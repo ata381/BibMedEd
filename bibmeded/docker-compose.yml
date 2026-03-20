@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: bibmeded
+      POSTGRES_PASSWORD: bibmeded
+      POSTGRES_DB: bibmeded
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      BIBMEDED_DATABASE_URL: postgresql://bibmeded:bibmeded@db:5432/bibmeded
+      BIBMEDED_REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - .:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  worker:
+    build: .
+    environment:
+      BIBMEDED_DATABASE_URL: postgresql://bibmeded:bibmeded@db:5432/bibmeded
+      BIBMEDED_REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    command: celery -A app.workers.celery_app worker --loglevel=info
+
+volumes:
+  pgdata:
