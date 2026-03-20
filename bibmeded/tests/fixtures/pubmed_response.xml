@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PubmedArticleSet>
+  <PubmedArticle>
+    <MedlineCitation Status="MEDLINE" Owner="NLM">
+      <PMID Version="1">38000001</PMID>
+      <Article PubModel="Electronic">
+        <Journal>
+          <ISSN IssnType="Electronic">2369-3762</ISSN>
+          <JournalIssue CitedMedium="Internet">
+            <Volume>10</Volume><Issue>1</Issue>
+            <PubDate><Year>2024</Year></PubDate>
+          </JournalIssue>
+          <Title>JMIR medical education</Title>
+        </Journal>
+        <ArticleTitle>Machine Learning in Medical Education: A Systematic Review</ArticleTitle>
+        <Abstract>
+          <AbstractText>This study reviews the application of machine learning in medical education curricula.</AbstractText>
+        </Abstract>
+        <AuthorList CompleteYN="Y">
+          <Author ValidYN="Y">
+            <LastName>Smith</LastName><ForeName>John</ForeName>
+            <Identifier Source="ORCID">0000-0001-2345-6789</Identifier>
+            <AffiliationInfo><Affiliation>Department of Medical Education, Harvard Medical School, Boston, MA, USA</Affiliation></AffiliationInfo>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Chen</LastName><ForeName>Li</ForeName>
+            <AffiliationInfo><Affiliation>School of Medicine, Peking University, Beijing, China</Affiliation></AffiliationInfo>
+          </Author>
+        </AuthorList>
+        <ELocationID EIdType="doi" ValidYN="Y">10.2196/12345</ELocationID>
+      </Article>
+      <MeshHeadingList>
+        <MeshHeading><DescriptorName MajorTopicYN="Y">Artificial Intelligence</DescriptorName></MeshHeading>
+        <MeshHeading><DescriptorName MajorTopicYN="Y">Education, Medical</DescriptorName></MeshHeading>
+      </MeshHeadingList>
+    </MedlineCitation>
+    <PubmedData>
+      <ReferenceList>
+        <Reference><ArticleIdList><ArticleId IdType="pubmed">37000001</ArticleId></ArticleIdList></Reference>
+      </ReferenceList>
+    </PubmedData>
+  </PubmedArticle>
+</PubmedArticleSet>
