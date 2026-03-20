@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(file *)",
+      "Bash(bash \"C:\\\\Users\\\\Aakil\\\\.claude\\\\plugins\\\\cache\\\\claude-plugins-official\\\\superpowers\\\\5.0.5\\\\skills\\\\brainstorming\\\\scripts\\\\start-server.sh\" --project-dir \"/c/Users/Aakil/Documents/Tip egitimi entegrasyon\")",
+      "Bash(python -c \":*)",
+      "Bash(python -X utf8 -c \":*)"
+    ]
+  }
+}

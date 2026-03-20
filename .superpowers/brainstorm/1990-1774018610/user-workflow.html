@@ -1,0 +1,211 @@
+<h2>User Workflow & Pages</h2>
+<p class="subtitle">The screens a researcher walks through</p>
+
+<!-- Flow diagram -->
+<div class="mockup">
+  <div class="mockup-header">User Journey</div>
+  <div class="mockup-body" style="padding: 24px;">
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <div style="background: #60a5fa; color: #0f172a; padding: 10px 16px; border-radius: 8px; font-weight: bold; font-size: 13px;">1. Home / Landing</div>
+      <div style="color: #94a3b8; font-size: 18px;">→</div>
+      <div style="background: #34d399; color: #0f172a; padding: 10px 16px; border-radius: 8px; font-weight: bold; font-size: 13px;">2. New Project</div>
+      <div style="color: #94a3b8; font-size: 18px;">→</div>
+      <div style="background: #f59e0b; color: #0f172a; padding: 10px 16px; border-radius: 8px; font-weight: bold; font-size: 13px;">3. Search Config</div>
+      <div style="color: #94a3b8; font-size: 18px;">→</div>
+      <div style="background: #f472b6; color: #0f172a; padding: 10px 16px; border-radius: 8px; font-weight: bold; font-size: 13px;">4. Results Review</div>
+      <div style="color: #94a3b8; font-size: 18px;">→</div>
+      <div style="background: #a78bfa; color: #0f172a; padding: 10px 16px; border-radius: 8px; font-weight: bold; font-size: 13px;">5. Dashboard</div>
+      <div style="color: #94a3b8; font-size: 18px;">→</div>
+      <div style="background: #fb923c; color: #0f172a; padding: 10px 16px; border-radius: 8px; font-weight: bold; font-size: 13px;">6. Export</div>
+    </div>
+  </div>
+</div>
+
+<!-- Page details -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px;">
+
+  <!-- Home -->
+  <div class="mockup">
+    <div class="mockup-header" style="background: #60a5fa; color: #0f172a;">1. Home / Landing Page</div>
+    <div class="mockup-body" style="padding: 20px;">
+      <div class="mock-nav" style="margin-bottom: 12px;">BibMedEd &nbsp;|&nbsp; My Projects &nbsp;|&nbsp; New Search &nbsp;|&nbsp; About</div>
+      <div style="text-align: center; padding: 24px;">
+        <div style="color: #e2e8f0; font-size: 18px; font-weight: bold; margin-bottom: 8px;">Bibliometric Analysis for Medical Education</div>
+        <div style="color: #94a3b8; margin-bottom: 16px;">Search PubMed. Analyze trends. Visualize networks.</div>
+        <button class="mock-button">+ New Project</button>
+      </div>
+      <div style="margin-top: 12px; color: #64748b; font-size: 12px;">
+        <div style="margin-bottom: 4px;">Recent Projects:</div>
+        <div style="background: #334155; padding: 8px; border-radius: 4px; margin-bottom: 4px;">📊 AI in Medical Education (2,340 papers)</div>
+        <div style="background: #334155; padding: 8px; border-radius: 4px;">📊 Deep Learning in Radiology (892 papers)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Project -->
+  <div class="mockup">
+    <div class="mockup-header" style="background: #34d399; color: #0f172a;">2. New Project</div>
+    <div class="mockup-body" style="padding: 20px;">
+      <div style="margin-bottom: 12px;">
+        <div class="label">Project Name</div>
+        <input class="mock-input" value="AI in Medical Education Curriculum" style="width: 100%; box-sizing: border-box;">
+      </div>
+      <div style="margin-bottom: 12px;">
+        <div class="label">Description (optional)</div>
+        <input class="mock-input" value="Bibliometric analysis of AI integration..." style="width: 100%; box-sizing: border-box;">
+      </div>
+      <div style="margin-bottom: 12px;">
+        <div class="label">Date Range</div>
+        <div style="display: flex; gap: 8px;">
+          <input class="mock-input" value="2022-01-01" style="flex: 1;">
+          <input class="mock-input" value="2025-06-30" style="flex: 1;">
+        </div>
+      </div>
+      <button class="mock-button">Continue to Search →</button>
+    </div>
+  </div>
+
+  <!-- Search Config -->
+  <div class="mockup">
+    <div class="mockup-header" style="background: #f59e0b; color: #0f172a;">3. Search Configuration</div>
+    <div class="mockup-body" style="padding: 20px;">
+      <div style="margin-bottom: 12px;">
+        <div class="label">Search Strategy Builder</div>
+        <div style="background: #0f172a; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 11px; color: #34d399; line-height: 1.8;">
+          <div>("Artificial Intelligence" <span style="color: #f59e0b;">OR</span> "AI" <span style="color: #f59e0b;">OR</span> "Machine Learning")</div>
+          <div><span style="color: #f59e0b;">AND</span></div>
+          <div>("Medical Education" <span style="color: #f59e0b;">OR</span> "Curriculum")</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+        <div style="flex: 1; background: #334155; padding: 8px; border-radius: 6px; text-align: center; border: 2px solid #34d399; color: #34d399; font-size: 12px;">✓ PubMed</div>
+        <div style="flex: 1; background: #334155; padding: 8px; border-radius: 6px; text-align: center; color: #64748b; font-size: 12px; opacity: 0.5;">🔒 Scopus</div>
+        <div style="flex: 1; background: #334155; padding: 8px; border-radius: 6px; text-align: center; color: #64748b; font-size: 12px; opacity: 0.5;">🔒 WoS</div>
+      </div>
+      <button class="mock-button">🔍 Run Search</button>
+    </div>
+  </div>
+
+  <!-- Results Review -->
+  <div class="mockup">
+    <div class="mockup-header" style="background: #f472b6; color: #0f172a;">4. Results Review</div>
+    <div class="mockup-body" style="padding: 20px;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+        <div style="color: #e2e8f0; font-weight: bold;">2,340 results found</div>
+        <div style="color: #34d399; font-size: 12px;">✓ 12 duplicates removed</div>
+      </div>
+      <div style="background: #334155; padding: 10px; border-radius: 6px; margin-bottom: 6px; font-size: 12px;">
+        <div style="color: #e2e8f0; font-weight: bold;">Machine Learning in Medical Education: A Systematic Review</div>
+        <div style="color: #94a3b8;">Smith J, et al. · JMIR Med Ed · 2024 · Cited: 45</div>
+      </div>
+      <div style="background: #334155; padding: 10px; border-radius: 6px; margin-bottom: 6px; font-size: 12px;">
+        <div style="color: #e2e8f0; font-weight: bold;">AI-Powered Assessment in Medical Training</div>
+        <div style="color: #94a3b8;">Chen L, et al. · Academic Medicine · 2023 · Cited: 38</div>
+      </div>
+      <div style="background: #334155; padding: 10px; border-radius: 6px; margin-bottom: 12px; font-size: 12px;">
+        <div style="color: #e2e8f0; font-weight: bold;">Deep Learning for Clinical Decision Support Education</div>
+        <div style="color: #94a3b8;">Patel R, et al. · BMC Med Ed · 2024 · Cited: 27</div>
+      </div>
+      <button class="mock-button">Run Bibliometric Analysis →</button>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="mockup" style="grid-column: span 2;">
+    <div class="mockup-header" style="background: #a78bfa; color: #0f172a;">5. Analysis Dashboard (Main Screen)</div>
+    <div class="mockup-body" style="padding: 20px;">
+      <!-- Tab bar -->
+      <div style="display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap;">
+        <div style="background: #a78bfa; color: #0f172a; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: bold;">Overview</div>
+        <div style="background: #334155; color: #94a3b8; padding: 6px 14px; border-radius: 6px; font-size: 12px;">Publications</div>
+        <div style="background: #334155; color: #94a3b8; padding: 6px 14px; border-radius: 6px; font-size: 12px;">Authors</div>
+        <div style="background: #334155; color: #94a3b8; padding: 6px 14px; border-radius: 6px; font-size: 12px;">Countries</div>
+        <div style="background: #334155; color: #94a3b8; padding: 6px 14px; border-radius: 6px; font-size: 12px;">Keywords</div>
+        <div style="background: #334155; color: #94a3b8; padding: 6px 14px; border-radius: 6px; font-size: 12px;">Citations</div>
+        <div style="background: #334155; color: #94a3b8; padding: 6px 14px; border-radius: 6px; font-size: 12px;">Journals</div>
+      </div>
+      <!-- Stats row -->
+      <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+        <div style="flex: 1; background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+          <div style="color: #60a5fa; font-size: 24px; font-weight: bold;">2,340</div>
+          <div style="color: #64748b; font-size: 11px;">Publications</div>
+        </div>
+        <div style="flex: 1; background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+          <div style="color: #34d399; font-size: 24px; font-weight: bold;">5,892</div>
+          <div style="color: #64748b; font-size: 11px;">Authors</div>
+        </div>
+        <div style="flex: 1; background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+          <div style="color: #f59e0b; font-size: 24px; font-weight: bold;">67</div>
+          <div style="color: #64748b; font-size: 11px;">Countries</div>
+        </div>
+        <div style="flex: 1; background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+          <div style="color: #f472b6; font-size: 24px; font-weight: bold;">1,245</div>
+          <div style="color: #64748b; font-size: 11px;">Keywords</div>
+        </div>
+        <div style="flex: 1; background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+          <div style="color: #a78bfa; font-size: 24px; font-weight: bold;">34,210</div>
+          <div style="color: #64748b; font-size: 11px;">Citations</div>
+        </div>
+      </div>
+      <!-- Chart placeholders -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div style="background: #1e293b; padding: 16px; border-radius: 8px;">
+          <div style="color: #64748b; font-size: 11px; margin-bottom: 8px;">PUBLICATION TREND</div>
+          <div style="display: flex; align-items: flex-end; gap: 4px; height: 50px;">
+            <div style="width: 100%; height: 20%; background: #60a5fa30; border-top: 2px solid #60a5fa;"></div>
+            <div style="width: 100%; height: 30%; background: #60a5fa30; border-top: 2px solid #60a5fa;"></div>
+            <div style="width: 100%; height: 45%; background: #60a5fa30; border-top: 2px solid #60a5fa;"></div>
+            <div style="width: 100%; height: 65%; background: #60a5fa30; border-top: 2px solid #60a5fa;"></div>
+            <div style="width: 100%; height: 100%; background: #60a5fa30; border-top: 2px solid #60a5fa;"></div>
+          </div>
+        </div>
+        <div style="background: #1e293b; padding: 16px; border-radius: 8px;">
+          <div style="color: #64748b; font-size: 11px; margin-bottom: 8px;">TOP COUNTRIES</div>
+          <div style="font-size: 11px; color: #94a3b8; line-height: 2;">
+            <div style="display: flex; align-items: center; gap: 8px;"><div style="background: #f59e0b; height: 8px; width: 80%; border-radius: 4px;"></div> USA</div>
+            <div style="display: flex; align-items: center; gap: 8px;"><div style="background: #f59e0b80; height: 8px; width: 55%; border-radius: 4px;"></div> China</div>
+            <div style="display: flex; align-items: center; gap: 8px;"><div style="background: #f59e0b60; height: 8px; width: 35%; border-radius: 4px;"></div> UK</div>
+          </div>
+        </div>
+      </div>
+      <!-- Filters -->
+      <div style="margin-top: 12px; display: flex; gap: 8px; align-items: center;">
+        <div style="color: #64748b; font-size: 11px;">FILTERS:</div>
+        <div style="background: #334155; padding: 4px 10px; border-radius: 12px; font-size: 11px; color: #94a3b8;">Year: 2022-2025</div>
+        <div style="background: #334155; padding: 4px 10px; border-radius: 12px; font-size: 11px; color: #94a3b8;">Type: All</div>
+        <div style="background: #334155; padding: 4px 10px; border-radius: 12px; font-size: 11px; color: #94a3b8;">Country: All</div>
+        <div style="background: #a78bfa30; border: 1px solid #a78bfa; padding: 4px 10px; border-radius: 12px; font-size: 11px; color: #a78bfa;">+ Add Filter</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export -->
+  <div class="mockup" style="grid-column: span 2;">
+    <div class="mockup-header" style="background: #fb923c; color: #0f172a;">6. Export Manager</div>
+    <div class="mockup-body" style="padding: 20px;">
+      <div style="display: flex; gap: 16px;">
+        <div style="flex: 1; background: #1e293b; padding: 16px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 24px; margin-bottom: 8px;">📄</div>
+          <div style="color: #e2e8f0; font-weight: bold; margin-bottom: 4px;">PDF Report</div>
+          <div style="color: #64748b; font-size: 11px;">Full analysis with charts & tables</div>
+        </div>
+        <div style="flex: 1; background: #1e293b; padding: 16px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 24px; margin-bottom: 8px;">📊</div>
+          <div style="color: #e2e8f0; font-weight: bold; margin-bottom: 4px;">CSV / Excel</div>
+          <div style="color: #64748b; font-size: 11px;">Raw data & computed metrics</div>
+        </div>
+        <div style="flex: 1; background: #1e293b; padding: 16px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 24px; margin-bottom: 8px;">🖼️</div>
+          <div style="color: #e2e8f0; font-weight: bold; margin-bottom: 4px;">PNG / SVG</div>
+          <div style="color: #64748b; font-size: 11px;">Individual charts & networks</div>
+        </div>
+        <div style="flex: 1; background: #1e293b; padding: 16px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 24px; margin-bottom: 8px;">🔗</div>
+          <div style="color: #e2e8f0; font-weight: bold; margin-bottom: 4px;">Shareable Link</div>
+          <div style="color: #64748b; font-size: 11px;">Read-only dashboard URL</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

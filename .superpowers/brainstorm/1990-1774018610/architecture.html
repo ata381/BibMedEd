@@ -1,0 +1,67 @@
+<h2>System Architecture</h2>
+<p class="subtitle">BibMedEd — Bibliometric Analysis Platform for Medical Education</p>
+
+<div class="mockup">
+  <div class="mockup-header">High-Level Architecture</div>
+  <div class="mockup-body" style="padding: 32px; font-family: monospace; font-size: 13px; line-height: 1.6;">
+    <div style="display: flex; gap: 24px; align-items: flex-start;">
+
+      <!-- Frontend -->
+      <div style="flex: 1; border: 2px solid #60a5fa; border-radius: 12px; padding: 16px; background: #1e293b;">
+        <div style="color: #60a5fa; font-weight: bold; font-size: 15px; margin-bottom: 12px; text-align: center;">Frontend (Next.js)</div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="background: #334155; padding: 8px 12px; border-radius: 6px; color: #cbd5e1;">Search Interface</div>
+          <div style="background: #334155; padding: 8px 12px; border-radius: 6px; color: #cbd5e1;">Dashboard & Charts (Recharts)</div>
+          <div style="background: #334155; padding: 8px 12px; border-radius: 6px; color: #cbd5e1;">Network Visualizations (D3.js)</div>
+          <div style="background: #334155; padding: 8px 12px; border-radius: 6px; color: #cbd5e1;">Results Explorer & Filters</div>
+          <div style="background: #334155; padding: 8px 12px; border-radius: 6px; color: #cbd5e1;">Export Manager (PDF/PNG/CSV)</div>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div style="display: flex; align-items: center; font-size: 24px; color: #94a3b8; padding-top: 80px;">⟷</div>
+
+      <!-- Backend -->
+      <div style="flex: 1; border: 2px solid #34d399; border-radius: 12px; padding: 16px; background: #1e293b;">
+        <div style="color: #34d399; font-weight: bold; font-size: 15px; margin-bottom: 12px; text-align: center;">Backend (FastAPI)</div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="background: #334155; padding: 8px 12px; border-radius: 6px; color: #cbd5e1;">REST API Layer</div>
+          <div style="background: #334155; padding: 8px 12px; border-radius: 6px; color: #cbd5e1;">PubMed Search Service</div>
+          <div style="background: #334155; padding: 8px 12px; border-radius: 6px; color: #cbd5e1;">Data Cleaning Pipeline</div>
+          <div style="background: #334155; padding: 8px 12px; border-radius: 6px; color: #cbd5e1;">Bibliometric Analysis Engine</div>
+          <div style="background: #334155; padding: 8px 12px; border-radius: 6px; color: #cbd5e1;">Export Service</div>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div style="display: flex; align-items: center; font-size: 24px; color: #94a3b8; padding-top: 80px;">⟷</div>
+
+      <!-- Infrastructure -->
+      <div style="flex: 0.8; display: flex; flex-direction: column; gap: 12px;">
+        <div style="border: 2px solid #f59e0b; border-radius: 12px; padding: 16px; background: #1e293b;">
+          <div style="color: #f59e0b; font-weight: bold; font-size: 15px; margin-bottom: 8px; text-align: center;">Data Layer</div>
+          <div style="background: #334155; padding: 8px 12px; border-radius: 6px; color: #cbd5e1; margin-bottom: 6px;">PostgreSQL</div>
+          <div style="background: #334155; padding: 8px 12px; border-radius: 6px; color: #cbd5e1;">Redis (Cache + Queue)</div>
+        </div>
+        <div style="border: 2px solid #f472b6; border-radius: 12px; padding: 16px; background: #1e293b;">
+          <div style="color: #f472b6; font-weight: bold; font-size: 15px; margin-bottom: 8px; text-align: center;">Workers</div>
+          <div style="background: #334155; padding: 8px 12px; border-radius: 6px; color: #cbd5e1; margin-bottom: 6px;">Celery Workers</div>
+          <div style="background: #334155; padding: 8px 12px; border-radius: 6px; color: #cbd5e1;">PubMed Crawler</div>
+        </div>
+        <div style="border: 2px solid #a78bfa; border-radius: 12px; padding: 16px; background: #1e293b;">
+          <div style="color: #a78bfa; font-weight: bold; font-size: 15px; margin-bottom: 8px; text-align: center;">External</div>
+          <div style="background: #334155; padding: 8px 12px; border-radius: 6px; color: #cbd5e1; margin-bottom: 6px;">PubMed E-Utils API</div>
+          <div style="background: #334155; padding: 8px 12px; border-radius: 6px; color: #cbd5e1; font-style: italic; opacity: 0.6;">Scopus API (future)</div>
+          <div style="background: #334155; padding: 8px 12px; border-radius: 6px; color: #cbd5e1; font-style: italic; opacity: 0.6;">WoS API (future)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top: 24px; padding: 16px; background: #1e293b; border-radius: 8px; border-left: 3px solid #60a5fa;">
+  <h3 style="margin: 0 0 8px 0;">Data Flow</h3>
+  <p style="margin: 0; color: #94a3b8; line-height: 1.8;">
+    <strong style="color: #cbd5e1;">1.</strong> User enters keywords → <strong style="color: #cbd5e1;">2.</strong> FastAPI dispatches PubMed search via Celery → <strong style="color: #cbd5e1;">3.</strong> Results stored in PostgreSQL → <strong style="color: #cbd5e1;">4.</strong> Analysis engine computes bibliometrics (NetworkX, pandas, scikit-learn) → <strong style="color: #cbd5e1;">5.</strong> Frontend renders interactive dashboard with D3.js networks + Recharts charts → <strong style="color: #cbd5e1;">6.</strong> User filters, drills down, exports
+  </p>
+</div>
