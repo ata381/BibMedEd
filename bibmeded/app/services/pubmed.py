@@ -37,11 +37,29 @@ class PubMedClient:
         self.api_key = api_key
         self.rate_limit = rate_limit
         self._client = httpx.AsyncClient(timeout=30.0)
+        self._last_request_time: float = 0.0
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
+        return False
+
+    async def _throttle(self) -> None:
+        """Enforce rate limiting between consecutive API requests."""
+        now = asyncio.get_event_loop().time()
+        min_interval = 1.0 / self.rate_limit
+        elapsed = now - self._last_request_time
+        if elapsed < min_interval:
+            await asyncio.sleep(min_interval - elapsed)
+        self._last_request_time = asyncio.get_event_loop().time()
 
     async def search(self, query: str, retstart: int = 0, retmax: int = 10000) -> SearchResult:
         params = {"db": "pubmed", "term": query, "retmode": "xml", "retstart": retstart, "retmax": retmax}
         if self.api_key:
             params["api_key"] = self.api_key
+        await self._throttle()
         response = await self._client.get(ESEARCH_URL, params=params)
         response.raise_for_status()
         root = etree.fromstring(response.text.encode())
@@ -53,6 +71,7 @@ class PubMedClient:
         params = {"db": "pubmed", "id": ",".join(pmids), "retmode": "xml", "rettype": "full"}
         if self.api_key:
             params["api_key"] = self.api_key
+        await self._throttle()
         response = await self._client.get(EFETCH_URL, params=params)
         response.raise_for_status()
         return self._parse_records(response.text)
@@ -63,7 +82,6 @@ class PubMedClient:
             batch = pmids[i:i + batch_size]
             records = await self.fetch(batch)
             all_records.extend(records)
-            await asyncio.sleep(1.0 / self.rate_limit)
         return all_records
 
     def _parse_records(self, xml_text: str) -> list[PubMedRecord]:
@@ -101,6 +119,11 @@ class PubMedClient:
                 aff_el = auth_el.find(".//AffiliationInfo/Affiliation")
                 affiliation = aff_el.text if aff_el is not None else None
                 authors.append(PubMedAuthor(name=name, orcid=orcid, affiliation=affiliation))
+            pub_types = art.findall(".//PublicationTypeList/PublicationType")
+            publication_type = pub_types[0].text if pub_types and pub_types[0].text else None
+            author_keywords = [
+                kw.text for kw in art.findall(".//KeywordList/Keyword") if kw.text
+            ]
             mesh_terms = [desc.text for desc in citation.findall(".//MeshHeadingList/MeshHeading/DescriptorName") if desc.text]
             references = []
             for ref in article.findall(".//ReferenceList/Reference"):
@@ -110,7 +133,9 @@ class PubMedClient:
             records.append(PubMedRecord(
                 pmid=pmid, title=title, abstract=abstract, doi=doi, year=year,
                 journal_name=journal_name, journal_issn=journal_issn,
-                authors=authors, mesh_terms=mesh_terms, references=references,
+                publication_type=publication_type,
+                authors=authors, mesh_terms=mesh_terms,
+                author_keywords=author_keywords, references=references,
             ))
         return records
 

@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     pubmed_api_key: str = ""
     pubmed_rate_limit: float = 3.0  # requests/sec, 10 with API key
     icite_base_url: str = "https://icite.od.nih.gov/api"
+    cors_origins: list[str] = ["http://localhost:3000"]
     debug: bool = False
 
     model_config = {"env_prefix": "BIBMEDED_"}

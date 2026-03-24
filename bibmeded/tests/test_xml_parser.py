@@ -17,6 +17,22 @@ def test_parse_multiple_authors():
     assert records[0].authors[0].name == "A, B"
     assert records[0].authors[2].name == "E, F"
 
+def test_parse_missing_publication_type_and_keywords():
+    xml = '<?xml version="1.0"?><PubmedArticleSet><PubmedArticle><MedlineCitation Status="MEDLINE" Owner="NLM"><PMID Version="1">33333333</PMID><Article PubModel="Print"><Journal><Title>J</Title><JournalIssue CitedMedium="Print"><PubDate><Year>2023</Year></PubDate></JournalIssue></Journal><ArticleTitle>No Type</ArticleTitle></Article></MedlineCitation><PubmedData></PubmedData></PubmedArticle></PubmedArticleSet>'
+    client = PubMedClient()
+    records = client._parse_records(xml)
+    assert records[0].publication_type is None
+    assert records[0].author_keywords == []
+
+
+def test_parse_publication_type_and_keywords():
+    xml = '<?xml version="1.0"?><PubmedArticleSet><PubmedArticle><MedlineCitation Status="MEDLINE" Owner="NLM"><PMID Version="1">44444444</PMID><Article PubModel="Print"><Journal><Title>J</Title><JournalIssue CitedMedium="Print"><PubDate><Year>2024</Year></PubDate></JournalIssue></Journal><ArticleTitle>Typed</ArticleTitle><PublicationTypeList><PublicationType UI="D016428">Journal Article</PublicationType></PublicationTypeList><KeywordList Owner="AUTHOR"><Keyword MajorTopicYN="N">AI</Keyword><Keyword MajorTopicYN="N">health</Keyword></KeywordList></Article></MedlineCitation><PubmedData></PubmedData></PubmedArticle></PubmedArticleSet>'
+    client = PubMedClient()
+    records = client._parse_records(xml)
+    assert records[0].publication_type == "Journal Article"
+    assert records[0].author_keywords == ["AI", "health"]
+
+
 def test_parse_no_references():
     xml = '<?xml version="1.0"?><PubmedArticleSet><PubmedArticle><MedlineCitation Status="MEDLINE" Owner="NLM"><PMID Version="1">22222222</PMID><Article PubModel="Print"><Journal><Title>J</Title><JournalIssue CitedMedium="Print"><PubDate><Year>2022</Year></PubDate></JournalIssue></Journal><ArticleTitle>No Refs</ArticleTitle></Article></MedlineCitation><PubmedData><ReferenceList></ReferenceList></PubmedData></PubmedArticle></PubmedArticleSet>'
     client = PubMedClient()

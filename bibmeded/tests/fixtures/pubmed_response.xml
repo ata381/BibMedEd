@@ -28,6 +28,13 @@
           </Author>
         </AuthorList>
         <ELocationID EIdType="doi" ValidYN="Y">10.2196/12345</ELocationID>
+        <PublicationTypeList>
+          <PublicationType UI="D016454">Review</PublicationType>
+        </PublicationTypeList>
+        <KeywordList Owner="AUTHOR">
+          <Keyword MajorTopicYN="N">machine learning</Keyword>
+          <Keyword MajorTopicYN="N">medical education</Keyword>
+        </KeywordList>
       </Article>
       <MeshHeadingList>
         <MeshHeading><DescriptorName MajorTopicYN="Y">Artificial Intelligence</DescriptorName></MeshHeading>

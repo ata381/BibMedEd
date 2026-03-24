@@ -21,3 +21,5 @@ class Publication(Base):
     journal: Mapped["Journal | None"] = relationship(back_populates="publications")
     authors: Mapped[list["Author"]] = relationship(secondary="publication_authors", back_populates="publications")
     keywords: Mapped[list["Keyword"]] = relationship(secondary="publication_keywords", back_populates="publications")
+    outgoing_citations: Mapped[list["Citation"]] = relationship(foreign_keys="Citation.citing_publication_id", back_populates="citing_publication")
+    incoming_citations: Mapped[list["Citation"]] = relationship(foreign_keys="Citation.cited_publication_id", back_populates="cited_publication")

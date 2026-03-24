@@ -3,14 +3,13 @@ import os
 # Set SQLite URL before any app imports to avoid needing psycopg2 during tests.
 # pydantic-settings reads env vars when Settings() is instantiated (at config import time),
 # so this must be set before app.config is first imported.
-os.environ["BIBMEDED_DATABASE_URL"] = "sqlite:///./test.db"
+os.environ["BIBMEDED_DATABASE_URL"] = "sqlite://"
 
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-TEST_DATABASE_URL = "sqlite:///./test.db"
-engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
+engine = create_engine("sqlite://", connect_args={"check_same_thread": False})
 TestSession = sessionmaker(bind=engine)
 
 
