@@ -38,6 +38,13 @@ class PubMedClient:
         self.rate_limit = rate_limit
         self._client = httpx.AsyncClient(timeout=30.0)
 
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
+        return False
+
     async def search(self, query: str, retstart: int = 0, retmax: int = 10000) -> SearchResult:
         params = {"db": "pubmed", "term": query, "retmode": "xml", "retstart": retstart, "retmax": retmax}
         if self.api_key:
@@ -101,6 +108,11 @@ class PubMedClient:
                 aff_el = auth_el.find(".//AffiliationInfo/Affiliation")
                 affiliation = aff_el.text if aff_el is not None else None
                 authors.append(PubMedAuthor(name=name, orcid=orcid, affiliation=affiliation))
+            pub_types = art.findall(".//PublicationTypeList/PublicationType")
+            publication_type = pub_types[0].text if pub_types and pub_types[0].text else None
+            author_keywords = [
+                kw.text for kw in art.findall(".//KeywordList/Keyword") if kw.text
+            ]
             mesh_terms = [desc.text for desc in citation.findall(".//MeshHeadingList/MeshHeading/DescriptorName") if desc.text]
             references = []
             for ref in article.findall(".//ReferenceList/Reference"):
@@ -110,7 +122,9 @@ class PubMedClient:
             records.append(PubMedRecord(
                 pmid=pmid, title=title, abstract=abstract, doi=doi, year=year,
                 journal_name=journal_name, journal_issn=journal_issn,
-                authors=authors, mesh_terms=mesh_terms, references=references,
+                publication_type=publication_type,
+                authors=authors, mesh_terms=mesh_terms,
+                author_keywords=author_keywords, references=references,
             ))
         return records
 

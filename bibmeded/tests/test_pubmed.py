@@ -1,5 +1,5 @@
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, patch, MagicMock
 import pytest
 from app.services.pubmed import PubMedClient
 
@@ -34,5 +34,15 @@ async def test_fetch_records(pubmed_client, sample_xml):
     assert len(records[0].authors) == 2
     assert records[0].authors[0].name == "Smith, John"
     assert records[0].doi == "10.2196/12345"
+    assert records[0].publication_type == "Review"
+    assert records[0].author_keywords == ["machine learning", "medical education"]
     assert len(records[0].mesh_terms) == 2
     assert len(records[0].references) == 1
+
+
+@pytest.mark.asyncio
+async def test_client_async_context_manager():
+    async with PubMedClient(api_key="", rate_limit=10.0) as client:
+        assert client is not None
+        assert not client._client.is_closed
+    assert client._client.is_closed
