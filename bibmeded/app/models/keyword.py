@@ -1,5 +1,5 @@
 import enum
-from sqlalchemy import Column, Enum, ForeignKey, Integer, String, Table
+from sqlalchemy import Column, Enum, ForeignKey, Integer, String, Table, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
@@ -17,6 +17,7 @@ class KeywordType(str, enum.Enum):
 
 class Keyword(Base):
     __tablename__ = "keywords"
+    __table_args__ = (UniqueConstraint("term", "type", name="uq_keywords_term_type"),)
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     term: Mapped[str] = mapped_column(String(255))
     type: Mapped[KeywordType] = mapped_column(
