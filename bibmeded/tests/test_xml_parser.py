@@ -38,3 +38,12 @@ def test_parse_no_references():
     client = PubMedClient()
     records = client._parse_records(xml)
     assert records[0].references == []
+
+
+def test_parse_collective_author_and_nested_title_text():
+    xml = '<?xml version="1.0"?><PubmedArticleSet><PubmedArticle><MedlineCitation><PMID>55555555</PMID><Article><Journal><Title>J</Title><JournalIssue><PubDate><Year>2025</Year></PubDate></JournalIssue></Journal><ArticleTitle>Impact of <i>AI</i> Tools</ArticleTitle><Abstract><AbstractText>Line with <b>markup</b>.</AbstractText></Abstract><AuthorList><Author><CollectiveName>AI Working Group</CollectiveName></Author></AuthorList></Article></MedlineCitation></PubmedArticle></PubmedArticleSet>'
+    client = PubMedClient()
+    records = client._parse_records(xml)
+    assert records[0].title == "Impact of AI Tools"
+    assert records[0].abstract == "Line with markup."
+    assert records[0].authors[0].name == "AI Working Group"
