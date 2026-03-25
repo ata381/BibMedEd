@@ -34,6 +34,8 @@ EFETCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
 
 class PubMedClient:
     def __init__(self, api_key: str = "", rate_limit: float = 3.0):
+        if rate_limit <= 0:
+            raise ValueError("rate_limit must be greater than 0")
         self.api_key = api_key
         self.rate_limit = rate_limit
         self._client = httpx.AsyncClient(timeout=30.0)
@@ -48,12 +50,12 @@ class PubMedClient:
 
     async def _throttle(self) -> None:
         """Enforce rate limiting between consecutive API requests."""
-        now = asyncio.get_event_loop().time()
+        now = asyncio.get_running_loop().time()
         min_interval = 1.0 / self.rate_limit
         elapsed = now - self._last_request_time
         if elapsed < min_interval:
             await asyncio.sleep(min_interval - elapsed)
-        self._last_request_time = asyncio.get_event_loop().time()
+        self._last_request_time = asyncio.get_running_loop().time()
 
     async def search(self, query: str, retstart: int = 0, retmax: int = 10000) -> SearchResult:
         params = {"db": "pubmed", "term": query, "retmode": "xml", "retstart": retstart, "retmax": retmax}
@@ -68,6 +70,8 @@ class PubMedClient:
         return SearchResult(total_count=count, pmids=pmids)
 
     async def fetch(self, pmids: list[str]) -> list[PubMedRecord]:
+        if not pmids:
+            return []
         params = {"db": "pubmed", "id": ",".join(pmids), "retmode": "xml", "rettype": "full"}
         if self.api_key:
             params["api_key"] = self.api_key
@@ -95,9 +99,10 @@ class PubMedClient:
             art = citation.find("Article")
             if art is None:
                 continue
-            title = art.findtext("ArticleTitle", "")
+            title_el = art.find("ArticleTitle")
+            title = "".join(title_el.itertext()).strip() if title_el is not None else ""
             abstract_parts = art.findall(".//AbstractText")
-            abstract = " ".join(at.text for at in abstract_parts if at.text) or None
+            abstract = " ".join("".join(at.itertext()).strip() for at in abstract_parts if "".join(at.itertext()).strip()) or None
             year_text = art.findtext(".//PubDate/Year")
             year = int(year_text) if year_text else None
             journal_name = art.findtext(".//Journal/Title")
@@ -111,7 +116,8 @@ class PubMedClient:
             for auth_el in art.findall(".//AuthorList/Author"):
                 last = auth_el.findtext("LastName", "")
                 first = auth_el.findtext("ForeName", "")
-                name = f"{last}, {first}" if last else first
+                collective = auth_el.findtext("CollectiveName", "")
+                name = f"{last}, {first}" if last else first or collective
                 orcid = None
                 for ident in auth_el.findall("Identifier"):
                     if ident.get("Source") == "ORCID":
