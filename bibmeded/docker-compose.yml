@@ -9,6 +9,11 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bibmeded"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
 
   redis:
     image: redis:7-alpine
@@ -23,8 +28,10 @@ services:
       BIBMEDED_DATABASE_URL: postgresql://bibmeded:bibmeded@db:5432/bibmeded
       BIBMEDED_REDIS_URL: redis://redis:6379/0
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
     volumes:
       - .:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -36,8 +43,10 @@ services:
       BIBMEDED_REDIS_URL: redis://redis:6379/0
       BIBMEDED_PUBMED_API_KEY: ${BIBMEDED_PUBMED_API_KEY:-}  # set in .env for 10 req/s
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
     command: celery -A app.workers.celery_app worker --loglevel=info
 
 volumes:
