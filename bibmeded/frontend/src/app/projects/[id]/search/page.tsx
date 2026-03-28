@@ -1,0 +1,123 @@
+"use client";
+
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { searchApi } from "@/lib/api";
+
+export default function SearchConfig() {
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const projectId = Number(params.id);
+  const [topicA, setTopicA] = useState('"Artificial Intelligence" OR "AI" OR "Machine Learning"');
+  const [topicB, setTopicB] = useState('"Medical Education" OR "Curriculum"');
+  const [operator, setOperator] = useState("AND");
+  const [yearStart, setYearStart] = useState("2022");
+  const [yearEnd, setYearEnd] = useState("2025");
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+
+  const queryString = `(${topicA}) ${operator} (${topicB}) AND ("${yearStart}/01/01"[PDAT] : "${yearEnd}/12/31"[PDAT])`;
+
+  const handleSearch = async () => {
+    setLoading(true);
+    setStatus("Submitting search...");
+    try {
+      const res = await searchApi.trigger(projectId, queryString);
+      const queryId = res.data.query_id;
+      setStatus("Search dispatched. Fetching results...");
+      const poll = setInterval(async () => {
+        try {
+          const s = await searchApi.status(projectId, queryId);
+          if (s.data.status === "completed") { clearInterval(poll); router.push(`/projects/${projectId}/results`); }
+          else if (s.data.status === "failed") { clearInterval(poll); setStatus("Search failed."); setLoading(false); }
+        } catch { clearInterval(poll); setStatus("Error."); setLoading(false); }
+      }, 2000);
+    } catch { setStatus("Failed to start."); setLoading(false); }
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-12">
+      {/* Hero */}
+      <section className="mb-16">
+        <h1 className="text-5xl font-extrabold text-[#001e4f] tracking-tight mb-4" style={{fontFamily:"'Manrope',sans-serif"}}>Precision Search Strategy</h1>
+        <p className="text-[#515f74] text-lg max-w-2xl leading-relaxed">Construct high-fidelity queries using MeSH term mapping and bibliometric operators.</p>
+      </section>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Left: Parameters */}
+        <div className="lg:col-span-8 space-y-8">
+          {/* Topics */}
+          <div className="bg-white rounded-xl p-8 shadow-sm">
+            <h2 className="font-bold text-xl text-[#001e4f] mb-6" style={{fontFamily:"'Manrope',sans-serif"}}>1. Define Research Topics</h2>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-20 bg-[#00327a] text-white px-3 py-1.5 rounded-lg text-center font-bold text-xs">TOPIC A</div>
+                <input value={topicA} onChange={e => setTopicA(e.target.value)}
+                  className="flex-1 bg-[#eceef0] rounded-lg px-4 py-3 text-sm font-medium border-b-2 border-transparent focus:border-[#2b5bb5] focus:bg-[#f2f4f6] transition-all outline-none" />
+              </div>
+              <div className="pl-24 flex items-center gap-6">
+                <div className="h-6 w-[1px] bg-[#c4c6cf]/30" />
+                <div className="flex gap-2">
+                  {["AND", "OR", "NOT"].map(op => (
+                    <button key={op} onClick={() => setOperator(op)}
+                      className={`px-3 py-1 text-[10px] font-bold rounded uppercase ${operator === op ? "bg-[#001e4f] text-white" : "bg-[#e6e8ea] text-[#43474e] hover:bg-[#e0e3e5]"}`}>
+                      {op}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="w-20 bg-[#d5e3fc] text-[#57657a] px-3 py-1.5 rounded-lg text-center font-bold text-xs">TOPIC B</div>
+                <input value={topicB} onChange={e => setTopicB(e.target.value)}
+                  className="flex-1 bg-[#eceef0] rounded-lg px-4 py-3 text-sm font-medium border-b-2 border-transparent focus:border-[#2b5bb5] focus:bg-[#f2f4f6] transition-all outline-none" />
+              </div>
+            </div>
+          </div>
+
+          {/* Date Range */}
+          <div className="bg-white rounded-xl p-8 shadow-sm">
+            <h2 className="font-bold text-xl text-[#001e4f] mb-6" style={{fontFamily:"'Manrope',sans-serif"}}>2. Publication Date Range</h2>
+            <div className="grid grid-cols-2 gap-8">
+              <div>
+                <label className="text-[10px] font-bold text-[#43474e] uppercase tracking-widest block mb-2">Start Year</label>
+                <div className="bg-[#eceef0] rounded-lg px-4 py-3 flex items-center justify-between">
+                  <input type="text" value={yearStart} onChange={e => setYearStart(e.target.value)} className="bg-transparent border-none text-sm font-medium outline-none w-full" />
+                  <span className="material-symbols-outlined text-[#c4c6cf]">calendar_today</span>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-[#43474e] uppercase tracking-widest block mb-2">End Year</label>
+                <div className="bg-[#eceef0] rounded-lg px-4 py-3 flex items-center justify-between">
+                  <input type="text" value={yearEnd} onChange={e => setYearEnd(e.target.value)} className="bg-transparent border-none text-sm font-medium outline-none w-full" />
+                  <span className="material-symbols-outlined text-[#c4c6cf]">calendar_today</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Query Preview */}
+        <div className="lg:col-span-4">
+          <div className="bg-[#001e4f] text-white rounded-xl p-8 sticky top-24 shadow-lg">
+            <div className="flex items-center gap-2 mb-6">
+              <span className="material-symbols-outlined" style={{fontVariationSettings:"'FILL' 1"}}>terminal</span>
+              <h2 className="font-bold text-lg" style={{fontFamily:"'Manrope',sans-serif"}}>3. Query Preview</h2>
+            </div>
+            <div className="bg-[#00327a]/50 rounded-lg p-5 font-mono text-xs leading-relaxed text-[#739cfb] mb-6 border border-white/10">
+              ({topicA}) <span className="text-[#93f2f2]">{operator}</span> ({topicB}) <span className="text-[#93f2f2]">AND</span> (&quot;{yearStart}/01/01&quot;[PDAT] : &quot;{yearEnd}/12/31&quot;[PDAT])
+            </div>
+            {status && (
+              <div className="text-xs text-[#93f2f2] mb-4">{loading && <span className="material-symbols-outlined animate-spin text-sm mr-1 inline-block">sync</span>}{status}</div>
+            )}
+            <button onClick={handleSearch} disabled={loading}
+              className="w-full bg-[#93f2f2] text-[#002020] font-extrabold py-4 rounded-lg hover:bg-[#76d6d5] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              style={{fontFamily:"'Manrope',sans-serif"}}>
+              {loading ? "Searching..." : "Execute Search"}
+              {!loading && <span className="material-symbols-outlined">arrow_forward</span>}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
