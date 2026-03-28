@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+from app.routers import projects, search, publications, analysis
 
 
 def create_app() -> FastAPI:
@@ -17,6 +18,11 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    app.include_router(projects.router)
+    app.include_router(search.router)
+    app.include_router(publications.router)
+    app.include_router(analysis.router)
 
     @app.get("/api/health")
     def health_check():
