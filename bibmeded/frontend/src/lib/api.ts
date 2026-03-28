@@ -24,6 +24,7 @@ export interface Publication {
   year: number | null;
   publication_type: string | null;
   citation_count: number | null;
+  excluded: boolean;
   journal_name: string | null;
   authors: { id: number; name: string; orcid: string | null }[];
 }
@@ -32,6 +33,8 @@ export interface SearchStatus {
   query_id: number;
   status: string;
   result_count: number | null;
+  raw_result_count: number | null;
+  duplicate_count: number | null;
   progress: number | null;
 }
 
@@ -57,11 +60,15 @@ export const searchApi = {
     api.post<SearchStatus>(`/api/projects/${projectId}/search`, { query_string: queryString }),
   status: (projectId: number, queryId: number) =>
     api.get<SearchStatus>(`/api/projects/${projectId}/search/${queryId}`),
+  latest: (projectId: number) =>
+    api.get<SearchStatus>(`/api/projects/${projectId}/search/latest`),
 };
 
 export const publicationsApi = {
   list: (projectId: number, params?: { sort_by?: string; order?: string; limit?: number; offset?: number }) =>
     api.get<{ total: number; items: Publication[] }>(`/api/projects/${projectId}/publications`, { params }),
+  toggleExclude: (projectId: number, publicationId: number) =>
+    api.patch<{ id: number; excluded: boolean }>(`/api/projects/${projectId}/publications/${publicationId}/exclude`),
 };
 
 export const analysisApi = {
@@ -69,6 +76,13 @@ export const analysisApi = {
     api.post<AnalysisResult>(`/api/projects/${projectId}/analysis/${type}`),
   get: (projectId: number, type: string) =>
     api.get<AnalysisResult>(`/api/projects/${projectId}/analysis/${type}`),
+};
+
+export const exportApi = {
+  csvUrl: (projectId: number) =>
+    `${api.defaults.baseURL}/api/projects/${projectId}/export/csv`,
+  risUrl: (projectId: number) =>
+    `${api.defaults.baseURL}/api/projects/${projectId}/export/ris`,
 };
 
 export default api;

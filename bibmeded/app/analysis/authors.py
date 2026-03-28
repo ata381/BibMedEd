@@ -11,7 +11,7 @@ def analyze_authors(db: Session, project_id: int) -> dict:
     query_ids = [q.id for q in project.queries]
     if not query_ids:
         return {"top_authors": [], "coauthorship_network": {"nodes": [], "links": []}, "total_authors": 0}
-    pubs = db.query(Publication).filter(Publication.query_id.in_(query_ids)).all()
+    pubs = db.query(Publication).filter(Publication.query_id.in_(query_ids), Publication.excluded == False).all()
     author_stats = {}
     coauthor_pairs = []
     for pub in pubs:

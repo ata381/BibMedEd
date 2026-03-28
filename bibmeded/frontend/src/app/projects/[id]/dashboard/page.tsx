@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { analysisApi, projectsApi, Project } from "@/lib/api";
+import toast from "react-hot-toast";
+import { ForceGraph } from "@/components/force-graph";
 
 type AnalysisData = Record<string, unknown>;
 
@@ -33,7 +35,9 @@ export default function Dashboard() {
           catch { try { const r = await analysisApi.run(projectId, t); results[t] = r.data.results as AnalysisData; } catch {} }
         }
         setAnalyses(results);
-      } catch {}
+      } catch {
+        toast.error("Failed to load analysis data.");
+      }
       setLoading(false);
     };
     load();
@@ -54,6 +58,7 @@ export default function Dashboard() {
   const topAuthors = (auth as any).top_authors as Array<{name:string;pub_count:number;citation_sum:number}> || [];
   const mostCited = (cite as any).most_cited as Array<{title:string;pmid:string;year:number;citation_count:number}> || [];
   const topKeywords = (kw as any).top_keywords as Array<{term:string;count:number}> || [];
+  const coauthorNetwork = (auth as any).coauthorship_network as {nodes: Array<{id:string;label?:string;size?:number}>; links: Array<{source:string;target:string;weight?:number}>} || {nodes:[], links:[]};
   const totalPubs = (pub as any).total || 0;
   const totalAuthors = (auth as any).total_authors || 0;
   const totalCitations = (cite as any).total_citations || 0;
@@ -140,22 +145,13 @@ export default function Dashboard() {
             <span className="material-symbols-outlined text-[#43474e]">hub</span>
           </div>
           <div className="flex-1 relative overflow-hidden rounded-xl bg-slate-50 border border-slate-100/50">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="relative w-48 h-48">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-6 bg-[#001e4f] rounded-full" />
-                <div className="absolute bottom-0 left-1/4 w-8 h-8 bg-[#003d3d] rounded-full" />
-                <div className="absolute top-1/3 right-0 w-10 h-10 bg-[#00327a] rounded-full" />
-                <div className="absolute top-1/2 left-0 w-4 h-4 bg-[#002626] rounded-full" />
-                <svg className="absolute inset-0 w-full h-full stroke-slate-200 fill-none opacity-50" viewBox="0 0 100 100">
-                  <line x1="50" y1="10" x2="25" y2="85" strokeWidth="0.5" />
-                  <line x1="50" y1="10" x2="85" y2="40" strokeWidth="0.5" />
-                  <line x1="25" y1="85" x2="85" y2="40" strokeWidth="0.5" />
-                </svg>
-              </div>
-            </div>
+            <ForceGraph
+              nodes={coauthorNetwork.nodes || []}
+              links={coauthorNetwork.links || []}
+            />
             <div className="absolute bottom-4 left-4 right-4 bg-white/60 backdrop-blur-md p-3 rounded-lg border border-white/40">
-              <p className="text-[10px] font-bold text-[#191c1e] uppercase tracking-wide">{topAuthors.length} Authors in Network</p>
-              <p className="text-[10px] text-slate-500">Click to explore full network view</p>
+              <p className="text-[10px] font-bold text-[#191c1e] uppercase tracking-wide">{coauthorNetwork.nodes?.length || 0} Authors in Network</p>
+              <p className="text-[10px] text-slate-500">Drag nodes to explore · scroll to zoom</p>
             </div>
           </div>
         </div>

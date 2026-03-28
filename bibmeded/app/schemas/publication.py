@@ -15,6 +15,7 @@ class PublicationResponse(BaseModel):
     year: int | None
     publication_type: str | None
     citation_count: int | None
+    excluded: bool = False
     journal_name: str | None = None
     authors: list[AuthorResponse] = []
     model_config = {"from_attributes": True}

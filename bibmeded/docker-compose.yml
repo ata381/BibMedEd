@@ -34,6 +34,7 @@ services:
     environment:
       BIBMEDED_DATABASE_URL: postgresql://bibmeded:bibmeded@db:5432/bibmeded
       BIBMEDED_REDIS_URL: redis://redis:6379/0
+      BIBMEDED_PUBMED_API_KEY: ${BIBMEDED_PUBMED_API_KEY:-}  # set in .env for 10 req/s
     depends_on:
       - db
       - redis

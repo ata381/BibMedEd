@@ -9,7 +9,7 @@ def analyze_journals(db: Session, project_id: int) -> dict:
     query_ids = [q.id for q in project.queries]
     if not query_ids:
         return {"top_journals": [], "bradford_zones": [], "total_journals": 0}
-    pubs = db.query(Publication).filter(Publication.query_id.in_(query_ids)).all()
+    pubs = db.query(Publication).filter(Publication.query_id.in_(query_ids), Publication.excluded == False).all()
     journal_counter = Counter()
     journal_citations = Counter()
     for pub in pubs:

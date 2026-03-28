@@ -10,7 +10,7 @@ def analyze_citations(db: Session, project_id: int) -> dict:
     query_ids = [q.id for q in project.queries]
     if not query_ids:
         return {"most_cited": [], "citation_network": {"nodes": [], "links": []}, "total_citations": 0}
-    pubs = db.query(Publication).filter(Publication.query_id.in_(query_ids)).all()
+    pubs = db.query(Publication).filter(Publication.query_id.in_(query_ids), Publication.excluded == False).all()
     pub_ids = {p.id for p in pubs}
     most_cited = sorted(
         [{"pmid": p.pmid, "title": p.title, "year": p.year, "citation_count": p.citation_count or 0} for p in pubs],

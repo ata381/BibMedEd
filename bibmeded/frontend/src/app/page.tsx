@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { projectsApi, Project } from "@/lib/api";
+import toast from "react-hot-toast";
 
 export default function Home() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -11,7 +12,7 @@ export default function Home() {
   useEffect(() => {
     projectsApi.list()
       .then((res) => setProjects(res.data))
-      .catch(() => {})
+      .catch(() => toast.error("Failed to load projects. Is the backend running?"))
       .finally(() => setLoading(false));
   }, []);
 

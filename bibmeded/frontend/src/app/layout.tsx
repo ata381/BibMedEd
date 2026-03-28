@@ -3,6 +3,7 @@ import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 import { StatusBar } from "@/components/status-bar";
+import { ToastProvider } from "@/components/toast-provider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </main>
         </div>
         <StatusBar />
+        <ToastProvider />
       </body>
     </html>
   );

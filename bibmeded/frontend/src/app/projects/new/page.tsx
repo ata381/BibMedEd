@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { projectsApi } from "@/lib/api";
+import toast from "react-hot-toast";
 
 export default function NewProject() {
   const router = useRouter();
@@ -15,6 +16,10 @@ export default function NewProject() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+    if (dateStart && dateEnd && dateStart > dateEnd) {
+      toast.error("Start date must be before end date.");
+      return;
+    }
     setLoading(true);
     try {
       const res = await projectsApi.create({
@@ -25,6 +30,7 @@ export default function NewProject() {
       });
       router.push(`/projects/${res.data.id}/search`);
     } catch {
+      toast.error("Failed to create project. Is the backend running?");
       setLoading(false);
     }
   };

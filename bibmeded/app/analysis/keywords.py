@@ -12,7 +12,7 @@ def analyze_keywords(db: Session, project_id: int) -> dict:
     query_ids = [q.id for q in project.queries]
     if not query_ids:
         return {"top_keywords": [], "cooccurrence_network": {"nodes": [], "links": []}, "keyword_trends": []}
-    pubs = db.query(Publication).filter(Publication.query_id.in_(query_ids)).all()
+    pubs = db.query(Publication).filter(Publication.query_id.in_(query_ids), Publication.excluded == False).all()
     keyword_counter = Counter()
     keyword_year = {}
     cooccurrence_pairs = []

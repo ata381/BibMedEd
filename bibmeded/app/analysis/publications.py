@@ -10,7 +10,7 @@ def analyze_publication_trends(db: Session, project_id: int) -> dict:
     if not query_ids:
         return {"yearly_counts": [], "total": 0, "growth_rates": [], "cumulative": []}
     pubs = db.query(Publication.year, Publication.id).filter(
-        Publication.query_id.in_(query_ids), Publication.year.isnot(None)).all()
+        Publication.query_id.in_(query_ids), Publication.year.isnot(None), Publication.excluded == False).all()
     if not pubs:
         return {"yearly_counts": [], "total": 0, "growth_rates": [], "cumulative": []}
     df = pd.DataFrame(pubs, columns=["year", "id"])

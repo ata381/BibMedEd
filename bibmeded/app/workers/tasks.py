@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime, timezone
+from celery.exceptions import SoftTimeLimitExceeded
 from app.database import SessionLocal
 from app.models import (Affiliation, Author, Journal, Keyword, KeywordType, Publication, SearchQuery, QueryStatus)
 from app.services.cleaning import deduplicate_records, extract_country, normalize_name
@@ -7,7 +8,7 @@ from app.services.icite import ICiteClient
 from app.services.pubmed import PubMedClient
 from app.workers.celery_app import celery_app
 
-@celery_app.task(bind=True)
+@celery_app.task(bind=True, soft_time_limit=600, time_limit=660)
 def run_pubmed_search(self, query_id: int):
     asyncio.run(_run_search(self, query_id))
 
@@ -26,8 +27,14 @@ async def _run_search(task, query_id: int):
         pmids = search_result.pmids
         task.update_state(state="PROGRESS", meta={"current": 0, "total": search_result.total_count})
 
-        records = await pubmed.fetch_batched(pmids, batch_size=200)
-        records = deduplicate_records(records)
+        records_raw = await pubmed.fetch_batched(pmids, batch_size=200)
+        raw_count = len(records_raw)
+        records = deduplicate_records(records_raw)
+        duplicate_count = raw_count - len(records)
+
+        query.raw_result_count = raw_count
+        query.duplicate_count = duplicate_count
+        db.flush()
 
         all_pmids = [r.pmid for r in records]
         citation_counts = await icite.get_citations(all_pmids)
@@ -87,6 +94,12 @@ async def _run_search(task, query_id: int):
         query.result_count = len(records)
         query.executed_at = datetime.now(timezone.utc)
         db.commit()
+    except SoftTimeLimitExceeded:
+        query = db.get(SearchQuery, query_id)
+        if query:
+            query.status = QueryStatus.failed
+            db.commit()
+        raise
     except Exception as e:
         query = db.get(SearchQuery, query_id)
         if query:

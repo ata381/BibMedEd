@@ -28,7 +28,17 @@ def list_publications(project_id: int, sort_by: str = Query("year", enum=["year"
     for pub in publications:
         item = PublicationResponse(id=pub.id, pmid=pub.pmid, doi=pub.doi, title=pub.title, abstract=pub.abstract,
             year=pub.year, publication_type=pub.publication_type, citation_count=pub.citation_count,
+            excluded=pub.excluded,
             journal_name=pub.journal.name if pub.journal else None,
             authors=[{"id": a.id, "name": a.name, "orcid": a.orcid} for a in pub.authors])
         items.append(item)
     return PublicationListResponse(total=total, items=items)
+
+@router.patch("/{publication_id}/exclude")
+def toggle_exclude(project_id: int, publication_id: int, db: Session = Depends(get_db)):
+    pub = db.get(Publication, publication_id)
+    if not pub:
+        raise HTTPException(status_code=404, detail="Publication not found")
+    pub.excluded = not pub.excluded
+    db.commit()
+    return {"id": pub.id, "excluded": pub.excluded}
