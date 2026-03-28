@@ -110,7 +110,7 @@ export function ForceGraph({ nodes, links, width = 400, height = 350 }: ForceGra
       .selectAll("text")
       .data(simNodes.filter(n => topIds.has(n.id)))
       .join("text")
-      .text((d: any) => (d.label || d.id).split(",")[0]?.slice(0, 15))
+      .text((d: any) => String(d.label || d.id).split(",")[0]?.slice(0, 15))
       .attr("font-size", "9px")
       .attr("font-weight", "600")
       .attr("fill", "#191c1e")
