@@ -1,0 +1,7 @@
+{
+  "meta": {"total": 2},
+  "data": [
+    {"pmid": 38000001, "citation_count": 45, "expected_citations_per_year": 8.2, "relative_citation_ratio": 2.1, "year": 2024},
+    {"pmid": 38000002, "citation_count": 12, "expected_citations_per_year": 3.1, "relative_citation_ratio": 0.8, "year": 2023}
+  ]
+}
