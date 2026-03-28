@@ -8,3 +8,4 @@ __pycache__/
 dist/
 node_modules/
 .next/
+*.db
