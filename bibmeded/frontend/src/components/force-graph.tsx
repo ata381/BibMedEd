@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import * as d3 from "d3";
 
 interface GraphNode {
@@ -24,27 +24,49 @@ interface ForceGraphProps {
 
 export function ForceGraph({ nodes, links, width = 400, height = 350 }: ForceGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const maxNodeSize = Math.max(...nodes.map(n => n.size ?? 1), 1);
+  const [minPubs, setMinPubs] = useState(0);
+
+  // Auto-set a reasonable threshold for large graphs
+  useEffect(() => {
+    if (nodes.length > 200) {
+      const sizes = nodes.map(n => n.size ?? 0).sort((a, b) => b - a);
+      const top100 = sizes[Math.min(99, sizes.length - 1)] ?? 0;
+      setMinPubs(top100);
+    } else {
+      setMinPubs(0);
+    }
+  }, [nodes]);
+
+  const filtered = useMemo(() => {
+    const filteredNodes = nodes.filter(n => (n.size ?? 0) >= minPubs);
+    const nodeIds = new Set(filteredNodes.map(n => n.id));
+    const filteredLinks = links.filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
+    return { nodes: filteredNodes, links: filteredLinks };
+  }, [nodes, links, minPubs]);
 
   useEffect(() => {
-    if (!svgRef.current || nodes.length === 0) return;
+    if (!svgRef.current || filtered.nodes.length === 0) return;
 
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
     const g = svg.append("g");
 
-    // Zoom
     svg.call(
       d3.zoom<SVGSVGElement, unknown>()
         .scaleExtent([0.3, 4])
         .on("zoom", (event) => g.attr("transform", event.transform))
     );
 
-    const maxWeight = Math.max(...links.map(l => l.weight ?? 1), 1);
-    const maxSize = Math.max(...nodes.map(n => n.size ?? 1), 1);
+    const simNodes = filtered.nodes.map(n => ({ ...n }));
+    const simLinks = filtered.links.map(l => ({ ...l }));
 
-    const simulation = d3.forceSimulation(nodes as d3.SimulationNodeDatum[])
-      .force("link", d3.forceLink(links as d3.SimulationLinkDatum<d3.SimulationNodeDatum>[])
+    const maxWeight = Math.max(...simLinks.map(l => l.weight ?? 1), 1);
+    const maxSize = Math.max(...simNodes.map(n => n.size ?? 1), 1);
+
+    const simulation = d3.forceSimulation(simNodes as d3.SimulationNodeDatum[])
+      .force("link", d3.forceLink(simLinks as d3.SimulationLinkDatum<d3.SimulationNodeDatum>[])
         .id((d: any) => d.id)
         .distance(80))
       .force("charge", d3.forceManyBody().strength(-120))
@@ -53,17 +75,17 @@ export function ForceGraph({ nodes, links, width = 400, height = 350 }: ForceGra
 
     const link = g.append("g")
       .selectAll("line")
-      .data(links)
+      .data(simLinks)
       .join("line")
       .attr("stroke", "#c4c6cf")
       .attr("stroke-opacity", 0.6)
-      .attr("stroke-width", (d) => 0.5 + (d.weight ?? 1) / maxWeight * 2.5);
+      .attr("stroke-width", (d: any) => 0.5 + (d.weight ?? 1) / maxWeight * 2.5);
 
     const node = g.append("g")
       .selectAll("circle")
-      .data(nodes)
+      .data(simNodes)
       .join("circle")
-      .attr("r", (d) => 4 + (d.size ?? 1) / maxSize * 10)
+      .attr("r", (d: any) => 4 + (d.size ?? 1) / maxSize * 10)
       .attr("fill", "#00327a")
       .attr("stroke", "#001e4f")
       .attr("stroke-width", 1)
@@ -79,16 +101,14 @@ export function ForceGraph({ nodes, links, width = 400, height = 350 }: ForceGra
         })
       );
 
-    // Tooltips
     node.append("title").text((d: any) => d.label || d.id);
 
-    // Labels for top nodes
-    const topNodes = [...nodes].sort((a, b) => (b.size ?? 0) - (a.size ?? 0)).slice(0, 8);
+    const topNodes = [...simNodes].sort((a, b) => (b.size ?? 0) - (a.size ?? 0)).slice(0, 8);
     const topIds = new Set(topNodes.map(n => n.id));
 
     const labels = g.append("g")
       .selectAll("text")
-      .data(nodes.filter(n => topIds.has(n.id)))
+      .data(simNodes.filter(n => topIds.has(n.id)))
       .join("text")
       .text((d: any) => (d.label || d.id).split(",")[0]?.slice(0, 15))
       .attr("font-size", "9px")
@@ -112,7 +132,7 @@ export function ForceGraph({ nodes, links, width = 400, height = 350 }: ForceGra
     });
 
     return () => { simulation.stop(); };
-  }, [nodes, links, width, height]);
+  }, [filtered, width, height]);
 
   if (nodes.length === 0) {
     return (
@@ -123,5 +143,25 @@ export function ForceGraph({ nodes, links, width = 400, height = 350 }: ForceGra
     );
   }
 
-  return <svg ref={svgRef} width={width} height={height} className="w-full h-full" />;
+  return (
+    <div className="relative w-full h-full">
+      <svg ref={svgRef} width={width} height={height} className="w-full h-full" />
+      {maxNodeSize > 1 && (
+        <div className="absolute top-3 right-3 bg-white/80 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-slate-100">
+          <label className="text-[9px] font-bold text-[#43474e] uppercase tracking-widest block mb-1">
+            Min. publications: {minPubs}
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={Math.ceil(maxNodeSize * 0.5)}
+            value={minPubs}
+            onChange={(e) => setMinPubs(Number(e.target.value))}
+            className="w-24 h-1 accent-[#001e4f]"
+          />
+          <p className="text-[8px] text-[#74777f] mt-0.5">{filtered.nodes.length} / {nodes.length} nodes</p>
+        </div>
+      )}
+    </div>
+  );
 }

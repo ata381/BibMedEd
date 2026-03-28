@@ -1,5 +1,7 @@
 import csv
 import io
+import re
+from datetime import date
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
@@ -9,25 +11,32 @@ from app.models import Publication, SearchProject
 router = APIRouter(prefix="/api/projects/{project_id}/export", tags=["export"])
 
 
-def _get_publications(project_id: int, db: Session) -> list[Publication]:
+def _slugify(name: str) -> str:
+    slug = re.sub(r"[^\w\s-]", "", name.lower().strip())
+    return re.sub(r"[\s_]+", "-", slug)[:50]
+
+
+def _get_project_and_pubs(project_id: int, db: Session) -> tuple[SearchProject, list[Publication]]:
     project = db.get(SearchProject, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     query_ids = [q.id for q in project.queries]
     if not query_ids:
-        return []
-    return (
+        return project, []
+    pubs = (
         db.query(Publication)
         .options(joinedload(Publication.authors), joinedload(Publication.journal), joinedload(Publication.keywords))
         .filter(Publication.query_id.in_(query_ids), Publication.excluded == False)
         .order_by(Publication.year.desc())
         .all()
     )
+    return project, pubs
 
 
 @router.get("/csv")
 def export_csv(project_id: int, db: Session = Depends(get_db)):
-    pubs = _get_publications(project_id, db)
+    project, pubs = _get_project_and_pubs(project_id, db)
+    filename = f"{_slugify(project.name)}-{date.today().isoformat()}.csv"
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["PMID", "DOI", "Title", "Authors", "Journal", "Year", "Citations", "Keywords", "Abstract"])
@@ -47,13 +56,14 @@ def export_csv(project_id: int, db: Session = Depends(get_db)):
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename=bibmeded_project_{project_id}.csv"},
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 
 @router.get("/ris")
 def export_ris(project_id: int, db: Session = Depends(get_db)):
-    pubs = _get_publications(project_id, db)
+    project, pubs = _get_project_and_pubs(project_id, db)
+    filename = f"{_slugify(project.name)}-{date.today().isoformat()}.ris"
     lines: list[str] = []
     for pub in pubs:
         lines.append("TY  - JOUR")
@@ -77,5 +87,5 @@ def export_ris(project_id: int, db: Session = Depends(get_db)):
     return StreamingResponse(
         iter([content]),
         media_type="application/x-research-info-systems",
-        headers={"Content-Disposition": f"attachment; filename=bibmeded_project_{project_id}.ris"},
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )

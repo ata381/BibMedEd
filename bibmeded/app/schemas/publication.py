@@ -22,4 +22,5 @@ class PublicationResponse(BaseModel):
 
 class PublicationListResponse(BaseModel):
     total: int
+    excluded_count: int = 0
     items: list[PublicationResponse]

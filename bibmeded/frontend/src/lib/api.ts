@@ -69,6 +69,8 @@ export const publicationsApi = {
     api.get<{ total: number; items: Publication[] }>(`/api/projects/${projectId}/publications`, { params }),
   toggleExclude: (projectId: number, publicationId: number) =>
     api.patch<{ id: number; excluded: boolean }>(`/api/projects/${projectId}/publications/${publicationId}/exclude`),
+  bulkExclude: (projectId: number, citationThreshold: number) =>
+    api.post<{ excluded_count: number }>(`/api/projects/${projectId}/publications/bulk-exclude`, { citation_threshold: citationThreshold }),
 };
 
 export const analysisApi = {

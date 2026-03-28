@@ -38,13 +38,17 @@ export default function ResultsReview() {
   const projectId = Number(params.id);
   const [publications, setPublications] = useState<Publication[]>([]);
   const [total, setTotal] = useState(0);
+  const [excludedCount, setExcludedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [searchStats, setSearchStats] = useState<SearchStatus | null>(null);
   const limit = 20;
 
+  const includedCount = total - excludedCount;
+
   const handleToggleExclude = (pubId: number, excluded: boolean) => {
     setPublications(prev => prev.map(p => p.id === pubId ? { ...p, excluded } : p));
+    setExcludedCount(prev => excluded ? prev + 1 : prev - 1);
   };
 
   useEffect(() => {
@@ -54,7 +58,7 @@ export default function ResultsReview() {
   useEffect(() => {
     setLoading(true);
     publicationsApi.list(projectId, { sort_by: "citation_count", order: "desc", limit, offset: (page - 1) * limit })
-      .then((res) => { setPublications(res.data.items); setTotal(res.data.total); })
+      .then((res) => { setPublications(res.data.items); setTotal(res.data.total); setExcludedCount(res.data.excluded_count ?? 0); })
       .catch(() => toast.error("Failed to load publications."))
       .finally(() => setLoading(false));
   }, [projectId, page]);
@@ -93,29 +97,63 @@ export default function ResultsReview() {
           </div>
           <span className="material-symbols-outlined text-[#c4c6cf] text-2xl">arrow_forward</span>
           {/* Duplicates Removed */}
-          <div className="flex-1 bg-[#fff3f3] rounded-xl p-5 text-center">
+          <div className="flex-1 bg-[#fff3f3] rounded-xl p-5 text-center group relative">
             <p className="text-[10px] font-bold text-[#43474e] uppercase tracking-widest mb-2">Duplicates Removed</p>
             <p className="text-3xl font-extrabold text-[#dc2626]" style={{fontFamily:"'Manrope',sans-serif"}}>
               {searchStats?.duplicate_count != null ? `-${searchStats.duplicate_count}` : "—"}
             </p>
             <p className="text-[10px] text-[#43474e] mt-1">cross-journal overlaps</p>
+            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-[#191c1e] text-white text-[10px] py-1.5 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+              Matched via exact PMID and DOI cross-check
+            </div>
           </div>
           <span className="material-symbols-outlined text-[#c4c6cf] text-2xl">arrow_forward</span>
+          {/* Manually Excluded */}
+          {excludedCount > 0 && (
+            <>
+              <div className="flex-1 bg-[#fef3c7] rounded-xl p-5 text-center">
+                <p className="text-[10px] font-bold text-[#43474e] uppercase tracking-widest mb-2">Manually Excluded</p>
+                <p className="text-3xl font-extrabold text-[#b45309]" style={{fontFamily:"'Manrope',sans-serif"}}>
+                  -{excludedCount}
+                </p>
+                <p className="text-[10px] text-[#43474e] mt-1">by reviewer</p>
+              </div>
+              <span className="material-symbols-outlined text-[#c4c6cf] text-2xl">arrow_forward</span>
+            </>
+          )}
           {/* Included */}
           <div className="flex-1 bg-[#001e4f] rounded-xl p-5 text-center text-white">
             <p className="text-[10px] font-bold uppercase tracking-widest mb-2 opacity-80">Records Included</p>
             <p className="text-3xl font-extrabold" style={{fontFamily:"'Manrope',sans-serif"}}>
-              {total.toLocaleString()}
+              {includedCount.toLocaleString()}
             </p>
             <p className="text-[10px] mt-1 opacity-70">for analysis</p>
           </div>
         </div>
       </div>
 
-      {/* Analyze Button */}
-      <div className="flex justify-end mb-6">
-        <button onClick={() => total > 0 ? router.push(`/projects/${projectId}/dashboard`) : toast.error("No publications to analyze. Run a search first.")}
-          disabled={total === 0 && !loading}
+      {/* Action Bar */}
+      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+        <div className="flex items-center gap-3">
+          <button onClick={async () => {
+            if (!confirm("Exclude all publications with 0 citations? This helps focus analysis on impactful papers.")) return;
+            try {
+              const res = await publicationsApi.bulkExclude(projectId, 0);
+              toast.success(`${res.data.excluded_count} publications excluded.`);
+              setExcludedCount(prev => prev + res.data.excluded_count);
+              setPublications(prev => prev.map(p =>
+                (p.citation_count === null || p.citation_count === 0) && !p.excluded ? { ...p, excluded: true } : p
+              ));
+            } catch { toast.error("Bulk exclude failed."); }
+          }}
+            disabled={total === 0 && !loading}
+            className="flex items-center gap-2 px-4 py-2 bg-[#fef3c7] text-[#92400e] rounded-lg font-bold text-xs hover:bg-[#fde68a] transition disabled:opacity-40 disabled:cursor-not-allowed">
+            <span className="material-symbols-outlined text-sm">filter_alt</span>
+            Exclude 0-citation papers
+          </button>
+        </div>
+        <button onClick={() => includedCount > 0 ? router.push(`/projects/${projectId}/dashboard`) : toast.error("No publications to analyze. Run a search first.")}
+          disabled={includedCount === 0 && !loading}
           className="flex items-center gap-2 px-6 py-2.5 bg-[#001e4f] text-white rounded-lg font-bold text-sm hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed">
           <span className="material-symbols-outlined text-sm">auto_awesome</span>
           Run Bibliometric Analysis
@@ -123,6 +161,7 @@ export default function ResultsReview() {
       </div>
 
       {/* Publication Cards */}
+      <div style={{ minHeight: "600px" }}>
       {loading ? (
         <div className="text-[#43474e] text-center py-20">Loading publications...</div>
       ) : publications.length === 0 ? (
@@ -162,7 +201,7 @@ export default function ResultsReview() {
                     <span>{pub.year}</span>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-3">
+                <div className="flex flex-col items-center gap-3 shrink-0">
                   <div className="flex flex-col items-center justify-center min-w-[64px] h-16 bg-[#eceef0] rounded-lg">
                     <span className="text-lg font-extrabold text-[#001e4f]">{pub.citation_count ?? 0}</span>
                     <span className="text-[8px] font-bold uppercase tracking-tighter opacity-60">Citations</span>
@@ -174,6 +213,7 @@ export default function ResultsReview() {
           ))}
         </div>
       )}
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (

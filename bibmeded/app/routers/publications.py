@@ -18,6 +18,7 @@ def list_publications(project_id: int, sort_by: str = Query("year", enum=["year"
         return PublicationListResponse(total=0, items=[])
     base_query = db.query(Publication).options(joinedload(Publication.authors), joinedload(Publication.journal)).filter(Publication.query_id.in_(query_ids))
     total = base_query.count()
+    excluded_count = base_query.filter(Publication.excluded == True).count()
     sort_col = getattr(Publication, sort_by, Publication.year)
     if order == "desc":
         sort_col = sort_col.desc()
@@ -32,7 +33,29 @@ def list_publications(project_id: int, sort_by: str = Query("year", enum=["year"
             journal_name=pub.journal.name if pub.journal else None,
             authors=[{"id": a.id, "name": a.name, "orcid": a.orcid} for a in pub.authors])
         items.append(item)
-    return PublicationListResponse(total=total, items=items)
+    return PublicationListResponse(total=total, excluded_count=excluded_count, items=items)
+
+@router.post("/bulk-exclude")
+def bulk_exclude(project_id: int, body: dict, db: Session = Depends(get_db)):
+    """Exclude all publications with citation_count below threshold."""
+    threshold = body.get("citation_threshold", 0)
+    project = db.get(SearchProject, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    query_ids = [q.id for q in project.queries]
+    if not query_ids:
+        return {"excluded_count": 0}
+    updated = (
+        db.query(Publication)
+        .filter(
+            Publication.query_id.in_(query_ids),
+            Publication.excluded == False,
+            (Publication.citation_count == None) | (Publication.citation_count <= threshold),
+        )
+        .update({Publication.excluded: True}, synchronize_session="fetch")
+    )
+    db.commit()
+    return {"excluded_count": updated}
 
 @router.patch("/{publication_id}/exclude")
 def toggle_exclude(project_id: int, publication_id: int, db: Session = Depends(get_db)):

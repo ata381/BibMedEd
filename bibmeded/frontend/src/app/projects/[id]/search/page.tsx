@@ -75,7 +75,12 @@ export default function SearchConfig() {
 
       {/* Mode Toggle */}
       <div className="flex items-center gap-4 mb-8">
-        <button onClick={() => { setAdvancedMode(false); }}
+        <button onClick={() => {
+          if (advancedMode && rawQuery && rawQuery !== builtQuery) {
+            if (!confirm("Switching to Query Builder will discard your raw query edits. Continue?")) return;
+          }
+          setAdvancedMode(false);
+        }}
           className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${!advancedMode ? "bg-[#001e4f] text-white" : "bg-[#eceef0] text-[#43474e] hover:bg-[#e6e8ea]"}`}>
           <span className="material-symbols-outlined text-sm mr-1 align-middle">tune</span>
           Query Builder
