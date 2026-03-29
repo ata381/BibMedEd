@@ -16,6 +16,7 @@ export default function SearchConfig() {
   const [yearEnd, setYearEnd] = useState("2025");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [progress, setProgress] = useState<{ found: number; fetched: number; total: number } | null>(null);
   const [advancedMode, setAdvancedMode] = useState(false);
   const [rawQuery, setRawQuery] = useState("");
   const [adapters, setAdapters] = useState<AdapterInfo[]>([]);
@@ -46,23 +47,38 @@ export default function SearchConfig() {
     try {
       const res = await searchApi.trigger(projectId, queryString, source, yearStart, yearEnd);
       const queryId = res.data.query_id;
-      setStatus("Search dispatched. Fetching results...");
+      setStatus("Search dispatched...");
+      setProgress(null);
       if (pollRef.current) clearInterval(pollRef.current);
       pollRef.current = setInterval(async () => {
         try {
           const s = await searchApi.status(projectId, queryId);
+          const found = s.data.raw_result_count ?? 0;
+          const fetched = s.data.result_count ?? 0;
+          if (found > 0 && fetched === 0) {
+            setStatus(`Found ${found.toLocaleString()} records. Fetching...`);
+            setProgress({ found, fetched: 0, total: Math.min(found, 2000) });
+          } else if (found > 0 && fetched > 0) {
+            const total = Math.min(found, 2000);
+            setStatus(`Fetched ${fetched.toLocaleString()} of ${total.toLocaleString()} records...`);
+            setProgress({ found, fetched, total });
+          }
           if (s.data.status === "completed") {
             if (pollRef.current) clearInterval(pollRef.current);
-            router.push(`/projects/${projectId}/results`);
+            setProgress({ found, fetched, total: fetched });
+            toast.success(`${fetched.toLocaleString()} publications ready.`);
+            setTimeout(() => router.push(`/projects/${projectId}/results`), 500);
           } else if (s.data.status === "failed") {
             if (pollRef.current) clearInterval(pollRef.current);
             setStatus("Search failed.");
+            setProgress(null);
             setLoading(false);
             toast.error("Search failed. Please try again.");
           }
         } catch {
           if (pollRef.current) clearInterval(pollRef.current);
           setStatus("Error polling status.");
+          setProgress(null);
           setLoading(false);
           toast.error("Lost connection while checking search status.");
         }
@@ -216,7 +232,15 @@ export default function SearchConfig() {
               )}
             </div>
             {status && (
-              <div className="text-xs text-[#93f2f2] mb-4">{loading && <span className="material-symbols-outlined animate-spin text-sm mr-1 inline-block">sync</span>}{status}</div>
+              <div className="mb-4">
+                <div className="text-xs text-[#93f2f2] mb-2">{loading && <span className="material-symbols-outlined animate-spin text-sm mr-1 inline-block">sync</span>}{status}</div>
+                {progress && progress.total > 0 && (
+                  <div className="w-full bg-[#00327a] rounded-full h-2 overflow-hidden">
+                    <div className="bg-[#93f2f2] h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(100, Math.round((progress.fetched / progress.total) * 100))}%` }} />
+                  </div>
+                )}
+              </div>
             )}
             <button onClick={handleSearch} disabled={loading}
               className="w-full bg-[#93f2f2] text-[#002020] font-extrabold py-4 rounded-lg hover:bg-[#76d6d5] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
