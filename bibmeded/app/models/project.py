@@ -28,7 +28,7 @@ class QueryStatus(str, enum.Enum):
 class SearchQuery(Base):
     __tablename__ = "search_queries"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    project_id: Mapped[int] = mapped_column(ForeignKey("search_projects.id"))
+    project_id: Mapped[int] = mapped_column(ForeignKey("search_projects.id", ondelete="CASCADE"))
     query_string: Mapped[str] = mapped_column(Text)
     database: Mapped[str] = mapped_column(String(50), default="pubmed")
     status: Mapped[QueryStatus] = mapped_column(

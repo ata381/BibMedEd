@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </head>
-      <body className={`${inter.variable} ${manrope.variable} font-sans antialiased bg-[#f7f9fb] text-[#191c1e] min-h-screen flex`} style={{fontFamily: "'Inter', sans-serif"}}>
+      <body suppressHydrationWarning className={`${inter.variable} ${manrope.variable} font-sans antialiased bg-[#f7f9fb] text-[#191c1e] min-h-screen flex`} style={{fontFamily: "'Inter', sans-serif"}}>
         <Sidebar />
         <div className="flex-1 ml-64 min-h-screen flex flex-col pb-8">
           <main className="px-8 pt-8 max-w-7xl w-full mx-auto flex-1">

@@ -11,8 +11,8 @@ publication_authors = Table(
 
 author_affiliations = Table(
     "author_affiliations", Base.metadata,
-    Column("author_id", Integer, ForeignKey("authors.id"), primary_key=True),
-    Column("affiliation_id", Integer, ForeignKey("affiliations.id"), primary_key=True),
+    Column("author_id", Integer, ForeignKey("authors.id", ondelete="CASCADE"), primary_key=True),
+    Column("affiliation_id", Integer, ForeignKey("affiliations.id", ondelete="CASCADE"), primary_key=True),
 )
 
 

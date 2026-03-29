@@ -124,6 +124,11 @@ export default function SearchConfig() {
                     {tag}
                   </button>
                 ))}
+                <div className="flex-1" />
+                <button onClick={() => setRawQuery("")}
+                  className="px-3 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold hover:bg-red-200 transition-colors">
+                  Clear Text
+                </button>
               </div>
             </div>
           ) : (

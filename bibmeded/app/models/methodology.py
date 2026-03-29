@@ -8,7 +8,7 @@ class MethodologyStep(Base):
     __tablename__ = "methodology_steps"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    query_id: Mapped[int] = mapped_column(ForeignKey("search_queries.id"))
+    query_id: Mapped[int] = mapped_column(ForeignKey("search_queries.id", ondelete="CASCADE"))
     step_order: Mapped[int] = mapped_column(Integer)
     phase: Mapped[str] = mapped_column(String(50))
     source: Mapped[str] = mapped_column(String(50))
