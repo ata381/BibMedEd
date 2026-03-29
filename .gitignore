@@ -1,1 +1,6 @@
 site/
+.claude/
+.superpowers/
+*.pdf
+*.docx
+docs/superpowers/
