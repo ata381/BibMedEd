@@ -138,13 +138,15 @@ def _log_step(db, query_id: int, step_order: int, phase: str, source: str,
     db.flush()
 
 
-@celery_app.task(bind=True, soft_time_limit=600, time_limit=660)
+@celery_app.task(bind=True, name="app.workers.tasks.run_search", soft_time_limit=600, time_limit=660)
 def run_search(self, query_id: int, source: str = "pubmed"):
     asyncio.run(_run_search(self, query_id, source))
 
 
-# Keep backward compatibility alias
-run_pubmed_search = run_search
+# Register the old task name so queued messages from before the rename still get processed
+@celery_app.task(bind=True, name="app.workers.tasks.run_pubmed_search", soft_time_limit=600, time_limit=660)
+def run_pubmed_search(self, query_id: int):
+    asyncio.run(_run_search(self, query_id, "pubmed"))
 
 
 async def _run_search(task, query_id: int, source: str):
