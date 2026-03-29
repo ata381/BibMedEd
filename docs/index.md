@@ -13,6 +13,23 @@ BibMedEd is an open-source tool that enables medical education researchers to se
 - **Reproducible methodology** — Every pipeline step logged and exportable as a citable `.txt` file
 - **Standard exports** — .RIS (Zotero/EndNote), .CSV (Excel/Sheets), methodology log
 
+## User Interface Tour
+
+The BibMedEd Agentic QA recording demonstrates the dynamic features, layout scaling, and state preservation:
+<p align="center">
+  <img src="assets/demo.webp" alt="BibMedEd Workflow Recording" width="100%">
+</p>
+
+### **Dashboard Analysis & Search Pipeline**
+The system gracefully visualizes bibliometric markers and updates fetching blocks via Celery sockets.
+<p align="center">
+  <img src="assets/dashboard.png" alt="BibMedEd Dashboard" width="48%">
+  <img src="assets/results.png" alt="BibMedEd Results Table" width="48%">
+</p>
+<p align="center">
+  <img src="assets/search.png" alt="Dynamic Search Progress" width="100%">
+</p>
+
 ## Quick Start
 
 ```bash
