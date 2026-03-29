@@ -3,6 +3,7 @@ from pydantic import BaseModel
 class SearchRequest(BaseModel):
     query_string: str
     database: str = "pubmed"
+    source: str = "pubmed"
 
 class SearchStatusResponse(BaseModel):
     query_id: int

@@ -1,20 +1,136 @@
 import asyncio
 from datetime import datetime, timezone
+
 from celery.exceptions import SoftTimeLimitExceeded
+
+from app.adapters.base import RawRecord
+from app.adapters.registry import get_adapter
 from app.database import SessionLocal
-from app.models import (Affiliation, Author, Journal, Keyword, KeywordType, Publication, SearchQuery, QueryStatus)
-from app.services.cleaning import deduplicate_records, extract_country, normalize_name
+from app.models import (
+    Affiliation, Author, Journal, Keyword, KeywordType,
+    Publication, SearchQuery, QueryStatus,
+)
+from app.services.cleaning import extract_country, normalize_name
 from app.services.icite import ICiteClient
-from app.services.pubmed import PubMedClient
 from app.workers.celery_app import celery_app
 
-@celery_app.task(bind=True, soft_time_limit=600, time_limit=660)
-def run_pubmed_search(self, query_id: int):
-    asyncio.run(_run_search(self, query_id))
 
-async def _run_search(task, query_id: int):
+def _persist_records(db, records: list[RawRecord], query_id: int) -> int:
+    """Persist a batch of RawRecords to the database. Returns count persisted."""
+    persisted = 0
+    for record in records:
+        journal = None
+        if record.journal_name:
+            journal = db.query(Journal).filter(Journal.name == record.journal_name).first()
+            if not journal:
+                journal = Journal(
+                    name=record.journal_name,
+                    issn=record.journal_issn,
+                    name_normalized=normalize_name(record.journal_name),
+                )
+                db.add(journal)
+                db.flush()
+
+        existing = db.query(Publication).filter(Publication.pmid == record.source_id).first()
+        if existing:
+            continue
+
+        pub = Publication(
+            pmid=record.source_id,
+            doi=record.doi,
+            title=record.title,
+            abstract=record.abstract,
+            year=record.year,
+            source_database=record.source_database,
+            citation_count=None,
+            journal_id=journal.id if journal else None,
+            query_id=query_id,
+        )
+        db.add(pub)
+        db.flush()
+
+        for pos, author_data in enumerate(record.authors):
+            author = db.query(Author).filter(
+                Author.name_normalized == normalize_name(author_data.name)
+            ).first()
+            if not author:
+                author = Author(
+                    name=author_data.name,
+                    orcid=author_data.orcid,
+                    name_normalized=normalize_name(author_data.name),
+                )
+                db.add(author)
+                db.flush()
+            db.execute(
+                Publication.__table__.metadata.tables["publication_authors"]
+                .insert()
+                .values(publication_id=pub.id, author_id=author.id, author_position=pos)
+            )
+
+            if author_data.affiliation:
+                country = extract_country(author_data.affiliation)
+                aff = db.query(Affiliation).filter(
+                    Affiliation.name_normalized == normalize_name(author_data.affiliation)
+                ).first()
+                if not aff:
+                    aff = Affiliation(
+                        name=author_data.affiliation,
+                        country=country,
+                        name_normalized=normalize_name(author_data.affiliation),
+                    )
+                    db.add(aff)
+                    db.flush()
+                if aff not in author.affiliations:
+                    author.affiliations.append(aff)
+
+        for term in record.mesh_terms:
+            kw = db.query(Keyword).filter(
+                Keyword.term_normalized == normalize_name(term),
+                Keyword.type == KeywordType.mesh_term,
+            ).first()
+            if not kw:
+                kw = Keyword(
+                    term=term,
+                    type=KeywordType.mesh_term,
+                    term_normalized=normalize_name(term),
+                )
+                db.add(kw)
+                db.flush()
+            pub.keywords.append(kw)
+
+        for term in record.keywords:
+            kw = db.query(Keyword).filter(
+                Keyword.term_normalized == normalize_name(term),
+                Keyword.type == KeywordType.author_keyword,
+            ).first()
+            if not kw:
+                kw = Keyword(
+                    term=term,
+                    type=KeywordType.author_keyword,
+                    term_normalized=normalize_name(term),
+                )
+                db.add(kw)
+                db.flush()
+            pub.keywords.append(kw)
+
+        persisted += 1
+
+    db.commit()
+    return persisted
+
+
+@celery_app.task(bind=True, soft_time_limit=600, time_limit=660)
+def run_search(self, query_id: int, source: str = "pubmed"):
+    asyncio.run(_run_search(self, query_id, source))
+
+
+# Keep backward compatibility alias
+run_pubmed_search = run_search
+
+
+async def _run_search(task, query_id: int, source: str):
+    adapter = get_adapter(source)
     db = SessionLocal()
-    pubmed = PubMedClient()
     icite = ICiteClient()
     try:
         query = db.get(SearchQuery, query_id)
@@ -23,75 +139,41 @@ async def _run_search(task, query_id: int):
         query.status = QueryStatus.running
         db.commit()
 
-        search_result = await pubmed.search(query.query_string)
-        pmids = search_result.pmids
-        task.update_state(state="PROGRESS", meta={"current": 0, "total": search_result.total_count})
+        # Phase 1: Collect IDs via streaming pagination
+        all_ids: list[str] = []
+        async for id_batch in adapter.search_paginated(query.query_string):
+            all_ids.extend(id_batch)
+            task.update_state(
+                state="PROGRESS",
+                meta={"phase": "search", "ids_found": len(all_ids)},
+            )
 
-        records_raw = await pubmed.fetch_batched(pmids, batch_size=200)
-        raw_count = len(records_raw)
-        records = deduplicate_records(records_raw)
-        duplicate_count = raw_count - len(records)
-
-        query.raw_result_count = raw_count
-        query.duplicate_count = duplicate_count
+        query.raw_result_count = len(all_ids)
         db.flush()
 
-        all_pmids = [r.pmid for r in records]
-        citation_counts = await icite.get_citations(all_pmids)
+        # Phase 2: Fetch + persist in chunks (flat memory)
+        persisted = 0
+        async for records in adapter.fetch_stream(all_ids, batch_size=200):
+            count = _persist_records(db, records, query_id)
+            persisted += count
+            task.update_state(
+                state="PROGRESS",
+                meta={"phase": "fetch", "current": persisted, "total": len(all_ids)},
+            )
 
-        for i, record in enumerate(records):
-            journal = None
-            if record.journal_name:
-                journal = db.query(Journal).filter(Journal.name == record.journal_name).first()
-                if not journal:
-                    journal = Journal(name=record.journal_name, issn=record.journal_issn, name_normalized=normalize_name(record.journal_name))
-                    db.add(journal)
-                    db.flush()
-
-            existing = db.query(Publication).filter(Publication.pmid == record.pmid).first()
-            if existing:
-                continue
-
-            pub = Publication(pmid=record.pmid, doi=record.doi, title=record.title, abstract=record.abstract,
-                year=record.year, source_database="pubmed", citation_count=citation_counts.get(record.pmid),
-                journal_id=journal.id if journal else None, query_id=query_id)
-            db.add(pub)
-            db.flush()
-
-            for pos, author_data in enumerate(record.authors):
-                author = db.query(Author).filter(Author.name_normalized == normalize_name(author_data.name)).first()
-                if not author:
-                    author = Author(name=author_data.name, orcid=author_data.orcid, name_normalized=normalize_name(author_data.name))
-                    db.add(author)
-                    db.flush()
-                db.execute(
-                    Publication.__table__.metadata.tables["publication_authors"].insert().values(
-                        publication_id=pub.id, author_id=author.id, author_position=pos))
-
-                if author_data.affiliation:
-                    country = extract_country(author_data.affiliation)
-                    aff = db.query(Affiliation).filter(Affiliation.name_normalized == normalize_name(author_data.affiliation)).first()
-                    if not aff:
-                        aff = Affiliation(name=author_data.affiliation, country=country, name_normalized=normalize_name(author_data.affiliation))
-                        db.add(aff)
-                        db.flush()
-                    if aff not in author.affiliations:
-                        author.affiliations.append(aff)
-
-            for term in record.mesh_terms:
-                kw = db.query(Keyword).filter(Keyword.term_normalized == normalize_name(term), Keyword.type == KeywordType.mesh_term).first()
-                if not kw:
-                    kw = Keyword(term=term, type=KeywordType.mesh_term, term_normalized=normalize_name(term))
-                    db.add(kw)
-                    db.flush()
-                pub.keywords.append(kw)
-
-            if (i + 1) % 50 == 0:
-                db.commit()
-                task.update_state(state="PROGRESS", meta={"current": i + 1, "total": len(records)})
+        # Phase 3: iCite enrichment (PubMed-sourced records only)
+        if source == "pubmed":
+            pmids = [rid for rid in all_ids]
+            citation_counts = await icite.get_citations(pmids)
+            for pmid_str, count in citation_counts.items():
+                pub = db.query(Publication).filter(Publication.pmid == pmid_str).first()
+                if pub:
+                    pub.citation_count = count
+            db.commit()
 
         query.status = QueryStatus.completed
-        query.result_count = len(records)
+        query.result_count = persisted
+        query.duplicate_count = (query.raw_result_count or 0) - persisted
         query.executed_at = datetime.now(timezone.utc)
         db.commit()
     except SoftTimeLimitExceeded:
@@ -107,6 +189,6 @@ async def _run_search(task, query_id: int):
             db.commit()
         raise e
     finally:
-        await pubmed.close()
+        await adapter.close()
         await icite.close()
         db.close()
