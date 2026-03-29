@@ -20,3 +20,56 @@ def test_deduplicate_by_pmid():
     deduped = deduplicate_records(records)
     assert len(deduped) == 2
     assert {r.pmid for r in deduped} == {"111", "222"}
+
+
+from app.adapters.base import RawRecord
+from app.services.cleaning import deduplicate_cross_source
+
+
+def test_cross_source_dedup_by_doi():
+    records = [
+        RawRecord(source_id="PM1", source_database="pubmed", title="Paper A", external_ids={"pmid": "PM1", "doi": "10.1/a"}),
+        RawRecord(source_id="OA1", source_database="openalex", title="Paper A", external_ids={"openalex": "OA1", "doi": "10.1/a"}),
+    ]
+    unique, removed, breakdown = deduplicate_cross_source(records)
+    assert len(unique) == 1
+    assert removed == 1
+    assert breakdown["doi"] == 1
+    assert unique[0].source_database == "pubmed"
+
+
+def test_cross_source_dedup_by_pmid():
+    records = [
+        RawRecord(source_id="PM1", source_database="pubmed", title="Paper A", external_ids={"pmid": "PM1"}),
+        RawRecord(source_id="OA1", source_database="openalex", title="Paper A", external_ids={"openalex": "OA1", "pmid": "PM1"}),
+    ]
+    unique, removed, breakdown = deduplicate_cross_source(records)
+    assert len(unique) == 1
+    assert removed == 1
+    assert breakdown["pmid"] == 1
+
+
+def test_cross_source_dedup_no_overlap():
+    records = [
+        RawRecord(source_id="PM1", source_database="pubmed", title="Paper A", external_ids={"pmid": "PM1", "doi": "10.1/a"}),
+        RawRecord(source_id="OA1", source_database="openalex", title="Paper B", external_ids={"openalex": "OA1", "doi": "10.1/b"}),
+    ]
+    unique, removed, breakdown = deduplicate_cross_source(records)
+    assert len(unique) == 2
+    assert removed == 0
+
+
+def test_cross_source_dedup_uses_doi_field_fallback():
+    records = [
+        RawRecord(source_id="PM1", source_database="pubmed", title="A", doi="10.1/a", external_ids={"pmid": "PM1"}),
+        RawRecord(source_id="OA1", source_database="openalex", title="A", doi="10.1/a", external_ids={"openalex": "OA1"}),
+    ]
+    unique, removed, breakdown = deduplicate_cross_source(records)
+    assert len(unique) == 1
+    assert breakdown["doi"] == 1
+
+
+def test_cross_source_dedup_empty():
+    unique, removed, breakdown = deduplicate_cross_source([])
+    assert unique == []
+    assert removed == 0

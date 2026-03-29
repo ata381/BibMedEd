@@ -1,5 +1,6 @@
 import re
 from app.services.pubmed import PubMedRecord
+from app.adapters.base import RawRecord as _RawRecord
 
 COUNTRIES = [
     "USA", "United States", "China", "United Kingdom", "UK", "Germany", "Japan",
@@ -45,3 +46,33 @@ def deduplicate_records(records: list[PubMedRecord]) -> list[PubMedRecord]:
             seen.add(record.pmid)
             unique.append(record)
     return unique
+
+def deduplicate_cross_source(records: list[_RawRecord]) -> tuple[list[_RawRecord], int, dict[str, int]]:
+    """Deduplicate records from multiple sources using DOI and PMID overlap.
+
+    Returns (unique_records, total_removed, removal_breakdown_by_field).
+    """
+    seen_doi: set[str] = set()
+    seen_pmid: set[str] = set()
+    unique: list[_RawRecord] = []
+    removed_by: dict[str, int] = {"doi": 0, "pmid": 0}
+
+    for r in records:
+        doi = r.external_ids.get("doi") or r.doi
+        pmid = r.external_ids.get("pmid") or (r.source_id if r.source_database == "pubmed" else None)
+
+        if doi and doi in seen_doi:
+            removed_by["doi"] += 1
+            continue
+        if pmid and pmid in seen_pmid:
+            removed_by["pmid"] += 1
+            continue
+
+        if doi:
+            seen_doi.add(doi)
+        if pmid:
+            seen_pmid.add(pmid)
+        unique.append(r)
+
+    total_removed = sum(removed_by.values())
+    return unique, total_removed, removed_by
