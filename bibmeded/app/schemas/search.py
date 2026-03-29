@@ -6,6 +6,7 @@ class SearchRequest(BaseModel):
     source: str = "pubmed"
     year_start: str | None = None
     year_end: str | None = None
+    max_results: int = 2000
 
 class SearchStatusResponse(BaseModel):
     query_id: int

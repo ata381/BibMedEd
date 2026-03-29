@@ -1,7 +1,10 @@
 import asyncio
+import logging
 from datetime import datetime, timezone
 
 from celery.exceptions import SoftTimeLimitExceeded
+
+logger = logging.getLogger(__name__)
 
 from app.adapters.base import RawRecord
 from app.adapters.registry import get_adapter
@@ -116,9 +119,10 @@ def _persist_records(db, records: list[RawRecord], query_id: int) -> int:
                 pub.keywords.append(kw)
 
             persisted += 1
-        except Exception:
+        except Exception as exc:
+            logger.warning("Skipping record %s: %s", record.source_id, exc)
             db.rollback()
-            continue  # skip this record, proceed with next
+            continue
 
     db.commit()
     return persisted
@@ -142,18 +146,24 @@ def _log_step(db, query_id: int, step_order: int, phase: str, source: str,
     db.flush()
 
 
+DEFAULT_MAX_RESULTS = 2000
+FETCH_BATCH_SIZE = 200
+
+
 @celery_app.task(bind=True, name="app.workers.tasks.run_search", soft_time_limit=600, time_limit=660)
-def run_search(self, query_id: int, source: str = "pubmed", year_start: str | None = None, year_end: str | None = None):
-    asyncio.run(_run_search(self, query_id, source, year_start, year_end))
+def run_search(self, query_id: int, source: str = "pubmed", year_start: str | None = None,
+               year_end: str | None = None, max_results: int = DEFAULT_MAX_RESULTS):
+    asyncio.run(_run_search(self, query_id, source, year_start, year_end, max_results))
 
 
 # Register the old task name so queued messages from before the rename still get processed
 @celery_app.task(bind=True, name="app.workers.tasks.run_pubmed_search", soft_time_limit=600, time_limit=660)
 def run_pubmed_search(self, query_id: int):
-    asyncio.run(_run_search(self, query_id, "pubmed", None, None))
+    asyncio.run(_run_search(self, query_id, "pubmed", None, None, DEFAULT_MAX_RESULTS))
 
 
-async def _run_search(task, query_id: int, source: str, year_start: str | None = None, year_end: str | None = None):
+async def _run_search(task, query_id: int, source: str, year_start: str | None = None,
+                      year_end: str | None = None, max_results: int = DEFAULT_MAX_RESULTS):
     adapter = get_adapter(source)
     db = SessionLocal()
     icite = ICiteClient()
@@ -168,21 +178,26 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
         all_ids: list[str] = []
         async for id_batch in adapter.search_paginated(query.query_string, year_start=year_start, year_end=year_end):
             all_ids.extend(id_batch)
+            if len(all_ids) >= max_results:
+                break
             task.update_state(
                 state="PROGRESS",
                 meta={"phase": "search", "ids_found": len(all_ids)},
             )
 
-        query.raw_result_count = len(all_ids)
+        total_found = len(all_ids)
+        all_ids = all_ids[:max_results]  # cap to max_results
+        query.raw_result_count = total_found
         db.flush()
         _log_step(db, query_id, step_order=1, phase="search", source=source,
                   action=f"{adapter.methodology_label()} search",
-                  records_in=0, records_out=len(all_ids),
-                  parameters={"query": query.query_string, "database": source})
+                  records_in=0, records_out=total_found,
+                  parameters={"query": query.query_string, "database": source,
+                              "max_results": max_results, "capped": total_found > max_results})
 
         # Phase 2: Fetch + persist in chunks (flat memory)
         persisted = 0
-        async for records in adapter.fetch_stream(all_ids, batch_size=25):
+        async for records in adapter.fetch_stream(all_ids, batch_size=FETCH_BATCH_SIZE):
             count = _persist_records(db, records, query_id)
             persisted += count
             task.update_state(
@@ -193,7 +208,7 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
         _log_step(db, query_id, step_order=2, phase="fetch", source=source,
                   action=f"Batch fetch via {adapter.methodology_label()}",
                   records_in=len(all_ids), records_out=persisted,
-                  parameters={"batch_size": 50})
+                  parameters={"batch_size": FETCH_BATCH_SIZE})
 
         # Phase 3: iCite enrichment (PubMed-sourced records only)
         if source == "pubmed":

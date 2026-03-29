@@ -8,4 +8,11 @@ __pycache__/
 dist/
 node_modules/
 .next/
-*.db
+*.log
+worker_logs*.txt
+api*.txt
+curl_debug.txt
+debug_*.py
+debug_*.log
+frontend_error.log
+worker*.txt
