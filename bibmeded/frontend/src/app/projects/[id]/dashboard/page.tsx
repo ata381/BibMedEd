@@ -64,6 +64,20 @@ export default function Dashboard() {
   const totalCitations = (cite as any).total_citations || 0;
   const maxYearCount = Math.max(...yearlyCounts.map(y => y.count), 1);
 
+  if (totalPubs === 0 && !loading) return (
+    <div className="max-w-7xl mx-auto px-2 py-6">
+      <div className="text-center py-20">
+        <span className="material-symbols-outlined text-6xl text-[#c4c6cf] mb-4 block">query_stats</span>
+        <h3 className="text-xl font-bold text-[#191c1e] mb-2" style={{fontFamily:"'Manrope',sans-serif"}}>No Publications to Analyze</h3>
+        <p className="text-sm text-[#43474e] mb-6">Run a search first to populate results, then come back here for analysis.</p>
+        <button onClick={() => window.location.href = `/projects/${projectId}/search`}
+          className="px-6 py-2.5 bg-[#001e4f] text-white rounded-lg font-bold text-sm hover:opacity-90 transition">
+          Go to Search
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="max-w-7xl mx-auto px-2 py-6">
       {/* Header */}

@@ -93,7 +93,7 @@ export default function ResultsReview() {
             <p className="text-3xl font-extrabold text-[#001e4f]" style={{fontFamily:"'Manrope',sans-serif"}}>
               {searchStats?.raw_result_count?.toLocaleString() ?? "—"}
             </p>
-            <p className="text-[10px] text-[#43474e] mt-1">via PubMed</p>
+            <p className="text-[10px] text-[#43474e] mt-1">via database search</p>
           </div>
           <span className="material-symbols-outlined text-[#c4c6cf] text-2xl">arrow_forward</span>
           {/* Duplicates Removed */}

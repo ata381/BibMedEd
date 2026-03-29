@@ -75,33 +75,42 @@ export default function Home() {
       ) : (
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((project) => (
-            <Link key={project.id} href={`/projects/${project.id}/results`}>
-              <article className="card-elevated p-6 group relative overflow-hidden cursor-pointer">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-[#002626]/5 rounded-bl-full -mr-8 -mt-8 group-hover:bg-[#002626]/10 transition-colors" />
-                <div className="flex justify-between items-start mb-4">
-                  <div className="px-3 py-1 bg-[#93f2f2] text-[#002626] text-[10px] font-bold uppercase tracking-widest rounded-full">
-                    Bibliometric
-                  </div>
-                  <span className="material-symbols-outlined text-[#43474e] opacity-0 group-hover:opacity-100 transition-opacity">more_vert</span>
+            <article key={project.id} className="card-elevated p-6 group relative overflow-hidden cursor-pointer"
+              onClick={() => window.location.href = `/projects/${project.id}/results`}>
+              <div className="absolute top-0 right-0 w-24 h-24 bg-[#002626]/5 rounded-bl-full -mr-8 -mt-8 group-hover:bg-[#002626]/10 transition-colors" />
+              <div className="flex justify-between items-start mb-4">
+                <div className="px-3 py-1 bg-[#93f2f2] text-[#002626] text-[10px] font-bold uppercase tracking-widest rounded-full">
+                  Bibliometric
                 </div>
-                <h4 className="text-lg font-bold text-[#191c1e] mb-2" style={{fontFamily: "'Manrope', sans-serif"}}>{project.name}</h4>
-                <p className="text-sm text-[#43474e] mb-6 line-clamp-2">
-                  {project.description || "No description provided"}
-                </p>
-                <div className="flex items-center justify-between pt-4 border-t border-[#eceef0]">
-                  <div>
-                    <p className="text-[10px] uppercase font-bold text-[#43474e]">Date Range</p>
-                    <p className="text-xs font-semibold text-[#001e4f]">
-                      {project.date_range_start ? new Date(project.date_range_start).getFullYear() : "—"} – {project.date_range_end ? new Date(project.date_range_end).getFullYear() : "—"}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[10px] uppercase font-bold text-[#43474e]">Created</p>
-                    <p className="text-xs font-semibold text-[#191c1e]">{new Date(project.created_at).toLocaleDateString()}</p>
-                  </div>
+                <button onClick={(e) => {
+                  e.stopPropagation();
+                  if (!confirm(`Delete project "${project.name}"? This will permanently remove all searches, publications, and analyses.`)) return;
+                  projectsApi.delete(project.id)
+                    .then(() => { setProjects(prev => prev.filter(p => p.id !== project.id)); toast.success("Project deleted."); })
+                    .catch(() => toast.error("Failed to delete project."));
+                }}
+                  className="p-1 rounded-lg hover:bg-red-50 transition-colors z-10"
+                  title="Delete project">
+                  <span className="material-symbols-outlined text-[#43474e] hover:text-red-600 transition-colors">delete</span>
+                </button>
+              </div>
+              <h4 className="text-lg font-bold text-[#191c1e] mb-2" style={{fontFamily: "'Manrope', sans-serif"}}>{project.name}</h4>
+              <p className="text-sm text-[#43474e] mb-6 line-clamp-2">
+                {project.description || "No description provided"}
+              </p>
+              <div className="flex items-center justify-between pt-4 border-t border-[#eceef0]">
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-[#43474e]">Date Range</p>
+                  <p className="text-xs font-semibold text-[#001e4f]">
+                    {project.date_range_start ? new Date(project.date_range_start).getFullYear() : "—"} – {project.date_range_end ? new Date(project.date_range_end).getFullYear() : "—"}
+                  </p>
                 </div>
-              </article>
-            </Link>
+                <div className="text-right">
+                  <p className="text-[10px] uppercase font-bold text-[#43474e]">Created</p>
+                  <p className="text-xs font-semibold text-[#191c1e]">{new Date(project.created_at).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </article>
           ))}
 
           {/* New Project Card */}
