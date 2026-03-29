@@ -24,8 +24,20 @@ class OpenAlexAdapter(BaseSourceAdapter):
             result = await result
         return result
 
+    def _build_filter(self, **kwargs) -> str | None:
+        """Build OpenAlex filter string from year_start/year_end kwargs."""
+        parts = []
+        if kwargs.get("year_start"):
+            parts.append(f"from_publication_date:{kwargs['year_start']}-01-01")
+        if kwargs.get("year_end"):
+            parts.append(f"to_publication_date:{kwargs['year_end']}-12-31")
+        return ",".join(parts) if parts else None
+
     async def search(self, query: str, **kwargs) -> SearchResponse:
         params = {"search": query, "per_page": 200}
+        date_filter = self._build_filter(**kwargs)
+        if date_filter:
+            params["filter"] = date_filter
         if self._email:
             params["mailto"] = self._email
         resp = await self._client.get(f"{OPENALEX_API}/works", params=params)
@@ -39,6 +51,9 @@ class OpenAlexAdapter(BaseSourceAdapter):
         cursor = "*"
         while cursor:
             params = {"search": query, "per_page": 200, "cursor": cursor}
+            date_filter = self._build_filter(**kwargs)
+            if date_filter:
+                params["filter"] = date_filter
             if self._email:
                 params["mailto"] = self._email
             resp = await self._client.get(f"{OPENALEX_API}/works", params=params)

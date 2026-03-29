@@ -139,17 +139,17 @@ def _log_step(db, query_id: int, step_order: int, phase: str, source: str,
 
 
 @celery_app.task(bind=True, name="app.workers.tasks.run_search", soft_time_limit=600, time_limit=660)
-def run_search(self, query_id: int, source: str = "pubmed"):
-    asyncio.run(_run_search(self, query_id, source))
+def run_search(self, query_id: int, source: str = "pubmed", year_start: str | None = None, year_end: str | None = None):
+    asyncio.run(_run_search(self, query_id, source, year_start, year_end))
 
 
 # Register the old task name so queued messages from before the rename still get processed
 @celery_app.task(bind=True, name="app.workers.tasks.run_pubmed_search", soft_time_limit=600, time_limit=660)
 def run_pubmed_search(self, query_id: int):
-    asyncio.run(_run_search(self, query_id, "pubmed"))
+    asyncio.run(_run_search(self, query_id, "pubmed", None, None))
 
 
-async def _run_search(task, query_id: int, source: str):
+async def _run_search(task, query_id: int, source: str, year_start: str | None = None, year_end: str | None = None):
     adapter = get_adapter(source)
     db = SessionLocal()
     icite = ICiteClient()
@@ -162,7 +162,7 @@ async def _run_search(task, query_id: int, source: str):
 
         # Phase 1: Collect IDs via streaming pagination
         all_ids: list[str] = []
-        async for id_batch in adapter.search_paginated(query.query_string):
+        async for id_batch in adapter.search_paginated(query.query_string, year_start=year_start, year_end=year_end):
             all_ids.extend(id_batch)
             task.update_state(
                 state="PROGRESS",

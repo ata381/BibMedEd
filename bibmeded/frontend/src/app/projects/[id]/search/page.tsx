@@ -21,7 +21,10 @@ export default function SearchConfig() {
   const [adapters, setAdapters] = useState<AdapterInfo[]>([]);
   const [source, setSource] = useState("pubmed");
 
-  const builtQuery = `(${topicA}) ${operator} (${topicB}) AND ("${yearStart}/01/01"[PDAT] : "${yearEnd}/12/31"[PDAT])`;
+  // PubMed uses field tags like [PDAT]; OpenAlex and others use plain text search
+  const pubmedQuery = `(${topicA}) ${operator} (${topicB}) AND ("${yearStart}/01/01"[PDAT] : "${yearEnd}/12/31"[PDAT])`;
+  const genericQuery = `(${topicA}) ${operator} (${topicB})`;
+  const builtQuery = source === "pubmed" ? pubmedQuery : genericQuery;
   const queryString = advancedMode ? rawQuery : builtQuery;
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -41,7 +44,7 @@ export default function SearchConfig() {
     setLoading(true);
     setStatus("Submitting search...");
     try {
-      const res = await searchApi.trigger(projectId, queryString, source);
+      const res = await searchApi.trigger(projectId, queryString, source, yearStart, yearEnd);
       const queryId = res.data.query_id;
       setStatus("Search dispatched. Fetching results...");
       if (pollRef.current) clearInterval(pollRef.current);
@@ -104,8 +107,8 @@ export default function SearchConfig() {
           {advancedMode ? (
             /* Raw Query Editor */
             <div className="bg-white rounded-xl p-8 shadow-sm">
-              <h2 className="font-bold text-xl text-[#001e4f] mb-2" style={{fontFamily:"'Manrope',sans-serif"}}>Raw PubMed Query</h2>
-              <p className="text-sm text-[#43474e] mb-6">Paste or write your full PubMed/MEDLINE query with MeSH terms, field tags, and Boolean operators.</p>
+              <h2 className="font-bold text-xl text-[#001e4f] mb-2" style={{fontFamily:"'Manrope',sans-serif"}}>Raw Query</h2>
+              <p className="text-sm text-[#43474e] mb-6">{source === "pubmed" ? "Paste or write your full PubMed/MEDLINE query with MeSH terms, field tags, and Boolean operators." : `Enter your search query for ${adapters.find(a => a.name === source)?.display_name || source}. Use plain text keywords and Boolean operators.`}</p>
               <textarea
                 value={rawQuery}
                 onChange={e => setRawQuery(e.target.value)}
@@ -201,8 +204,10 @@ export default function SearchConfig() {
               <h2 className="font-bold text-lg" style={{fontFamily:"'Manrope',sans-serif"}}>3. Query Preview</h2>
             </div>
             <div className="bg-[#00327a]/50 rounded-lg p-5 font-mono text-xs leading-relaxed text-[#739cfb] mb-6 border border-white/10 whitespace-pre-wrap break-all">
-              {advancedMode ? (rawQuery || <span className="text-[#3e5578] italic">Enter your raw query...</span>) : (
+              {advancedMode ? (rawQuery || <span className="text-[#3e5578] italic">Enter your raw query...</span>) : source === "pubmed" ? (
                 <>({topicA}) <span className="text-[#93f2f2]">{operator}</span> ({topicB}) <span className="text-[#93f2f2]">AND</span> (&quot;{yearStart}/01/01&quot;[PDAT] : &quot;{yearEnd}/12/31&quot;[PDAT])</>
+              ) : (
+                <>({topicA}) <span className="text-[#93f2f2]">{operator}</span> ({topicB})<br/><span className="text-[#3e5578] text-[10px]">+ date filter: {yearStart}–{yearEnd}</span></>
               )}
             </div>
             {status && (

@@ -20,7 +20,7 @@ def trigger_search(project_id: int, body: SearchRequest, db: Session = Depends(g
     db.add(query)
     db.commit()
     db.refresh(query)
-    run_search.delay(query.id, body.source)
+    run_search.delay(query.id, body.source, body.year_start, body.year_end)
     return SearchStatusResponse(query_id=query.id, status=query.status.value, result_count=None)
 
 @router.get("/latest", response_model=SearchStatusResponse)

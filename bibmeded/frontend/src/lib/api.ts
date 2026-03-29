@@ -62,8 +62,8 @@ export const projectsApi = {
 };
 
 export const searchApi = {
-  trigger: (projectId: number, queryString: string, source: string = "pubmed") =>
-    api.post<SearchStatus>(`/api/projects/${projectId}/search`, { query_string: queryString, source }),
+  trigger: (projectId: number, queryString: string, source: string = "pubmed", yearStart?: string, yearEnd?: string) =>
+    api.post<SearchStatus>(`/api/projects/${projectId}/search`, { query_string: queryString, source, year_start: yearStart, year_end: yearEnd }),
   status: (projectId: number, queryId: number) =>
     api.get<SearchStatus>(`/api/projects/${projectId}/search/${queryId}`),
   latest: (projectId: number) =>

@@ -4,6 +4,8 @@ class SearchRequest(BaseModel):
     query_string: str
     database: str = "pubmed"
     source: str = "pubmed"
+    year_start: str | None = None
+    year_end: str | None = None
 
 class SearchStatusResponse(BaseModel):
     query_id: int
