@@ -5,7 +5,7 @@ from app.database import Base
 
 publication_keywords = Table(
     "publication_keywords", Base.metadata,
-    Column("publication_id", Integer, ForeignKey("publications.id"), primary_key=True),
+    Column("publication_id", Integer, ForeignKey("publications.id", ondelete="CASCADE"), primary_key=True),
     Column("keyword_id", Integer, ForeignKey("keywords.id"), primary_key=True),
 )
 

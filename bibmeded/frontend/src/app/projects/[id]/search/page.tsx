@@ -94,7 +94,7 @@ export default function SearchConfig() {
           <span className="material-symbols-outlined text-sm mr-1 align-middle">tune</span>
           Query Builder
         </button>
-        <button onClick={() => { setAdvancedMode(true); setRawQuery(builtQuery); }}
+        <button onClick={() => { if (!advancedMode) { setAdvancedMode(true); setRawQuery(builtQuery); } }}
           className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${advancedMode ? "bg-[#001e4f] text-white" : "bg-[#eceef0] text-[#43474e] hover:bg-[#e6e8ea]"}`}>
           <span className="material-symbols-outlined text-sm mr-1 align-middle">terminal</span>
           Advanced Query (Raw)
