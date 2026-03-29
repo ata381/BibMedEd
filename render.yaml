@@ -1,0 +1,64 @@
+# Render.com Blueprint — one-click deploy for BibMedEd
+# https://render.com/docs/blueprint-spec
+
+databases:
+  - name: bibmeded-db
+    plan: free
+    databaseName: bibmeded
+    user: bibmeded
+
+services:
+  - type: redis
+    name: bibmeded-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+
+  - type: web
+    name: bibmeded-api
+    runtime: docker
+    plan: free
+    dockerfilePath: bibmeded/Dockerfile
+    dockerContext: bibmeded
+    envVars:
+      - key: BIBMEDED_DATABASE_URL
+        fromDatabase:
+          name: bibmeded-db
+          property: connectionString
+      - key: BIBMEDED_REDIS_URL
+        fromService:
+          name: bibmeded-redis
+          type: redis
+          property: connectionString
+    startCommand: "sh -c 'alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT'"
+
+  - type: worker
+    name: bibmeded-worker
+    runtime: docker
+    plan: free
+    dockerfilePath: bibmeded/Dockerfile
+    dockerContext: bibmeded
+    envVars:
+      - key: BIBMEDED_DATABASE_URL
+        fromDatabase:
+          name: bibmeded-db
+          property: connectionString
+      - key: BIBMEDED_REDIS_URL
+        fromService:
+          name: bibmeded-redis
+          type: redis
+          property: connectionString
+    startCommand: "celery -A app.workers.celery_app worker --loglevel=info"
+
+  - type: web
+    name: bibmeded-frontend
+    runtime: docker
+    plan: free
+    dockerfilePath: bibmeded/frontend/Dockerfile
+    dockerContext: bibmeded/frontend
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          name: bibmeded-api
+          type: web
+          property: host
+          prefix: https://
