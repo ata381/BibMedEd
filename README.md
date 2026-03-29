@@ -32,24 +32,7 @@ BibMedEd replaces the fragmented workflow of PubMed + Covidence + VOSviewer + Ci
 - **Self-hostable** — Single `docker compose up` on any lab server, no cloud account needed
 - **Result cap** — Default 2,000 record limit with live progress bar during fetch
 
-## User Interface Tour
-
-<p align="center">
-  <img src="docs/assets/demo.webp" alt="BibMedEd Workflow Recording" width="100%">
-</p>
-
-### **Dashboard & PRISMA Processing**
-The dashboard visualizes citation trends and dominant publication metrics, while the Results tab leverages dynamic PRISMA Flow algorithms.
-<p align="center">
-  <img src="docs/assets/dashboard.png" alt="BibMedEd Dashboard" width="48%">
-  <img src="docs/assets/results.png" alt="BibMedEd Results Table" width="48%">
-</p>
-
-### **Dynamic Query Progress**
-The Advanced Query Builder streams real-time parsing bounds, dynamically capping open-source streams into your local PostgreSQL instance safely.
-<p align="center">
-  <img src="docs/assets/search.png" alt="Dynamic Search Progress" width="100%">
-</p>
+> **See it in action:** [UI Tour with screenshots and demo video](https://ata381.github.io/BibMedEd/#user-interface-tour)
 
 ## Architecture
 
