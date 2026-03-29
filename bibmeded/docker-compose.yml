@@ -2,9 +2,9 @@ services:
   db:
     image: postgres:16
     environment:
-      POSTGRES_USER: bibmeded
-      POSTGRES_PASSWORD: bibmeded
-      POSTGRES_DB: bibmeded
+      POSTGRES_USER: ${POSTGRES_USER:-bibmeded}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bibmeded}
+      POSTGRES_DB: ${POSTGRES_DB:-bibmeded}
     ports:
       - "5432:5432"
     volumes:
@@ -19,35 +19,48 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
 
   api:
     build: .
     ports:
       - "8000:8000"
     environment:
-      BIBMEDED_DATABASE_URL: postgresql://bibmeded:bibmeded@db:5432/bibmeded
+      BIBMEDED_DATABASE_URL: postgresql://${POSTGRES_USER:-bibmeded}:${POSTGRES_PASSWORD:-bibmeded}@db:5432/${POSTGRES_DB:-bibmeded}
       BIBMEDED_REDIS_URL: redis://redis:6379/0
+      BIBMEDED_PUBMED_API_KEY: ${BIBMEDED_PUBMED_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
-    volumes:
-      - .:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+        condition: service_healthy
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
   worker:
     build: .
     environment:
-      BIBMEDED_DATABASE_URL: postgresql://bibmeded:bibmeded@db:5432/bibmeded
+      BIBMEDED_DATABASE_URL: postgresql://${POSTGRES_USER:-bibmeded}:${POSTGRES_PASSWORD:-bibmeded}@db:5432/${POSTGRES_DB:-bibmeded}
       BIBMEDED_REDIS_URL: redis://redis:6379/0
-      BIBMEDED_PUBMED_API_KEY: ${BIBMEDED_PUBMED_API_KEY:-}  # set in .env for 10 req/s
+      BIBMEDED_PUBMED_API_KEY: ${BIBMEDED_PUBMED_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     command: celery -A app.workers.celery_app worker --loglevel=info
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on:
+      - api
 
 volumes:
   pgdata:

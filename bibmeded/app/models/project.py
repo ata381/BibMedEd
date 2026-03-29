@@ -39,3 +39,4 @@ class SearchQuery(Base):
     duplicate_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     executed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     project: Mapped["SearchProject"] = relationship(back_populates="queries")
+    methodology_steps: Mapped[list["MethodologyStep"]] = relationship(back_populates="query", order_by="MethodologyStep.step_order")

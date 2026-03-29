@@ -6,7 +6,7 @@ def test_trigger_search(client, db):
     db.add(project)
     db.commit()
     db.refresh(project)
-    with patch("app.routers.search.run_pubmed_search") as mock_task:
+    with patch("app.routers.search.run_search") as mock_task:
         mock_task.delay.return_value = None
         response = client.post(f"/api/projects/{project.id}/search", json={"query_string": '"AI" AND "medical education"'})
     assert response.status_code == 202
@@ -20,7 +20,7 @@ def test_get_search_status(client, db):
     db.add(project)
     db.commit()
     db.refresh(project)
-    with patch("app.routers.search.run_pubmed_search") as mock_task:
+    with patch("app.routers.search.run_search") as mock_task:
         mock_task.delay.return_value = None
         create = client.post(f"/api/projects/{project.id}/search", json={"query_string": "test"})
     query_id = create.json()["query_id"]

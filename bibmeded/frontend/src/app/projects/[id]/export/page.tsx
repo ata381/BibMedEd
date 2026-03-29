@@ -9,6 +9,23 @@ export default function ExportManager() {
   const params = useParams<{ id: string }>();
   const projectId = Number(params.id);
   const [dataFormat, setDataFormat] = useState<"csv" | "ris">("csv");
+  const [activeTab, setActiveTab] = useState<"data" | "methodology">("data");
+  const [methodologyText, setMethodologyText] = useState<string | null>(null);
+  const [loadingMethodology, setLoadingMethodology] = useState(false);
+
+  const loadMethodology = async () => {
+    if (methodologyText) return;
+    setLoadingMethodology(true);
+    try {
+      const response = await fetch(exportApi.methodologyUrl(projectId));
+      const text = await response.text();
+      setMethodologyText(text);
+    } catch {
+      toast.error("Failed to load methodology log.");
+    } finally {
+      setLoadingMethodology(false);
+    }
+  };
 
   const handleDataExport = () => {
     const url = dataFormat === "csv" ? exportApi.csvUrl(projectId) : exportApi.risUrl(projectId);
@@ -29,7 +46,20 @@ export default function ExportManager() {
         </p>
       </header>
 
-      {/* Bento Grid */}
+      {/* Tabs */}
+      <div className="flex gap-2 mb-8">
+        <button onClick={() => setActiveTab("data")}
+          className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "data" ? "bg-[#001e4f] text-white" : "bg-[#eceef0] text-[#43474e] hover:bg-[#e6e8ea]"}`}>
+          Data Export
+        </button>
+        <button onClick={() => { setActiveTab("methodology"); loadMethodology(); }}
+          className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "methodology" ? "bg-[#001e4f] text-white" : "bg-[#eceef0] text-[#43474e] hover:bg-[#e6e8ea]"}`}>
+          Methodology Log
+        </button>
+      </div>
+
+      {activeTab === "data" && (
+      <>{/* Bento Grid */}
       <div className="grid grid-cols-12 gap-8">
         {/* Raw Data Export - Primary */}
         <section className="col-span-12 lg:col-span-8 bg-white rounded-xl p-10 flex flex-col md:flex-row gap-10 items-center shadow-sm relative overflow-hidden group">
@@ -127,6 +157,34 @@ export default function ExportManager() {
           </div>
         </section>
       </div>
+      </>)}
+
+      {activeTab === "methodology" && (
+        <div className="bg-white rounded-xl p-10 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-[#001e4f]" style={{fontFamily:"'Manrope',sans-serif"}}>Methodology Log</h2>
+            <a href={exportApi.methodologyUrl(projectId)} download
+              className="inline-flex items-center gap-2 bg-[#001e4f] text-white px-6 py-2.5 rounded-lg font-bold text-sm hover:opacity-90 transition">
+              Download .txt <span className="material-symbols-outlined text-sm">download</span>
+            </a>
+          </div>
+          <p className="text-sm text-[#43474e] mb-6">
+            A complete record of every pipeline step — citable in your paper&apos;s Methods section.
+          </p>
+          {loadingMethodology ? (
+            <div className="text-center py-12 text-[#43474e]">
+              <span className="material-symbols-outlined animate-spin text-2xl">sync</span>
+              <p className="mt-2 text-sm">Loading methodology log...</p>
+            </div>
+          ) : methodologyText ? (
+            <pre className="bg-[#0a1628] text-[#93f2f2] font-mono text-xs rounded-lg p-6 overflow-x-auto whitespace-pre-wrap leading-relaxed">
+              {methodologyText}
+            </pre>
+          ) : (
+            <p className="text-sm text-[#43474e]">No methodology data available yet. Run a search first.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

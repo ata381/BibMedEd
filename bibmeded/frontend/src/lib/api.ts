@@ -46,6 +46,12 @@ export interface AnalysisResult {
   created_at: string;
 }
 
+export interface AdapterInfo {
+  name: string;
+  display_name: string;
+  requires_api_key: boolean;
+}
+
 // API functions
 export const projectsApi = {
   list: () => api.get<Project[]>('/api/projects'),
@@ -56,8 +62,8 @@ export const projectsApi = {
 };
 
 export const searchApi = {
-  trigger: (projectId: number, queryString: string) =>
-    api.post<SearchStatus>(`/api/projects/${projectId}/search`, { query_string: queryString }),
+  trigger: (projectId: number, queryString: string, source: string = "pubmed") =>
+    api.post<SearchStatus>(`/api/projects/${projectId}/search`, { query_string: queryString, source }),
   status: (projectId: number, queryId: number) =>
     api.get<SearchStatus>(`/api/projects/${projectId}/search/${queryId}`),
   latest: (projectId: number) =>
@@ -80,11 +86,17 @@ export const analysisApi = {
     api.get<AnalysisResult>(`/api/projects/${projectId}/analysis/${type}`),
 };
 
+export const adaptersApi = {
+  list: () => api.get<AdapterInfo[]>('/api/adapters'),
+};
+
 export const exportApi = {
   csvUrl: (projectId: number) =>
     `${api.defaults.baseURL}/api/projects/${projectId}/export/csv`,
   risUrl: (projectId: number) =>
     `${api.defaults.baseURL}/api/projects/${projectId}/export/ris`,
+  methodologyUrl: (projectId: number) =>
+    `${api.defaults.baseURL}/api/projects/${projectId}/export/methodology`,
 };
 
 export default api;

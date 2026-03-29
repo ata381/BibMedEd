@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import QueryStatus, SearchProject, SearchQuery
 from app.schemas.search import SearchRequest, SearchStatusResponse
-from app.workers.tasks import run_pubmed_search
+from app.workers.tasks import run_search
 
 router = APIRouter(prefix="/api/projects/{project_id}/search", tags=["search"])
 
@@ -16,11 +16,11 @@ def trigger_search(project_id: int, body: SearchRequest, db: Session = Depends(g
     project = db.get(SearchProject, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    query = SearchQuery(project_id=project_id, query_string=body.query_string, database=body.database)
+    query = SearchQuery(project_id=project_id, query_string=body.query_string, database=body.source)
     db.add(query)
     db.commit()
     db.refresh(query)
-    run_pubmed_search.delay(query.id)
+    run_search.delay(query.id, body.source)
     return SearchStatusResponse(query_id=query.id, status=query.status.value, result_count=None)
 
 @router.get("/latest", response_model=SearchStatusResponse)

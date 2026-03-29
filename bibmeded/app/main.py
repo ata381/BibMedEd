@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import settings
-from app.routers import projects, search, publications, analysis, export
+from app.routers import projects, search, publications, analysis, export, adapters
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,7 @@ def create_app() -> FastAPI:
     app.include_router(publications.router)
     app.include_router(analysis.router)
     app.include_router(export.router)
+    app.include_router(adapters.router)
 
     @app.get("/api/health")
     def health_check():
