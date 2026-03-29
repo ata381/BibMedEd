@@ -14,7 +14,8 @@ class SearchProject(Base):
     date_range_end: Mapped[date | None] = mapped_column(Date, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
-    queries: Mapped[list["SearchQuery"]] = relationship(back_populates="project")
+    queries: Mapped[list["SearchQuery"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    analysis_runs: Mapped[list["AnalysisRun"]] = relationship(cascade="all, delete-orphan")
 
 
 class QueryStatus(str, enum.Enum):
@@ -39,4 +40,5 @@ class SearchQuery(Base):
     duplicate_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     executed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     project: Mapped["SearchProject"] = relationship(back_populates="queries")
-    methodology_steps: Mapped[list["MethodologyStep"]] = relationship(back_populates="query", order_by="MethodologyStep.step_order")
+    publications: Mapped[list["Publication"]] = relationship(cascade="all, delete-orphan")
+    methodology_steps: Mapped[list["MethodologyStep"]] = relationship(back_populates="query", order_by="MethodologyStep.step_order", cascade="all, delete-orphan")

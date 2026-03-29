@@ -27,12 +27,15 @@ def list_publications(project_id: int, sort_by: str = Query("year", enum=["year"
     publications = base_query.order_by(sort_col).offset(offset).limit(limit).all()
     items = []
     for pub in publications:
-        item = PublicationResponse(id=pub.id, pmid=pub.pmid, doi=pub.doi, title=pub.title, abstract=pub.abstract,
-            year=pub.year, publication_type=pub.publication_type, citation_count=pub.citation_count,
-            excluded=pub.excluded,
-            journal_name=pub.journal.name if pub.journal else None,
-            authors=[{"id": a.id, "name": a.name, "orcid": a.orcid} for a in pub.authors])
-        items.append(item)
+        try:
+            item = PublicationResponse(id=pub.id, pmid=pub.pmid or "", doi=pub.doi, title=pub.title or "Untitled",
+                abstract=pub.abstract, year=pub.year, publication_type=pub.publication_type,
+                citation_count=pub.citation_count, excluded=pub.excluded,
+                journal_name=pub.journal.name if pub.journal else None,
+                authors=[{"id": a.id, "name": a.name, "orcid": a.orcid} for a in pub.authors])
+            items.append(item)
+        except Exception:
+            continue  # skip malformed records
     return PublicationListResponse(total=total, excluded_count=excluded_count, items=items)
 
 @router.post("/bulk-exclude")
