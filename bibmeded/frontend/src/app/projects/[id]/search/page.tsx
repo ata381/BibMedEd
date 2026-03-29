@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { searchApi } from "@/lib/api";
+import { searchApi, adaptersApi, AdapterInfo } from "@/lib/api";
 import toast from "react-hot-toast";
 
 export default function SearchConfig() {
@@ -18,6 +18,8 @@ export default function SearchConfig() {
   const [status, setStatus] = useState<string | null>(null);
   const [advancedMode, setAdvancedMode] = useState(false);
   const [rawQuery, setRawQuery] = useState("");
+  const [adapters, setAdapters] = useState<AdapterInfo[]>([]);
+  const [source, setSource] = useState("pubmed");
 
   const builtQuery = `(${topicA}) ${operator} (${topicB}) AND ("${yearStart}/01/01"[PDAT] : "${yearEnd}/12/31"[PDAT])`;
   const queryString = advancedMode ? rawQuery : builtQuery;
@@ -31,11 +33,15 @@ export default function SearchConfig() {
     };
   }, []);
 
+  useEffect(() => {
+    adaptersApi.list().then(res => setAdapters(res.data)).catch(() => {});
+  }, []);
+
   const handleSearch = useCallback(async () => {
     setLoading(true);
     setStatus("Submitting search...");
     try {
-      const res = await searchApi.trigger(projectId, queryString);
+      const res = await searchApi.trigger(projectId, queryString, source);
       const queryId = res.data.query_id;
       setStatus("Search dispatched. Fetching results...");
       if (pollRef.current) clearInterval(pollRef.current);
@@ -63,7 +69,7 @@ export default function SearchConfig() {
       setLoading(false);
       toast.error("Could not start search. Is the backend running?");
     }
-  }, [projectId, queryString, router]);
+  }, [projectId, queryString, source, router]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-12">
@@ -167,6 +173,22 @@ export default function SearchConfig() {
                   </div>
                 </div>
               </div>
+
+              {/* Data Source */}
+              {adapters.length > 1 && (
+                <div className="bg-white rounded-xl p-8 shadow-sm">
+                  <h2 className="font-bold text-xl text-[#001e4f] mb-6" style={{fontFamily:"'Manrope',sans-serif"}}>3. Data Source</h2>
+                  <div className="flex gap-3 flex-wrap">
+                    {adapters.map(a => (
+                      <button key={a.name} onClick={() => setSource(a.name)}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${source === a.name ? "bg-[#001e4f] text-white" : "bg-[#eceef0] text-[#43474e] hover:bg-[#e6e8ea]"}`}>
+                        {a.display_name}
+                        {a.requires_api_key && <span className="ml-1 text-[10px] opacity-60">(API key)</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
