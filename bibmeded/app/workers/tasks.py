@@ -10,6 +10,7 @@ from app.models import (
     Affiliation, Author, Journal, Keyword, KeywordType,
     Publication, SearchQuery, QueryStatus,
 )
+from app.models.methodology import MethodologyStep
 from app.services.cleaning import extract_country, normalize_name
 from app.services.icite import ICiteClient
 from app.workers.celery_app import celery_app
@@ -119,6 +120,24 @@ def _persist_records(db, records: list[RawRecord], query_id: int) -> int:
     return persisted
 
 
+def _log_step(db, query_id: int, step_order: int, phase: str, source: str,
+              action: str, records_in: int, records_out: int, parameters: dict | None = None) -> None:
+    step = MethodologyStep(
+        query_id=query_id,
+        step_order=step_order,
+        phase=phase,
+        source=source,
+        action=action,
+        records_in=records_in,
+        records_out=records_out,
+        records_affected=abs(records_in - records_out),
+        parameters=parameters or {},
+        timestamp=datetime.now(timezone.utc),
+    )
+    db.add(step)
+    db.flush()
+
+
 @celery_app.task(bind=True, soft_time_limit=600, time_limit=660)
 def run_search(self, query_id: int, source: str = "pubmed"):
     asyncio.run(_run_search(self, query_id, source))
@@ -150,6 +169,10 @@ async def _run_search(task, query_id: int, source: str):
 
         query.raw_result_count = len(all_ids)
         db.flush()
+        _log_step(db, query_id, step_order=1, phase="search", source=source,
+                  action=f"{adapter.methodology_label()} search",
+                  records_in=0, records_out=len(all_ids),
+                  parameters={"query": query.query_string, "database": source})
 
         # Phase 2: Fetch + persist in chunks (flat memory)
         persisted = 0
@@ -161,6 +184,11 @@ async def _run_search(task, query_id: int, source: str):
                 meta={"phase": "fetch", "current": persisted, "total": len(all_ids)},
             )
 
+        _log_step(db, query_id, step_order=2, phase="fetch", source=source,
+                  action=f"Batch fetch via {adapter.methodology_label()}",
+                  records_in=len(all_ids), records_out=persisted,
+                  parameters={"batch_size": 200})
+
         # Phase 3: iCite enrichment (PubMed-sourced records only)
         if source == "pubmed":
             pmids = [rid for rid in all_ids]
@@ -170,6 +198,12 @@ async def _run_search(task, query_id: int, source: str):
                 if pub:
                     pub.citation_count = count
             db.commit()
+            enriched_count = len(citation_counts)
+            _log_step(db, query_id, step_order=3, phase="enrichment", source="icite",
+                      action="iCite citation count enrichment",
+                      records_in=persisted, records_out=persisted,
+                      parameters={"source": "NIH iCite", "enriched": enriched_count,
+                                  "missing": persisted - enriched_count})
 
         query.status = QueryStatus.completed
         query.result_count = persisted
