@@ -20,6 +20,10 @@ def upgrade():
     # Widen pmid column to accommodate OpenAlex IDs
     op.alter_column("publications", "pmid", type_=sa.String(50))
 
+    # Widen affiliation columns — real PubMed affiliations can exceed 500 chars
+    op.alter_column("affiliations", "name", type_=sa.Text())
+    op.alter_column("affiliations", "name_normalized", type_=sa.Text())
+
     # Add ON DELETE CASCADE to all FKs in the delete chain:
     # publication_authors → publications
     op.drop_constraint("publication_authors_publication_id_fkey", "publication_authors", type_="foreignkey")

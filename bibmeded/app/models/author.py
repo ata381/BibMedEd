@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, Table, UniqueConstraint
+from sqlalchemy import Column, ForeignKey, Integer, String, Table, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
@@ -30,7 +30,7 @@ class Author(Base):
 class Affiliation(Base):
     __tablename__ = "affiliations"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(500))
+    name: Mapped[str] = mapped_column(Text)
     country: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    name_normalized: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    name_normalized: Mapped[str | None] = mapped_column(Text, nullable=True)
     authors: Mapped[list["Author"]] = relationship(secondary=author_affiliations, back_populates="affiliations")

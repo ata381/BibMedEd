@@ -20,101 +20,105 @@ def _persist_records(db, records: list[RawRecord], query_id: int) -> int:
     """Persist a batch of RawRecords to the database. Returns count persisted."""
     persisted = 0
     for record in records:
-        journal = None
-        if record.journal_name:
-            journal = db.query(Journal).filter(Journal.name == record.journal_name).first()
-            if not journal:
-                journal = Journal(
-                    name=record.journal_name,
-                    issn=record.journal_issn,
-                    name_normalized=normalize_name(record.journal_name),
-                )
-                db.add(journal)
-                db.flush()
-
-        existing = db.query(Publication).filter(Publication.pmid == record.source_id).first()
-        if existing:
-            continue
-
-        pub = Publication(
-            pmid=record.source_id,
-            doi=record.doi,
-            title=record.title,
-            abstract=record.abstract,
-            year=record.year,
-            source_database=record.source_database,
-            citation_count=None,
-            journal_id=journal.id if journal else None,
-            query_id=query_id,
-        )
-        db.add(pub)
-        db.flush()
-
-        for pos, author_data in enumerate(record.authors):
-            author = db.query(Author).filter(
-                Author.name_normalized == normalize_name(author_data.name)
-            ).first()
-            if not author:
-                author = Author(
-                    name=author_data.name,
-                    orcid=author_data.orcid,
-                    name_normalized=normalize_name(author_data.name),
-                )
-                db.add(author)
-                db.flush()
-            db.execute(
-                Publication.__table__.metadata.tables["publication_authors"]
-                .insert()
-                .values(publication_id=pub.id, author_id=author.id, author_position=pos)
-            )
-
-            if author_data.affiliation:
-                country = extract_country(author_data.affiliation)
-                aff = db.query(Affiliation).filter(
-                    Affiliation.name_normalized == normalize_name(author_data.affiliation)
-                ).first()
-                if not aff:
-                    aff = Affiliation(
-                        name=author_data.affiliation,
-                        country=country,
-                        name_normalized=normalize_name(author_data.affiliation),
+        try:
+            journal = None
+            if record.journal_name:
+                journal = db.query(Journal).filter(Journal.name == record.journal_name).first()
+                if not journal:
+                    journal = Journal(
+                        name=record.journal_name,
+                        issn=record.journal_issn,
+                        name_normalized=normalize_name(record.journal_name),
                     )
-                    db.add(aff)
+                    db.add(journal)
                     db.flush()
-                if aff not in author.affiliations:
-                    author.affiliations.append(aff)
 
-        for term in record.mesh_terms:
-            kw = db.query(Keyword).filter(
-                Keyword.term_normalized == normalize_name(term),
-                Keyword.type == KeywordType.mesh_term,
-            ).first()
-            if not kw:
-                kw = Keyword(
-                    term=term,
-                    type=KeywordType.mesh_term,
-                    term_normalized=normalize_name(term),
+            existing = db.query(Publication).filter(Publication.pmid == record.source_id).first()
+            if existing:
+                continue
+
+            pub = Publication(
+                pmid=record.source_id,
+                doi=record.doi,
+                title=record.title,
+                abstract=record.abstract,
+                year=record.year,
+                source_database=record.source_database,
+                citation_count=None,
+                journal_id=journal.id if journal else None,
+                query_id=query_id,
+            )
+            db.add(pub)
+            db.flush()
+
+            for pos, author_data in enumerate(record.authors):
+                author = db.query(Author).filter(
+                    Author.name_normalized == normalize_name(author_data.name)
+                ).first()
+                if not author:
+                    author = Author(
+                        name=author_data.name,
+                        orcid=author_data.orcid,
+                        name_normalized=normalize_name(author_data.name),
+                    )
+                    db.add(author)
+                    db.flush()
+                db.execute(
+                    Publication.__table__.metadata.tables["publication_authors"]
+                    .insert()
+                    .values(publication_id=pub.id, author_id=author.id, author_position=pos)
                 )
-                db.add(kw)
-                db.flush()
-            pub.keywords.append(kw)
 
-        for term in record.keywords:
-            kw = db.query(Keyword).filter(
-                Keyword.term_normalized == normalize_name(term),
-                Keyword.type == KeywordType.author_keyword,
-            ).first()
-            if not kw:
-                kw = Keyword(
-                    term=term,
-                    type=KeywordType.author_keyword,
-                    term_normalized=normalize_name(term),
-                )
-                db.add(kw)
-                db.flush()
-            pub.keywords.append(kw)
+                if author_data.affiliation:
+                    country = extract_country(author_data.affiliation)
+                    aff = db.query(Affiliation).filter(
+                        Affiliation.name_normalized == normalize_name(author_data.affiliation)
+                    ).first()
+                    if not aff:
+                        aff = Affiliation(
+                            name=author_data.affiliation,
+                            country=country,
+                            name_normalized=normalize_name(author_data.affiliation),
+                        )
+                        db.add(aff)
+                        db.flush()
+                    if aff not in author.affiliations:
+                        author.affiliations.append(aff)
 
-        persisted += 1
+            for term in record.mesh_terms:
+                kw = db.query(Keyword).filter(
+                    Keyword.term_normalized == normalize_name(term),
+                    Keyword.type == KeywordType.mesh_term,
+                ).first()
+                if not kw:
+                    kw = Keyword(
+                        term=term,
+                        type=KeywordType.mesh_term,
+                        term_normalized=normalize_name(term),
+                    )
+                    db.add(kw)
+                    db.flush()
+                pub.keywords.append(kw)
+
+            for term in record.keywords:
+                kw = db.query(Keyword).filter(
+                    Keyword.term_normalized == normalize_name(term),
+                    Keyword.type == KeywordType.author_keyword,
+                ).first()
+                if not kw:
+                    kw = Keyword(
+                        term=term,
+                        type=KeywordType.author_keyword,
+                        term_normalized=normalize_name(term),
+                    )
+                    db.add(kw)
+                    db.flush()
+                pub.keywords.append(kw)
+
+            persisted += 1
+        except Exception:
+            db.rollback()
+            continue  # skip this record, proceed with next
 
     db.commit()
     return persisted
@@ -178,7 +182,7 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
 
         # Phase 2: Fetch + persist in chunks (flat memory)
         persisted = 0
-        async for records in adapter.fetch_stream(all_ids, batch_size=200):
+        async for records in adapter.fetch_stream(all_ids, batch_size=25):
             count = _persist_records(db, records, query_id)
             persisted += count
             task.update_state(
@@ -189,7 +193,7 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
         _log_step(db, query_id, step_order=2, phase="fetch", source=source,
                   action=f"Batch fetch via {adapter.methodology_label()}",
                   records_in=len(all_ids), records_out=persisted,
-                  parameters={"batch_size": 200})
+                  parameters={"batch_size": 50})
 
         # Phase 3: iCite enrichment (PubMed-sourced records only)
         if source == "pubmed":
