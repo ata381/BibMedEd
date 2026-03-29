@@ -103,7 +103,7 @@ The shipped OpenAlex adapter (`app/adapters/openalex.py`) is a complete real-wor
    - Reconstructing abstracts from OpenAlex's inverted index format
    - Parsing author affiliations from nested institution objects
 
-Read the full source: [`app/adapters/openalex.py`](https://github.com/ata381/bibmeded/blob/master/bibmeded/app/adapters/openalex.py)
+Read the full source: [`app/adapters/openalex.py`](https://github.com/ata381/Tip-egitimi-entegrasyon/blob/master/bibmeded/app/adapters/openalex.py)
 
 ## Step-by-Step: Adding a New Source
 

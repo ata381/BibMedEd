@@ -1,8 +1,8 @@
 site_name: BibMedEd
 site_description: Bibliometric Analysis Platform for Medical Education
-site_url: https://ata381.github.io/bibmeded/
-repo_url: https://github.com/ata381/bibmeded
-repo_name: ata381/bibmeded
+site_url: https://ata381.github.io/Tip-egitimi-entegrasyon/
+repo_url: https://github.com/ata381/Tip-egitimi-entegrasyon
+repo_name: ata381/Tip-egitimi-entegrasyon
 
 theme:
   name: material
@@ -24,6 +24,9 @@ nav:
   - Home: index.md
   - Self-Hosting: deploy.md
   - Writing Adapters: adapters.md
+
+exclude_docs: |
+  superpowers/
 
 markdown_extensions:
   - admonition

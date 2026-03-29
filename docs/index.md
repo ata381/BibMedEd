@@ -16,8 +16,8 @@ BibMedEd is an open-source tool that enables medical education researchers to se
 ## Quick Start
 
 ```bash
-git clone https://github.com/ata381/bibmeded
-cd bibmeded/bibmeded
+git clone https://github.com/ata381/Tip-egitimi-entegrasyon
+cd Tip-egitimi-entegrasyon/bibmeded
 docker compose up
 ```
 
@@ -38,10 +38,10 @@ If you use BibMedEd in your research, please cite:
   title={BibMedEd: Bibliometric Analysis Platform for Medical Education},
   author={Ata, Aakil},
   year={2026},
-  url={https://github.com/ata381/bibmeded}
+  url={https://github.com/ata381/Tip-egitimi-entegrasyon}
 }
 ```
 
 ## License
 
-[MIT](https://github.com/ata381/bibmeded/blob/master/LICENSE)
+[MIT](https://github.com/ata381/Tip-egitimi-entegrasyon/blob/master/LICENSE)

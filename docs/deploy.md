@@ -5,8 +5,8 @@ BibMedEd runs as a set of Docker containers. You need **Docker** (with Compose) 
 ## Quick Start
 
 ```bash
-git clone https://github.com/ata381/bibmeded
-cd bibmeded/bibmeded
+git clone https://github.com/ata381/Tip-egitimi-entegrasyon
+cd Tip-egitimi-entegrasyon/bibmeded
 docker compose up
 ```
 
@@ -20,7 +20,7 @@ This starts five services:
 | PostgreSQL | `localhost:5432` | Database |
 | Redis | `localhost:6379` | Message broker + cache |
 
-The database schema is created automatically via Alembic migrations on first startup.
+The database schema is created automatically on first startup.
 
 ## Configuration
 

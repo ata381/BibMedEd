@@ -36,18 +36,18 @@ BibMedEd is an open-source tool that enables medical education researchers to se
 ## Quick Start
 
 ```bash
-git clone https://github.com/ata381/bibmeded
-cd bibmeded/bibmeded
+git clone https://github.com/ata381/Tip-egitimi-entegrasyon
+cd Tip-egitimi-entegrasyon/bibmeded
 docker compose up
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-See the [Self-Hosting Guide](https://ata381.github.io/bibmeded/deploy/) for configuration options.
+See the [Self-Hosting Guide](https://ata381.github.io/Tip-egitimi-entegrasyon/deploy/) for configuration options.
 
 ## Deploy to Cloud
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ata381/bibmeded)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ata381/Tip-egitimi-entegrasyon)
 
 One click provisions PostgreSQL, Redis, FastAPI, Celery, and the Next.js frontend on Render.com's free tier.
 
@@ -67,7 +67,7 @@ class MySourceAdapter(BaseSourceAdapter):
     async def fetch(self, ids) -> list[RawRecord]: ...
 ```
 
-Drop it in `app/adapters/`, restart, and it appears in the UI. See the full [Writing Adapters](https://ata381.github.io/bibmeded/adapters/) guide.
+Drop it in `app/adapters/`, restart, and it appears in the UI. See the full [Writing Adapters](https://ata381.github.io/Tip-egitimi-entegrasyon/adapters/) guide.
 
 ## Citation
 
@@ -76,15 +76,15 @@ Drop it in `app/adapters/`, restart, and it appears in the UI. See the full [Wri
   title={BibMedEd: Bibliometric Analysis Platform for Medical Education},
   author={Ata, Aakil},
   year={2026},
-  url={https://github.com/ata381/bibmeded}
+  url={https://github.com/ata381/Tip-egitimi-entegrasyon}
 }
 ```
 
 ## Contributing
 
-Contributions welcome! The easiest way to contribute is writing an adapter for a new data source. See the [adapter guide](https://ata381.github.io/bibmeded/adapters/) for the full walkthrough.
+Contributions welcome! The easiest way to contribute is writing an adapter for a new data source. See the [adapter guide](https://ata381.github.io/Tip-egitimi-entegrasyon/adapters/) for the full walkthrough.
 
-Bug reports and feature requests: [open an issue](https://github.com/ata381/bibmeded/issues).
+Bug reports and feature requests: [open an issue](https://github.com/ata381/Tip-egitimi-entegrasyon/issues).
 
 ## License
 
