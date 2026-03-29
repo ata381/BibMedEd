@@ -1,0 +1,37 @@
+site_name: BibMedEd
+site_description: Bibliometric Analysis Platform for Medical Education
+site_url: https://ata381.github.io/bibmeded/
+repo_url: https://github.com/ata381/bibmeded
+repo_name: ata381/bibmeded
+
+theme:
+  name: material
+  palette:
+    primary: custom
+    accent: custom
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - content.code.copy
+    - search.suggest
+  icon:
+    repo: fontawesome/brands/github
+
+extra_css:
+  - stylesheets/extra.css
+
+nav:
+  - Home: index.md
+  - Self-Hosting: deploy.md
+  - Writing Adapters: adapters.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
