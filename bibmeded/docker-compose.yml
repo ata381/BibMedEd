@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:16
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-bibmeded}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bibmeded}
@@ -14,6 +14,10 @@ services:
       interval: 3s
       timeout: 3s
       retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
   redis:
     image: redis:7-alpine
@@ -24,6 +28,10 @@ services:
       interval: 3s
       timeout: 3s
       retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 64M
 
   api:
     build: .
@@ -39,6 +47,10 @@ services:
       redis:
         condition: service_healthy
     command: sh -c "python -c 'from app.database import Base, get_engine; import app.models; Base.metadata.create_all(get_engine())' && echo 'DB ready' && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   worker:
     build: .
@@ -51,7 +63,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: celery -A app.workers.celery_app worker --loglevel=info
+    command: celery -A app.workers.celery_app worker --loglevel=info --concurrency=2 --pool=prefork --max-memory-per-child=200000
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   frontend:
     build: ./frontend
@@ -61,6 +77,10 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:8000
     depends_on:
       - api
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
 volumes:
   pgdata:
