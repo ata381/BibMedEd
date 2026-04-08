@@ -29,7 +29,10 @@ export default function ExportManager() {
 
   const handleDataExport = () => {
     const url = dataFormat === "csv" ? exportApi.csvUrl(projectId) : exportApi.risUrl(projectId);
-    window.open(url, "_blank");
+    const newWindow = window.open(url, "_blank", "noopener,noreferrer");
+    if (newWindow) {
+      newWindow.opener = null;
+    }
     toast.success(`${dataFormat.toUpperCase()} download started.`);
   };
 

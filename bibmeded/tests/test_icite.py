@@ -1,4 +1,5 @@
 import json
+import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 import pytest
@@ -12,17 +13,15 @@ def sample_response():
 def icite_client():
     return ICiteClient()
 
-@pytest.mark.asyncio
-async def test_get_citation_counts(icite_client, sample_response):
+def test_get_citation_counts(icite_client, sample_response):
     mock_response = AsyncMock()
     mock_response.json = lambda: sample_response
     mock_response.raise_for_status = lambda: None
     with patch.object(icite_client._client, "get", return_value=mock_response):
-        result = await icite_client.get_citations(["38000001", "38000002"])
+        result = asyncio.run(icite_client.get_citations(["38000001", "38000002"]))
     assert result["38000001"] == 45
     assert result["38000002"] == 12
 
-@pytest.mark.asyncio
-async def test_get_citation_counts_empty(icite_client):
-    result = await icite_client.get_citations([])
+def test_get_citation_counts_empty(icite_client):
+    result = asyncio.run(icite_client.get_citations([]))
     assert result == {}

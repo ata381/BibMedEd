@@ -31,7 +31,6 @@ def create_app() -> FastAPI:
             status_code=500,
             content={
                 "detail": "Internal server error",
-                "type": type(exc).__name__,
             },
         )
 
