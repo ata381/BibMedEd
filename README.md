@@ -8,6 +8,10 @@
   <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.12+-green.svg" alt="Python 3.12+"></a>
   <a href="https://docs.docker.com/compose/"><img src="https://img.shields.io/badge/Docker-Compose-2496ED.svg" alt="Docker"></a>
   <a href="https://ata381.github.io/BibMedEd/"><img src="https://img.shields.io/badge/Docs-MkDocs-526CFE.svg" alt="Documentation"></a>
+  <a href="https://github.com/ata381/BibMedEd/issues"><img src="https://img.shields.io/github/issues/ata381/BibMedEd" alt="GitHub issues"></a>
+  <a href="https://github.com/ata381/BibMedEd/pulls"><img src="https://img.shields.io/github/issues-pr/ata381/BibMedEd" alt="GitHub pull requests"></a>
+  <a href="https://github.com/ata381/BibMedEd/graphs/contributors"><img src="https://img.shields.io/github/contributors/ata381/BibMedEd" alt="Contributors"></a>
+  <a href="https://github.com/ata381/BibMedEd/actions/workflows/ci.yml"><img src="https://github.com/ata381/BibMedEd/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
 </p>
 
 <p align="center">
@@ -97,6 +101,18 @@ Drop it in `app/adapters/`, restart the worker, and it appears in the search UI 
 
 See the full [Writing Adapters](https://ata381.github.io/BibMedEd/adapters/) guide with `RawRecord` field reference and an annotated OpenAlex walkthrough.
 
+
+## Community & Roadmap
+
+Want to help shape BibMedEd?
+
+- **Start contributing:** See [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Request or claim work:** [GitHub Issues](https://github.com/ata381/BibMedEd/issues)
+- **Discuss major ideas in a PR:** [Pull Requests](https://github.com/ata381/BibMedEd/pulls)
+- **Use in research and cite the project:** See [Citation](#citation)
+
+If you are looking for a first task, open an issue titled **"Good first issue request"** and we will suggest one.
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -123,11 +139,12 @@ If you use BibMedEd in your research, please cite:
 
 ## Contributing
 
-Contributions welcome! The easiest way to start:
+Contributions are welcome from researchers, engineers, and students. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, PR expectations, and a contribution checklist.
 
-1. **Write an adapter** for a new data source — see the [adapter guide](https://ata381.github.io/BibMedEd/adapters/)
-2. **Report bugs** or request features — [open an issue](https://github.com/ata381/BibMedEd/issues)
-3. **Improve docs** — PRs to `docs/` are auto-deployed to GitHub Pages
+Quick links:
+- [Open an issue](https://github.com/ata381/BibMedEd/issues)
+- [Open a pull request](https://github.com/ata381/BibMedEd/pulls)
+- [Adapter development guide](https://ata381.github.io/BibMedEd/adapters/)
 
 ## License
 
