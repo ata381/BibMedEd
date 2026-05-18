@@ -14,7 +14,6 @@ dependencies = [
     "celery[redis]>=5.4.0",
     "httpx>=0.27.0",
     "lxml>=5.0.0",
-    "pandas>=2.0.0",
     "networkx>=3.0.0",
 ]
 
