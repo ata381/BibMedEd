@@ -1,0 +1,49 @@
+name: New data source adapter
+description: Request or propose support for a new bibliographic database.
+title: "[adapter] "
+labels: ["adapter", "good first issue"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Adapters are the easiest way to contribute. Most take ~50 lines of Python.
+        Read the [adapter guide](https://ata381.github.io/BibMedEd/adapters/) before starting.
+
+  - type: input
+    id: source-name
+    attributes:
+      label: Database name
+      placeholder: Scopus, Web of Science, Dimensions, CrossRef, Europe PMC, ...
+    validations:
+      required: true
+
+  - type: input
+    id: api-url
+    attributes:
+      label: API documentation URL
+    validations:
+      required: true
+
+  - type: dropdown
+    id: auth
+    attributes:
+      label: Authentication
+      options:
+        - No API key required
+        - Free API key (no payment)
+        - Paid / institutional access
+    validations:
+      required: true
+
+  - type: textarea
+    id: coverage
+    attributes:
+      label: Why this source matters for medical-education research
+      placeholder: e.g. Scopus indexes most non-PubMed European medical journals; needed for global coverage.
+
+  - type: checkboxes
+    id: claim
+    attributes:
+      label: Claim it
+      options:
+        - label: I'm planning to implement this myself.

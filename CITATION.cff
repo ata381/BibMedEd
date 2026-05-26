@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+title: "BibMedEd: Bibliometric Analysis Platform for Medical Education"
+message: "If you use this software, please cite it using the metadata below."
+type: software
+authors:
+  - family-names: Ata
+    given-names: Aakil
+repository-code: "https://github.com/ata381/BibMedEd"
+url: "https://ata381.github.io/BibMedEd/"
+abstract: >-
+  BibMedEd is an open-source platform that unifies bibliographic search,
+  deduplication, bibliometric analysis, and methodology logging for
+  medical-education research. It replaces a fragmented workflow across
+  PubMed, Covidence, VOSviewer, CiteSpace, and Excel with a single
+  self-hostable application and an extensible adapter system for
+  arbitrary bibliographic data sources.
+keywords:
+  - bibliometrics
+  - medical education
+  - systematic review
+  - scientometrics
+  - pubmed
+  - openalex
+  - network analysis
+  - research synthesis
+license: MIT
+version: 0.1.0
+date-released: 2026-05-26

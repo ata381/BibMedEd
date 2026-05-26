@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://ata381.github.io/BibMedEd/
+    about: Self-hosting, adapter authoring, and API reference.
+  - name: Discussions
+    url: https://github.com/ata381/BibMedEd/discussions
+    about: Ask a question, share a use case, or propose an idea.

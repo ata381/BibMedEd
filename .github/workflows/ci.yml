@@ -2,8 +2,9 @@ name: CI
 
 on:
   workflow_dispatch:
-  pull_request:
   push:
+    branches: [master, main]
+  pull_request:
     branches: [master, main]
 
 permissions:
@@ -14,48 +15,84 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  backend-tests:
-    name: Backend Tests (Python 3.12)
+  backend:
+    name: Backend tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.12', '3.13']
     defaults:
       run:
         working-directory: bibmeded
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-          cache: 'pip'
+          python-version: ${{ matrix.python-version }}
+          cache: pip
           cache-dependency-path: bibmeded/pyproject.toml
 
       - name: Install dependencies
-        run: pip install -e .[dev]
+        run: pip install -e ".[dev]"
 
-      - name: Run tests
-        run: pytest -q
+      - name: Run pytest
+        run: pytest -q --cov=app --cov-report=term-missing
+
+  frontend-build:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bibmeded/frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: bibmeded/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Type check
+        run: npx tsc --noEmit || true
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
 
   docs-build:
-    name: Docs Build (MkDocs)
+    name: Docs build (MkDocs strict)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: bibmeded
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pip'
+          cache: pip
           cache-dependency-path: bibmeded/pyproject.toml
 
       - name: Install docs dependencies
-        run: pip install -e .[docs]
+        run: pip install -e ".[docs]"
 
       - name: Build docs
         run: mkdocs build --strict --config-file ../mkdocs.yml
+
+  docker-build:
+    name: Docker build smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend image
+        run: docker build -f bibmeded/Dockerfile bibmeded
+      - name: Build frontend image
+        run: docker build -f bibmeded/frontend/Dockerfile bibmeded/frontend
