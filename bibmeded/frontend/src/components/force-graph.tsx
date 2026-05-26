@@ -82,7 +82,7 @@ export function ForceGraph({ nodes, links, width = 400, height = 350 }: ForceGra
       .attr("stroke-width", (d: any) => 0.5 + (d.weight ?? 1) / maxWeight * 2.5);
 
     const node = g.append("g")
-      .selectAll("circle")
+      .selectAll<SVGCircleElement, typeof simNodes[number]>("circle")
       .data(simNodes)
       .join("circle")
       .attr("r", (d: any) => 4 + (d.size ?? 1) / maxSize * 10)

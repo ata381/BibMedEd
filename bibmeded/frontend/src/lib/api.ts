@@ -72,7 +72,7 @@ export const searchApi = {
 
 export const publicationsApi = {
   list: (projectId: number, params?: { sort_by?: string; order?: string; limit?: number; offset?: number }) =>
-    api.get<{ total: number; items: Publication[] }>(`/api/projects/${projectId}/publications`, { params }),
+    api.get<{ total: number; excluded_count: number; items: Publication[] }>(`/api/projects/${projectId}/publications`, { params }),
   toggleExclude: (projectId: number, publicationId: number) =>
     api.patch<{ id: number; excluded: boolean }>(`/api/projects/${projectId}/publications/${publicationId}/exclude`),
   bulkExclude: (projectId: number, citationThreshold: number) =>
