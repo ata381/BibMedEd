@@ -4,3 +4,6 @@ site/
 *.pdf
 *.docx
 docs/superpowers/
+.env
+.env.*
+!.env.example
