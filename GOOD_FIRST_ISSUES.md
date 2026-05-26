@@ -8,20 +8,20 @@ Read the [adapter guide](https://ata381.github.io/BibMedEd/adapters/) first. Ref
 
 | Source | API | Notes | Status |
 |---|---|---|---|
-| **CrossRef** | <https://api.crossref.org/swagger-ui/index.html> | Authoritative DOI metadata. High value for cross-source dedup. | Open |
-| **Europe PMC** | <https://europepmc.org/RestfulWebService> | Broader life-sciences coverage than PubMed, includes preprints. | Open |
-| **Semantic Scholar** | <https://api.semanticscholar.org/> | Citation graph + influential-citation flags. Free tier ample. | Open |
-| **arXiv** | <https://info.arxiv.org/help/api/index.html> | Preprints relevant to med-AI / informatics papers. | Open |
-| **CORE** | <https://core.ac.uk/services/api> | Aggregates open-access repositories worldwide. Free key by email. | Open |
-| **BASE (Bielefeld)** | <https://www.base-search.net/about/en/about_develop.php> | Massive OA aggregator, strong European coverage. | Open |
-| **DOAJ** | <https://doaj.org/api/v3/docs> | Directory of Open Access Journals — useful for OA-only filters. | Open |
-| **OpenCitations** | <https://opencitations.net/index/api/v2> | Citation links by DOI; pairs well with CrossRef. | Open |
+| **CrossRef** | <https://api.crossref.org/swagger-ui/index.html> | Authoritative DOI metadata. High value for cross-source dedup. | [#6](https://github.com/ata381/BibMedEd/issues/6) |
+| **Europe PMC** | <https://europepmc.org/RestfulWebService> | Broader life-sciences coverage than PubMed, includes preprints. | [#7](https://github.com/ata381/BibMedEd/issues/7) |
+| **Semantic Scholar** | <https://api.semanticscholar.org/> | Citation graph + influential-citation flags. Free tier ample. | [#8](https://github.com/ata381/BibMedEd/issues/8) |
+| **arXiv** | <https://info.arxiv.org/help/api/index.html> | Preprints relevant to med-AI / informatics papers. | [#9](https://github.com/ata381/BibMedEd/issues/9) |
+| **CORE** | <https://core.ac.uk/services/api> | Aggregates open-access repositories worldwide. Free key by email. | [#12](https://github.com/ata381/BibMedEd/issues/12) |
+| **BASE (Bielefeld)** | <https://www.base-search.net/about/en/about_develop.php> | Massive OA aggregator, strong European coverage. | [#13](https://github.com/ata381/BibMedEd/issues/13) |
+| **DOAJ** | <https://doaj.org/api/v3/docs> | Directory of Open Access Journals — useful for OA-only filters. | [#10](https://github.com/ata381/BibMedEd/issues/10) |
+| **OpenCitations** | <https://opencitations.net/index/api/v2> | Citation links by DOI; pairs well with CrossRef. | [#11](https://github.com/ata381/BibMedEd/issues/11) |
 
 ## API-key sources (free tier available)
 
 | Source | API | Notes | Status |
 |---|---|---|---|
-| **Lens.org Scholarly** | <https://docs.api.lens.org/> | Scholarly + patent metadata. Free academic tier. | Open |
+| **Lens.org Scholarly** | <https://docs.api.lens.org/> | Scholarly + patent metadata. Free academic tier. | [#14](https://github.com/ata381/BibMedEd/issues/14) |
 | **Dimensions** | <https://docs.dimensions.ai/dsl/> | Strong grant + clinical-trial linkage. Free for non-commercial. | Open |
 
 ## Institutional / paid sources
@@ -33,11 +33,11 @@ Read the [adapter guide](https://ata381.github.io/BibMedEd/adapters/) first. Ref
 
 ## Non-adapter starter tasks
 
-- **PRISMA flow diagram export** — generate a printable PNG/SVG of the included/excluded record counts from the methodology log.
+- **PRISMA flow diagram export** — [#15](https://github.com/ata381/BibMedEd/issues/15)
+- **i18n scaffold + Turkish locale** — [#16](https://github.com/ata381/BibMedEd/issues/16)
+- **Search CLI `--dry-run` for cost estimation** — [#17](https://github.com/ata381/BibMedEd/issues/17)
 - **Locale-aware date parsing** in `app/services/cleaning.py` — currently assumes ISO; some adapters emit `DD-MM-YYYY`.
-- **Add a `--dry-run` flag** to the search CLI for cost-estimation before a full fetch.
 - **Improve the empty-state copy** in the frontend project dashboard (`bibmeded/frontend/app/projects/`).
-- **Translate the UI** — add an `i18n` scaffold and a Turkish or Spanish locale (high demand from non-English-speaking medical educators).
 
 ## Claiming and shipping
 

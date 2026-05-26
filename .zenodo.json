@@ -1,0 +1,36 @@
+{
+  "title": "BibMedEd: An Open-Source Bibliometric Analysis Platform for Medical Education Research",
+  "description": "BibMedEd unifies multi-database bibliographic search (PubMed, OpenAlex, and contributable adapters), automated cross-source deduplication, six bibliometric analysis modules, D3.js network visualisations, and a reproducible methodology log in a single self-hostable web application. Designed for medical-education researchers conducting systematic reviews and scientometric studies under PRISMA 2020.",
+  "license": "MIT",
+  "upload_type": "software",
+  "access_right": "open",
+  "keywords": [
+    "bibliometrics",
+    "scientometrics",
+    "systematic review",
+    "medical education",
+    "PRISMA",
+    "PubMed",
+    "OpenAlex",
+    "network analysis",
+    "research software"
+  ],
+  "creators": [
+    {
+      "name": "Ata, Aakil",
+      "affiliation": "Independent Researcher"
+    }
+  ],
+  "related_identifiers": [
+    {
+      "scheme": "url",
+      "identifier": "https://github.com/ata381/BibMedEd",
+      "relation": "isSupplementTo"
+    },
+    {
+      "scheme": "url",
+      "identifier": "https://ata381.github.io/BibMedEd/",
+      "relation": "isDocumentedBy"
+    }
+  ]
+}

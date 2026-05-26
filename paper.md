@@ -43,7 +43,7 @@ The methodology-log feature is, to the authors' knowledge, novel among open bibl
 3. An **adapter registry** that auto-discovers any `BaseSourceAdapter` subclass in `app/adapters/`, making the system extensible without touching core code.
 4. A **Next.js frontend** providing the search UI, project dashboard, results table, interactive network graphs, and export manager.
 
-Analysis modules use NetworkX [@hagberg2008networkx] for graph computations, pandas for tabular aggregation, and scikit-learn for clustering. Network visualisations are rendered client-side with D3.js to enable interactive exploration of co-authorship and keyword co-occurrence structures.
+Analysis modules use NetworkX [@hagberg2008networkx] for graph computations and lightweight standard-library aggregations (`collections.Counter`) to keep the deployment footprint small. Network visualisations are rendered client-side with D3.js to enable interactive exploration of co-authorship and keyword co-occurrence structures.
 
 # Acknowledgements
 

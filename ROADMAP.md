@@ -15,8 +15,10 @@ A living document. Items move up and down as the community contributes adapters 
 
 ## Next (0.x → 1.0)
 
-- [ ] Additional adapters: CrossRef, Europe PMC, Semantic Scholar, arXiv, Scopus, Web of Science, Dimensions, CORE, BASE, Lens.org
-- [ ] PRISMA flow diagram export
+- [ ] Additional adapters — tracked individually: [CrossRef #6](https://github.com/ata381/BibMedEd/issues/6), [Europe PMC #7](https://github.com/ata381/BibMedEd/issues/7), [Semantic Scholar #8](https://github.com/ata381/BibMedEd/issues/8), [arXiv #9](https://github.com/ata381/BibMedEd/issues/9), [DOAJ #10](https://github.com/ata381/BibMedEd/issues/10), [OpenCitations #11](https://github.com/ata381/BibMedEd/issues/11), [CORE #12](https://github.com/ata381/BibMedEd/issues/12), [BASE #13](https://github.com/ata381/BibMedEd/issues/13), [Lens.org #14](https://github.com/ata381/BibMedEd/issues/14)
+- [ ] [PRISMA flow diagram export #15](https://github.com/ata381/BibMedEd/issues/15)
+- [ ] [Frontend i18n + Turkish locale #16](https://github.com/ata381/BibMedEd/issues/16)
+- [ ] [Search CLI `--dry-run` for cost estimation #17](https://github.com/ata381/BibMedEd/issues/17)
 - [ ] Project sharing — read-only public project URLs
 - [ ] Saved query alerts (cron re-runs notify on new matching records)
 - [ ] Author disambiguation using ORCID + co-author network
