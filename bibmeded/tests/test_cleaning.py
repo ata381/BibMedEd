@@ -73,3 +73,29 @@ def test_cross_source_dedup_empty():
     unique, removed, breakdown = deduplicate_cross_source([])
     assert unique == []
     assert removed == 0
+
+
+def test_cross_source_dedup_normalizes_doi_case_and_url_prefix():
+    records = [
+        RawRecord(source_id="PM1", source_database="pubmed", title="A", external_ids={"pmid": "PM1", "doi": "10.1000/ABC"}),
+        RawRecord(source_id="OA1", source_database="openalex", title="A", external_ids={"openalex": "OA1", "doi": "https://doi.org/10.1000/abc"}),
+    ]
+    unique, removed, breakdown = deduplicate_cross_source(records)
+    assert len(unique) == 1
+    assert removed == 1
+    assert breakdown["doi"] == 1
+
+
+def test_cross_source_dedup_normalizes_pmid_whitespace():
+    records = [
+        RawRecord(source_id="PM1", source_database="pubmed", title="A", external_ids={"pmid": " 12345 "}),
+        RawRecord(source_id="OA1", source_database="openalex", title="A", external_ids={"openalex": "OA1", "pmid": "12345"}),
+    ]
+    unique, removed, breakdown = deduplicate_cross_source(records)
+    assert len(unique) == 1
+    assert removed == 1
+    assert breakdown["pmid"] == 1
+
+
+def test_extract_country_is_case_insensitive_for_canonical_country_names():
+    assert extract_country("Department of Surgery, toronto, canada") == "Canada"

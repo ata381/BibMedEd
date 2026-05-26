@@ -33,10 +33,31 @@ def extract_country(affiliation: str) -> str | None:
     for alias, canonical in COUNTRY_ALIASES.items():
         if aff.lower().endswith(alias.lower()):
             return canonical
+    aff_lower = aff.lower()
     for country in COUNTRIES:
-        if aff.endswith(country) or aff.endswith(country + "."):
+        country_lower = country.lower()
+        if aff_lower.endswith(country_lower) or aff_lower.endswith(country_lower + "."):
             return country
     return None
+
+
+def _normalize_identifier(value: str | None) -> str | None:
+    if not value:
+        return None
+    normalized = value.strip()
+    return normalized or None
+
+
+def _normalize_doi(value: str | None) -> str | None:
+    normalized = _normalize_identifier(value)
+    if not normalized:
+        return None
+    lowered = normalized.lower()
+    for prefix in ("https://doi.org/", "http://doi.org/", "doi:"):
+        if lowered.startswith(prefix):
+            lowered = lowered[len(prefix):]
+            break
+    return lowered.strip()
 
 def deduplicate_records(records: list[PubMedRecord]) -> list[PubMedRecord]:
     seen = set()
@@ -58,8 +79,10 @@ def deduplicate_cross_source(records: list[_RawRecord]) -> tuple[list[_RawRecord
     removed_by: dict[str, int] = {"doi": 0, "pmid": 0}
 
     for r in records:
-        doi = r.external_ids.get("doi") or r.doi
-        pmid = r.external_ids.get("pmid") or (r.source_id if r.source_database == "pubmed" else None)
+        doi = _normalize_doi(r.external_ids.get("doi") or r.doi)
+        pmid = _normalize_identifier(
+            r.external_ids.get("pmid") or (r.source_id if r.source_database == "pubmed" else None)
+        )
 
         if doi and doi in seen_doi:
             removed_by["doi"] += 1
