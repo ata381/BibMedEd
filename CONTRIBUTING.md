@@ -1,58 +1,70 @@
 # Contributing to BibMedEd
 
-Thanks for your interest in improving **BibMedEd**! This project is designed to be friendly to first-time open-source contributors and domain experts in medical education.
+Thanks for considering a contribution. BibMedEd is built so that the most useful change you can make — adding a new bibliographic data source — is also the easiest. This guide walks through the three contribution paths in order of impact.
 
-## High-impact ways to contribute
+## Three ways to contribute
 
-1. **Add a new source adapter**
-   - Implement a new adapter in `bibmeded/backend/app/adapters/`.
-   - Follow the adapter docs: <https://ata381.github.io/BibMedEd/adapters/>.
-2. **Improve analysis quality or visualizations**
-   - Add metrics, improve network analysis behavior, or enhance dashboard UX.
-3. **Strengthen docs and examples**
-   - Clarify setup, troubleshooting, and methodology reproducibility.
-4. **Report bugs and suggest features**
-   - Open an issue with steps to reproduce and expected behavior.
+### 1. Write an adapter (highest leverage)
 
-## Development setup
+Every new adapter immediately broadens the literature base every BibMedEd user can analyse. The adapter API is intentionally small: implement `search` and `fetch`, map the source's record format to `RawRecord`, register the class, done.
+
+- Read the [adapter guide](https://ata381.github.io/BibMedEd/adapters/) for a walkthrough of the `OpenAlexAdapter`.
+- Check [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md) for vetted source ideas you can claim.
+- Open an [adapter request issue](.github/ISSUE_TEMPLATE/adapter_request.yml) to claim a source before you start so we don't duplicate work.
+
+A good adapter PR includes:
+- A class in `bibmeded/app/adapters/<source>.py` subclassing `BaseSourceAdapter`.
+- Registration in `bibmeded/app/adapters/__init__.py`.
+- A fixture-based test under `bibmeded/tests/test_adapters_<source>.py` that exercises `search` and `fetch` against captured JSON / XML payloads — no live API calls in CI.
+- A note in `docs/adapters.md` and a one-line mention in `README.md`'s feature list.
+
+### 2. Report a bug or request a feature
+
+Use the [issue templates](.github/ISSUE_TEMPLATE/). Bugs need a reproduction; feature requests need a problem statement (what research workflow is currently painful).
+
+### 3. Improve docs and examples
+
+`docs/` is rendered with MkDocs Material and deployed automatically on merge to `master`. Walkthroughs of real bibliometric studies you have run with BibMedEd are especially welcome — they double as marketing and tutorials.
+
+## Local development
 
 ```bash
 git clone https://github.com/ata381/BibMedEd
 cd BibMedEd/bibmeded
-docker compose up --build
+
+# Backend — Python 3.12+
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+pytest -q
+
+# Full stack
+docker compose up
 ```
 
-Then open:
-- Frontend: <http://localhost:3000>
-- Backend API docs: <http://localhost:8000/docs>
+Tests use in-memory SQLite and require no external services. The full Docker stack provisions Postgres, Redis, the FastAPI API, a Celery worker, and the Next.js frontend.
 
-## Contribution workflow
+## Code style
 
-1. Fork the repository.
-2. Create a branch: `git checkout -b feat/short-description`.
-3. Make focused, atomic commits.
-4. Run local checks relevant to your changes.
-5. Open a pull request with:
-   - Problem statement
-   - What changed
-   - Screenshots (for UI changes)
-   - Any migration or compatibility notes
+- Python: ruff-compatible, type hints on public functions, `async` everywhere in the request path.
+- TypeScript / React: the frontend uses Next.js 16 App Router; co-locate components with their route.
+- Keep commits scoped. Conventional-commit-style prefixes (`feat:`, `fix:`, `docs:`, `chore:`, `perf:`, `sec:`) are encouraged — recent history shows the pattern.
 
-## Pull request checklist
+## Pull request flow
 
-- [ ] I linked the related issue (if one exists).
-- [ ] I kept the change focused and documented non-obvious decisions.
-- [ ] I updated docs when behavior or configuration changed.
-- [ ] I included screenshots for frontend/UI changes.
-- [ ] I verified the app runs via Docker Compose.
+1. Fork and create a branch off `master`.
+2. Make focused commits; rebase rather than merge `master` into your branch.
+3. `pytest -q` must pass; CI will re-run it on Python 3.12 and 3.13.
+4. Fill in the [PR template](.github/PULL_REQUEST_TEMPLATE.md). Link the issue you're closing.
+5. A maintainer will review. Most adapter PRs are reviewed within a week.
 
-## Style and scope guidelines
+## Code of Conduct
 
-- Keep PRs small enough for fast review.
-- Prefer clear naming and explicit data contracts.
-- Preserve reproducibility features (methodology logging, exports).
-- For adapter contributions, ensure mapped `external_ids` are stable.
+Participation in this project is governed by the [Contributor Covenant](CODE_OF_CONDUCT.md).
 
-## Need help?
+## Security
 
-If you are unsure where to start, open an issue titled **"Good first issue request"** and describe your background (engineering, statistics, med-ed research, etc.). We'll help you find a useful task.
+Do **not** open public issues for security problems. See [SECURITY.md](SECURITY.md) for private disclosure.
+
+## License
+
+By contributing you agree that your contributions are licensed under the project [MIT License](LICENSE).

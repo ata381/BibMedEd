@@ -4,26 +4,29 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/ata381/BibMedEd/actions/workflows/ci.yml"><img src="https://github.com/ata381/BibMedEd/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.12+-green.svg" alt="Python 3.12+"></a>
   <a href="https://docs.docker.com/compose/"><img src="https://img.shields.io/badge/Docker-Compose-2496ED.svg" alt="Docker"></a>
   <a href="https://ata381.github.io/BibMedEd/"><img src="https://img.shields.io/badge/Docs-MkDocs-526CFE.svg" alt="Documentation"></a>
+  <a href="CITATION.cff"><img src="https://img.shields.io/badge/cite-CITATION.cff-yellow.svg" alt="Cite this software"></a>
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome"></a>
   <a href="https://github.com/ata381/BibMedEd/issues"><img src="https://img.shields.io/github/issues/ata381/BibMedEd" alt="GitHub issues"></a>
-  <a href="https://github.com/ata381/BibMedEd/pulls"><img src="https://img.shields.io/github/issues-pr/ata381/BibMedEd" alt="GitHub pull requests"></a>
   <a href="https://github.com/ata381/BibMedEd/graphs/contributors"><img src="https://img.shields.io/github/contributors/ata381/BibMedEd" alt="Contributors"></a>
-  <a href="https://github.com/ata381/BibMedEd/actions/workflows/ci.yml"><img src="https://github.com/ata381/BibMedEd/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
 </p>
 
 <p align="center">
   <a href="https://ata381.github.io/BibMedEd/">Documentation</a> &bull;
   <a href="https://ata381.github.io/BibMedEd/deploy/">Self-Hosting</a> &bull;
   <a href="https://ata381.github.io/BibMedEd/adapters/">Write an Adapter</a> &bull;
-  <a href="https://render.com/deploy?repo=https://github.com/ata381/BibMedEd">Deploy to Cloud</a>
+  <a href="https://render.com/deploy?repo=https://github.com/ata381/BibMedEd">Deploy to Cloud</a> &bull;
+  <a href="ROADMAP.md">Roadmap</a> &bull;
+  <a href="CONTRIBUTING.md">Contribute</a>
 </p>
 
 ---
 
-BibMedEd replaces the fragmented workflow of PubMed + Covidence + VOSviewer + CiteSpace + Excel with a single integrated platform. Search multiple bibliographic databases, analyze trends, visualize research networks, and export reproducible methodology logs — all from one tool.
+> Systematic bibliometric reviews currently require stitching together PubMed search, Covidence, VOSviewer, CiteSpace, and Excel — four tools, manual deduplication, and a methodology section that's painful to reconstruct. **BibMedEd is one application that does all of it**, self-hosts with one command, and exports a citable PRISMA-ready methodology log of every step it took.
 
 ## Features
 
@@ -121,7 +124,7 @@ If you are looking for a first task, open an issue titled **"Good first issue re
 | Backend | FastAPI, SQLAlchemy 2.0, Pydantic |
 | Workers | Celery with Redis broker |
 | Database | PostgreSQL 16 |
-| Analysis | NetworkX, pandas, scikit-learn, scipy |
+| Analysis | NetworkX, scikit-learn, scipy |
 | Deployment | Docker Compose, Render.com Blueprint |
 
 ## Citation
@@ -139,12 +142,16 @@ If you use BibMedEd in your research, please cite:
 
 ## Contributing
 
-Contributions are welcome from researchers, engineers, and students. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, PR expectations, and a contribution checklist.
+Contributions are warmly welcome. The fastest path to a merged PR is to write an adapter for a new data source — most take ~50 lines.
 
-Quick links:
-- [Open an issue](https://github.com/ata381/BibMedEd/issues)
-- [Open a pull request](https://github.com/ata381/BibMedEd/pulls)
-- [Adapter development guide](https://ata381.github.io/BibMedEd/adapters/)
+- **Read** the [Contributing Guide](CONTRIBUTING.md) for setup, code style, and PR flow.
+- **Pick a starter task** from [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md) — 10+ vetted adapter ideas waiting for an owner.
+- **Report bugs or request features** with the [issue templates](.github/ISSUE_TEMPLATE/).
+- **Improve docs** — PRs to `docs/` auto-deploy to GitHub Pages on merge.
+
+By contributing you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md). Security issues should be reported via the process in [SECURITY.md](SECURITY.md).
+
+This repository also has [`@claude`](https://code.claude.com/docs/en/github-actions) enabled — mention `@claude` in any issue or PR comment to ask for help or request changes, and every new PR is automatically reviewed.
 
 ## License
 
