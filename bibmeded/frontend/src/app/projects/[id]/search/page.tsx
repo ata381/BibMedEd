@@ -29,11 +29,14 @@ export default function SearchConfig() {
   const queryString = advancedMode ? rawQuery : builtQuery;
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Cleanup polling on unmount to prevent memory leaks
+  // Cleanup polling + pending redirect on unmount to prevent memory leaks
+  // and setState-on-unmounted-component warnings during fast navigation.
   useEffect(() => {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
     };
   }, []);
 
@@ -67,7 +70,7 @@ export default function SearchConfig() {
             if (pollRef.current) clearInterval(pollRef.current);
             setProgress({ found, fetched, total: fetched });
             toast.success(`${fetched.toLocaleString()} publications ready.`);
-            setTimeout(() => router.push(`/projects/${projectId}/results`), 500);
+            redirectTimeoutRef.current = setTimeout(() => router.push(`/projects/${projectId}/results`), 500);
           } else if (s.data.status === "failed") {
             if (pollRef.current) clearInterval(pollRef.current);
             setStatus("Search failed.");

@@ -14,15 +14,26 @@ from app.models import (
     Publication, SearchQuery, QueryStatus,
 )
 from app.models.methodology import MethodologyStep
-from app.services.cleaning import extract_country, normalize_name
+from app.services.cleaning import (
+    _normalize_doi,
+    deduplicate_cross_source,
+    extract_country,
+    normalize_name,
+)
 from app.services.icite import ICiteClient
 from app.workers.celery_app import celery_app
 
 
-def _persist_records(db, records: list[RawRecord], query_id: int) -> int:
-    """Persist a batch of RawRecords to the database. Returns count persisted."""
+def _persist_records(db, records: list[RawRecord], query_id: int) -> tuple[int, list[str]]:
+    """Persist a batch of RawRecords. Returns (count_persisted, persisted_pmids).
+
+    Each record is wrapped in a SAVEPOINT so a single bad row does not roll back
+    its siblings in the same batch.
+    """
     persisted = 0
+    persisted_pmids: list[str] = []
     for record in records:
+        sp = db.begin_nested()
         try:
             journal = None
             if record.journal_name:
@@ -36,13 +47,20 @@ def _persist_records(db, records: list[RawRecord], query_id: int) -> int:
                     db.add(journal)
                     db.flush()
 
-            existing = db.query(Publication).filter(Publication.pmid == record.source_id).first()
+            normalized_doi = _normalize_doi(record.external_ids.get("doi") or record.doi)
+            existing_q = db.query(Publication).filter(Publication.pmid == record.source_id)
+            if normalized_doi:
+                existing_q = db.query(Publication).filter(
+                    (Publication.pmid == record.source_id) | (Publication.doi == normalized_doi)
+                )
+            existing = existing_q.first()
             if existing:
+                sp.rollback()
                 continue
 
             pub = Publication(
                 pmid=record.source_id,
-                doi=record.doi,
+                doi=normalized_doi,
                 title=record.title,
                 abstract=record.abstract,
                 year=record.year,
@@ -118,14 +136,16 @@ def _persist_records(db, records: list[RawRecord], query_id: int) -> int:
                     db.flush()
                 pub.keywords.append(kw)
 
+            sp.commit()
             persisted += 1
+            persisted_pmids.append(pub.pmid)
         except Exception as exc:
             logger.warning("Skipping record %s: %s", record.source_id, exc)
-            db.rollback()
+            sp.rollback()
             continue
 
     db.commit()
-    return persisted
+    return persisted, persisted_pmids
 
 
 def _log_step(db, query_id: int, step_order: int, phase: str, source: str,
@@ -195,11 +215,19 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
                   parameters={"query": query.query_string, "database": source,
                               "max_results": max_results, "capped": total_found > max_results})
 
-        # Phase 2: Fetch + persist in chunks (flat memory)
+        # Phase 2: Fetch + cross-source dedup + persist in chunks
         persisted = 0
+        all_persisted_pmids: list[str] = []
+        cross_source_removed = 0
+        dedup_breakdown: dict[str, int] = {"doi": 0, "pmid": 0}
         async for records in adapter.fetch_stream(all_ids, batch_size=FETCH_BATCH_SIZE):
-            count = _persist_records(db, records, query_id)
+            deduped, batch_removed, batch_breakdown = deduplicate_cross_source(records)
+            cross_source_removed += batch_removed
+            for k, v in batch_breakdown.items():
+                dedup_breakdown[k] = dedup_breakdown.get(k, 0) + v
+            count, batch_pmids = _persist_records(db, deduped, query_id)
             persisted += count
+            all_persisted_pmids.extend(batch_pmids)
             task.update_state(
                 state="PROGRESS",
                 meta={"phase": "fetch", "current": persisted, "total": len(all_ids)},
@@ -210,17 +238,23 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
                   records_in=len(all_ids), records_out=persisted,
                   parameters={"batch_size": FETCH_BATCH_SIZE})
 
-        # Phase 3: iCite enrichment (PubMed-sourced records only)
-        if source == "pubmed":
-            pmids = [rid for rid in all_ids]
-            citation_counts = await icite.get_citations(pmids)
+        if cross_source_removed:
+            _log_step(db, query_id, step_order=3, phase="dedup", source=source,
+                      action="Cross-source deduplication on DOI and PMID",
+                      records_in=persisted + cross_source_removed, records_out=persisted,
+                      parameters={"method": "exact-match", "fields": "doi,pmid",
+                                  "removed_by": dedup_breakdown})
+
+        # Phase 4: iCite enrichment (PubMed-sourced records only)
+        if source == "pubmed" and all_persisted_pmids:
+            citation_counts = await icite.get_citations(all_persisted_pmids)
             for pmid_str, count in citation_counts.items():
                 pub = db.query(Publication).filter(Publication.pmid == pmid_str).first()
                 if pub:
                     pub.citation_count = count
             db.commit()
             enriched_count = len(citation_counts)
-            _log_step(db, query_id, step_order=3, phase="enrichment", source="icite",
+            _log_step(db, query_id, step_order=4, phase="enrichment", source="icite",
                       action="iCite citation count enrichment",
                       records_in=persisted, records_out=persisted,
                       parameters={"source": "NIH iCite", "enriched": enriched_count,
@@ -228,7 +262,8 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
 
         query.status = QueryStatus.completed
         query.result_count = persisted
-        query.duplicate_count = (query.raw_result_count or 0) - persisted
+        ids_submitted_for_fetch = len(all_ids)
+        query.duplicate_count = max(0, ids_submitted_for_fetch - persisted)
         query.executed_at = datetime.now(timezone.utc)
         db.commit()
     except SoftTimeLimitExceeded:

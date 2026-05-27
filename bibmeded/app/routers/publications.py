@@ -1,8 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
-from app.models import Publication, SearchProject, SearchQuery
-from app.schemas.publication import PublicationListResponse, PublicationResponse
+from app.models import Publication, SearchProject
+from app.schemas.publication import (
+    BulkExcludeRequest,
+    PublicationListResponse,
+    PublicationResponse,
+)
 
 router = APIRouter(prefix="/api/projects/{project_id}/publications", tags=["publications"])
 
@@ -39,9 +43,8 @@ def list_publications(project_id: int, sort_by: str = Query("year", enum=["year"
     return PublicationListResponse(total=total, excluded_count=excluded_count, items=items)
 
 @router.post("/bulk-exclude")
-def bulk_exclude(project_id: int, body: dict, db: Session = Depends(get_db)):
+def bulk_exclude(project_id: int, body: BulkExcludeRequest, db: Session = Depends(get_db)):
     """Exclude all publications with citation_count below threshold."""
-    threshold = body.get("citation_threshold", 0)
     project = db.get(SearchProject, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -53,7 +56,7 @@ def bulk_exclude(project_id: int, body: dict, db: Session = Depends(get_db)):
         .filter(
             Publication.query_id.in_(query_ids),
             Publication.excluded == False,
-            (Publication.citation_count == None) | (Publication.citation_count <= threshold),
+            (Publication.citation_count == None) | (Publication.citation_count <= body.citation_threshold),
         )
         .update({Publication.excluded: True}, synchronize_session="fetch")
     )
@@ -62,8 +65,14 @@ def bulk_exclude(project_id: int, body: dict, db: Session = Depends(get_db)):
 
 @router.patch("/{publication_id}/exclude")
 def toggle_exclude(project_id: int, publication_id: int, db: Session = Depends(get_db)):
+    project = db.get(SearchProject, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
     pub = db.get(Publication, publication_id)
     if not pub:
+        raise HTTPException(status_code=404, detail="Publication not found")
+    project_query_ids = {q.id for q in project.queries}
+    if pub.query_id not in project_query_ids:
         raise HTTPException(status_code=404, detail="Publication not found")
     pub.excluded = not pub.excluded
     db.commit()

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { analysisApi, projectsApi, Project } from "@/lib/api";
 import toast from "react-hot-toast";
 import { ForceGraph } from "@/components/force-graph";
@@ -17,6 +17,7 @@ const TABS = [
 
 export default function Dashboard() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const projectId = Number(params.id);
   const [activeTab, setActiveTab] = useState("overview");
   const [project, setProject] = useState<Project | null>(null);
@@ -70,7 +71,7 @@ export default function Dashboard() {
         <span className="material-symbols-outlined text-6xl text-on-surface-subtle mb-4 block">query_stats</span>
         <h3 className="text-xl font-bold text-on-surface mb-2" style={{fontFamily:"var(--font-display)"}}>No Publications to Analyze</h3>
         <p className="text-sm text-on-surface-muted mb-6">Run a search first to populate results, then come back here for analysis.</p>
-        <button onClick={() => window.location.href = `/projects/${projectId}/search`}
+        <button onClick={() => router.push(`/projects/${projectId}/search`)}
           className="px-6 py-2.5 bg-primary text-white rounded-lg font-bold text-sm hover:opacity-90 transition">
           Go to Search
         </button>

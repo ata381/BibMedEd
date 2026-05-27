@@ -24,7 +24,7 @@ interface ForceGraphProps {
 
 export function ForceGraph({ nodes, links, width = 400, height = 350 }: ForceGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const maxNodeSize = Math.max(...nodes.map(n => n.size ?? 1), 1);
+  const maxNodeSize = nodes.reduce((m, n) => Math.max(m, n.size ?? 1), 1);
 
   // Derive the auto-threshold during render — no setState in effect.
   // For large graphs (>200 nodes) we cap to the 100th-densest node so the
@@ -63,8 +63,8 @@ export function ForceGraph({ nodes, links, width = 400, height = 350 }: ForceGra
     const simNodes = filtered.nodes.map(n => ({ ...n }));
     const simLinks = filtered.links.map(l => ({ ...l }));
 
-    const maxWeight = Math.max(...simLinks.map(l => l.weight ?? 1), 1);
-    const maxSize = Math.max(...simNodes.map(n => n.size ?? 1), 1);
+    const maxWeight = simLinks.reduce((m, l) => Math.max(m, l.weight ?? 1), 1);
+    const maxSize = simNodes.reduce((m, n) => Math.max(m, n.size ?? 1), 1);
 
     const simulation = d3.forceSimulation(simNodes as d3.SimulationNodeDatum[])
       .force("link", d3.forceLink(simLinks as d3.SimulationLinkDatum<d3.SimulationNodeDatum>[])

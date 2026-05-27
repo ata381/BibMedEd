@@ -45,11 +45,3 @@ class ProjectResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     model_config = {"from_attributes": True}
-
-class ProjectListResponse(BaseModel):
-    id: int
-    name: str
-    description: str | None
-    created_at: datetime
-    publication_count: int = 0
-    model_config = {"from_attributes": True}

@@ -169,8 +169,13 @@ def export_methodology(project_id: int, db: Session = Depends(get_db)):
                 lines.append(f"    Retrieved: {step.records_out} of {step.records_in} ({step.records_affected} unavailable)")
             elif step.phase == "dedup":
                 method = step.parameters.get("method", "unknown")
-                fields = step.parameters.get("fields", step.parameters.get("field", ""))
-                lines.append(f"    Method: {method} on {fields}")
+                fields = step.parameters.get("fields") or step.parameters.get("field") or ""
+                lines.append(f"    Method: {method} on {fields}" if fields else f"    Method: {method}")
+                removed_by = step.parameters.get("removed_by")
+                if isinstance(removed_by, dict) and removed_by:
+                    breakdown = ", ".join(f"{k}={v}" for k, v in removed_by.items() if v)
+                    if breakdown:
+                        lines.append(f"    Removed by field: {breakdown}")
                 lines.append(f"    Removed: {step.records_affected} duplicates ({step.records_in} → {step.records_out})")
             elif step.phase == "enrichment":
                 source_name = step.parameters.get("source", "")

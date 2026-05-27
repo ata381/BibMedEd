@@ -141,6 +141,7 @@ class CrossrefAdapter(BaseSourceAdapter):
             journal_issn=journal_issn,
             publication_type=item.get("type"),
             authors=authors,
+            mesh_terms=[],
             keywords=keywords,
             references=references,
             external_ids=external_ids,

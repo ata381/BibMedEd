@@ -1,12 +1,17 @@
-from pydantic import BaseModel
+from typing import Literal
+
+from pydantic import BaseModel, Field
+
+AdapterSource = Literal["pubmed", "openalex", "crossref"]
+
 
 class SearchRequest(BaseModel):
-    query_string: str
-    database: str = "pubmed"
-    source: str = "pubmed"
+    query_string: str = Field(min_length=1, max_length=10_000)
+    source: AdapterSource = "pubmed"
     year_start: str | None = None
     year_end: str | None = None
-    max_results: int = 2000
+    max_results: int = Field(default=2000, ge=1, le=10_000)
+
 
 class SearchStatusResponse(BaseModel):
     query_id: int

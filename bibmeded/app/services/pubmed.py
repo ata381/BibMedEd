@@ -3,6 +3,17 @@ from dataclasses import dataclass, field
 import httpx
 from lxml import etree
 
+_SAFE_XML_PARSER = etree.XMLParser(
+    resolve_entities=False,
+    no_network=True,
+    load_dtd=False,
+    huge_tree=False,
+)
+
+
+def _parse_xml(text: str) -> etree._Element:
+    return etree.fromstring(text.encode(), parser=_SAFE_XML_PARSER)
+
 @dataclass
 class PubMedAuthor:
     name: str
@@ -64,7 +75,7 @@ class PubMedClient:
         await self._throttle()
         response = await self._client.get(ESEARCH_URL, params=params)
         response.raise_for_status()
-        root = etree.fromstring(response.text.encode())
+        root = _parse_xml(response.text)
         count = int(root.findtext("Count", "0"))
         pmids = [id_el.text for id_el in root.findall(".//IdList/Id") if id_el.text]
         return SearchResult(total_count=count, pmids=pmids)
@@ -89,7 +100,7 @@ class PubMedClient:
         return all_records
 
     def _parse_records(self, xml_text: str) -> list[PubMedRecord]:
-        root = etree.fromstring(xml_text.encode())
+        root = _parse_xml(xml_text)
         records = []
         for article in root.findall(".//PubmedArticle"):
             citation = article.find("MedlineCitation")

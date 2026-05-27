@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+  baseURL: API_BASE_URL,
 });
 
 // Types
@@ -13,6 +15,13 @@ export interface Project {
   date_range_end: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ProjectUpdateInput {
+  name?: string;
+  description?: string | null;
+  date_range_start?: string | null;
+  date_range_end?: string | null;
 }
 
 export interface Publication {
@@ -58,6 +67,8 @@ export const projectsApi = {
   get: (id: number) => api.get<Project>(`/api/projects/${id}`),
   create: (data: { name: string; description?: string; date_range_start?: string; date_range_end?: string }) =>
     api.post<Project>('/api/projects', data),
+  update: (id: number, data: ProjectUpdateInput) =>
+    api.patch<Project>(`/api/projects/${id}`, data),
   delete: (id: number) => api.delete(`/api/projects/${id}`),
 };
 
@@ -92,13 +103,13 @@ export const adaptersApi = {
 
 export const exportApi = {
   csvUrl: (projectId: number) =>
-    `${api.defaults.baseURL}/api/projects/${projectId}/export/csv`,
+    `${API_BASE_URL}/api/projects/${projectId}/export/csv`,
   risUrl: (projectId: number) =>
-    `${api.defaults.baseURL}/api/projects/${projectId}/export/ris`,
+    `${API_BASE_URL}/api/projects/${projectId}/export/ris`,
   methodologyUrl: (projectId: number) =>
-    `${api.defaults.baseURL}/api/projects/${projectId}/export/methodology`,
+    `${API_BASE_URL}/api/projects/${projectId}/export/methodology`,
   prismaUrl: (projectId: number) =>
-    `${api.defaults.baseURL}/api/projects/${projectId}/export/prisma`,
+    `${API_BASE_URL}/api/projects/${projectId}/export/prisma`,
 };
 
 export default api;

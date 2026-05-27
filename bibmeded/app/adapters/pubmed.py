@@ -19,15 +19,16 @@ class PubMedAdapter(BaseSourceAdapter):
         return [self._to_raw(r) for r in records]
 
     def _to_raw(self, r: PubMedRecord) -> RawRecord:
+        doi = r.doi.lower() if r.doi else None
         external_ids: dict[str, str] = {"pmid": r.pmid}
-        if r.doi:
-            external_ids["doi"] = r.doi
+        if doi:
+            external_ids["doi"] = doi
         return RawRecord(
             source_id=r.pmid,
             source_database="pubmed",
             title=r.title,
             abstract=r.abstract,
-            doi=r.doi,
+            doi=doi,
             year=r.year,
             journal_name=r.journal_name,
             journal_issn=r.journal_issn,

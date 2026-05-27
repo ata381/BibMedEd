@@ -38,6 +38,7 @@ class SearchQuery(Base):
     result_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     raw_result_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     duplicate_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     executed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     project: Mapped["SearchProject"] = relationship(back_populates="queries")
     publications: Mapped[list["Publication"]] = relationship(cascade="all, delete-orphan")

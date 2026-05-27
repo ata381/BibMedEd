@@ -84,7 +84,7 @@ class OpenAlexAdapter(BaseSourceAdapter):
             external_ids["pmid"] = str(raw_ids["pmid"]).split("/")[-1]
         if "doi" in raw_ids:
             doi_str = str(raw_ids["doi"])
-            external_ids["doi"] = doi_str.replace("https://doi.org/", "")
+            external_ids["doi"] = doi_str.replace("https://doi.org/", "").lower()
 
         primary_loc = work.get("primary_location") or {}
         source = primary_loc.get("source") or {}
@@ -114,6 +114,7 @@ class OpenAlexAdapter(BaseSourceAdapter):
             journal_issn=source.get("issn_l"),
             publication_type=work.get("type"),
             authors=authors,
+            mesh_terms=[],
             keywords=keywords,
             references=references,
             external_ids=external_ids,

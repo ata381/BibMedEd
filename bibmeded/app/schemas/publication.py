@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class AuthorResponse(BaseModel):
     id: int
@@ -24,3 +24,7 @@ class PublicationListResponse(BaseModel):
     total: int
     excluded_count: int = 0
     items: list[PublicationResponse]
+
+
+class BulkExcludeRequest(BaseModel):
+    citation_threshold: int = Field(default=0, ge=0)

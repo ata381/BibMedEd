@@ -70,6 +70,18 @@ export default function ResultsReview() {
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
+  const pageWindow = (() => {
+    const windowSize = 5;
+    if (totalPages <= windowSize) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const half = Math.floor(windowSize / 2);
+    let start = Math.max(1, page - half);
+    const end = Math.min(totalPages, start + windowSize - 1);
+    start = Math.max(1, end - windowSize + 1);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  })();
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
       {/* Editorial Header */}
@@ -227,15 +239,23 @@ export default function ResultsReview() {
             <button onClick={() => setPage(Math.max(1, page - 1))} className="p-2 hover:bg-surface-hover rounded-full transition-colors">
               <span className="material-symbols-outlined text-sm">chevron_left</span>
             </button>
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => i + 1).map((p) => (
+            {pageWindow[0] > 1 && (
+              <>
+                <button onClick={() => setPage(1)} className="px-4 py-1.5 hover:bg-surface-hover rounded-full text-xs font-bold">1</button>
+                {pageWindow[0] > 2 && <span className="px-2 text-on-surface-subtle text-xs">...</span>}
+              </>
+            )}
+            {pageWindow.map((p) => (
               <button key={p} onClick={() => setPage(p)}
                 className={`px-4 py-1.5 rounded-full text-xs font-bold ${page === p ? "bg-primary text-white" : "hover:bg-surface-hover"}`}>
                 {p}
               </button>
             ))}
-            {totalPages > 5 && <span className="px-2 text-on-surface-subtle text-xs">...</span>}
-            {totalPages > 5 && (
-              <button onClick={() => setPage(totalPages)} className="px-4 py-1.5 hover:bg-surface-hover rounded-full text-xs font-bold">{totalPages}</button>
+            {pageWindow[pageWindow.length - 1] < totalPages && (
+              <>
+                {pageWindow[pageWindow.length - 1] < totalPages - 1 && <span className="px-2 text-on-surface-subtle text-xs">...</span>}
+                <button onClick={() => setPage(totalPages)} className="px-4 py-1.5 hover:bg-surface-hover rounded-full text-xs font-bold">{totalPages}</button>
+              </>
             )}
             <button onClick={() => setPage(Math.min(totalPages, page + 1))} className="p-2 hover:bg-surface-hover rounded-full transition-colors">
               <span className="material-symbols-outlined text-sm">chevron_right</span>
