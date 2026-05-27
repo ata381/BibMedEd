@@ -59,7 +59,7 @@ jobs:
         run: npm ci || npm install
 
       - name: Type check
-        run: npx tsc --noEmit || true
+        run: npx tsc --noEmit
 
       - name: Build
         run: npm run build
