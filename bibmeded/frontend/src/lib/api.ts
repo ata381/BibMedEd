@@ -42,7 +42,7 @@ export interface AnalysisResult {
   id: number;
   project_id: number;
   analysis_type: string;
-  results: any;
+  results: Record<string, unknown>;
   created_at: string;
 }
 

@@ -54,14 +54,14 @@ export default function Dashboard() {
   const cite = analyses.citations || {};
   const kw = analyses.keywords || {};
 
-  const yearlyCounts = (pub as any).yearly_counts as Array<{year:number;count:number}> || [];
-  const topAuthors = (auth as any).top_authors as Array<{name:string;pub_count:number;citation_sum:number}> || [];
-  const mostCited = (cite as any).most_cited as Array<{title:string;pmid:string;year:number;citation_count:number}> || [];
-  const topKeywords = (kw as any).top_keywords as Array<{term:string;count:number}> || [];
-  const coauthorNetwork = (auth as any).coauthorship_network as {nodes: Array<{id:string;label?:string;size?:number}>; links: Array<{source:string;target:string;weight?:number}>} || {nodes:[], links:[]};
-  const totalPubs = (pub as any).total || 0;
-  const totalAuthors = (auth as any).total_authors || 0;
-  const totalCitations = (cite as any).total_citations || 0;
+  const yearlyCounts = (pub.yearly_counts as Array<{year:number;count:number}>) || [];
+  const topAuthors = (auth.top_authors as Array<{name:string;pub_count:number;citation_sum:number}>) || [];
+  const mostCited = (cite.most_cited as Array<{title:string;pmid:string;year:number;citation_count:number}>) || [];
+  const topKeywords = (kw.top_keywords as Array<{term:string;count:number}>) || [];
+  const coauthorNetwork = (auth.coauthorship_network as {nodes: Array<{id:string;label?:string;size?:number}>; links: Array<{source:string;target:string;weight?:number}>}) || {nodes:[], links:[]};
+  const totalPubs = (pub.total as number) || 0;
+  const totalAuthors = (auth.total_authors as number) || 0;
+  const totalCitations = (cite.total_citations as number) || 0;
   const maxYearCount = Math.max(...yearlyCounts.map(y => y.count), 1);
 
   if (totalPubs === 0 && !loading) return (
