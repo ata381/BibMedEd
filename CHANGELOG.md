@@ -4,8 +4,15 @@ All notable changes to BibMedEd are recorded here. This project follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+- **CrossRef adapter** (`app/adapters/crossref.py`). Authoritative DOI metadata source — closes [#6](https://github.com/ata381/BibMedEd/issues/6). Adds significant cross-source deduplication leverage because most other adapters carry a DOI but few normalise it; CrossRef hands you the canonical lowercase form. Polite-pool `mailto`, cursor pagination, references list, year-extraction fallback chain.
+- ESLint flat-config wired into the frontend CI; closes [#25](https://github.com/ata381/BibMedEd/issues/25). React 19 Compiler warnings tracked in [#26](https://github.com/ata381/BibMedEd/issues/26).
+- `tsc --noEmit` is strict in CI (was silently swallowing errors).
+- Branch protection on `master` requiring all 5 CI checks, linear history, conversation resolution.
+- Dependabot (pip + npm + actions, weekly), CodeQL (Python + TypeScript), JOSS draft-pdf workflow on every paper change.
+
 ### Planned
-- Adapters: CrossRef, Europe PMC, Semantic Scholar, arXiv, DOAJ, OpenCitations, CORE, BASE, Lens.org — see [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md).
+- Adapters: Europe PMC, Semantic Scholar, arXiv, DOAJ, OpenCitations, CORE, BASE, Lens.org — see [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md).
 - PRISMA flow-diagram PNG/SVG export ([#15](https://github.com/ata381/BibMedEd/issues/15)).
 - i18n scaffold + Turkish locale ([#16](https://github.com/ata381/BibMedEd/issues/16)).
 - Search CLI `--dry-run` for cost estimation ([#17](https://github.com/ata381/BibMedEd/issues/17)).

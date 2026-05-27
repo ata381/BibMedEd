@@ -105,6 +105,20 @@ The shipped OpenAlex adapter (`app/adapters/openalex.py`) is a complete real-wor
 
 Read the full source: [`app/adapters/openalex.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/app/adapters/openalex.py)
 
+## Walkthrough: CrossRef Adapter
+
+The CrossRef adapter (`app/adapters/crossref.py`) shows the same pattern applied to a metadata-only source that's the canonical DOI resolver. CrossRef contributes huge cross-source dedup leverage because most other adapters carry a DOI but few normalise it consistently.
+
+Patterns worth noting:
+
+1. **Polite pool via `mailto`** — CrossRef ranks polite-pool requests above anonymous ones. The adapter accepts an `email` constructor arg and appends `mailto=` to every request when set.
+2. **Cursor pagination via `cursor=*`** — `search_paginated()` walks `next-cursor` exactly as OpenAlex does; CrossRef's deep-paging API uses the same idiom.
+3. **DOI normalisation** — `_to_raw()` lower-cases the DOI both as `source_id` storage convention and in `external_ids["doi"]` so cross-source dedup matches the same DOI emitted by PubMed or OpenAlex regardless of case.
+4. **Multi-fallback year extraction** — `published-print` → `published-online` → `issued` → `created`. CrossRef is inconsistent about which key is populated for a given record.
+5. **References get the same lowercase treatment** — `references` list is populated from `reference[].DOI` and lowercased, so downstream citation analyses can cross-link to other CrossRef records without case mismatches.
+
+Read the full source: [`app/adapters/crossref.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/app/adapters/crossref.py) — and the tests at [`tests/test_adapters_crossref.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/tests/test_adapters_crossref.py) demonstrate the fixture-driven testing convention every new adapter PR should follow.
+
 ## Step-by-Step: Adding a New Source
 
 1. Create `app/adapters/mysource.py`

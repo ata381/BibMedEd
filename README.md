@@ -35,7 +35,7 @@
 
 ## Features
 
-- **Multi-database search** — PubMed and OpenAlex built-in, extensible to any source via plug-and-play adapters
+- **Multi-database search** — PubMed, OpenAlex, and CrossRef built-in, extensible to any source via plug-and-play adapters
 - **Automated deduplication** — Cross-database dedup by DOI and PMID
 - **Six analysis modules** — Publications, authors, countries, keywords, citations, journals
 - **Interactive visualizations** — D3.js co-authorship and keyword co-occurrence network graphs
