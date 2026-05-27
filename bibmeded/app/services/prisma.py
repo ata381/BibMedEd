@@ -18,6 +18,19 @@ from typing import Iterable
 from app.models.methodology import MethodologyStep
 
 
+_EXCLUSION_REASON_LABELS = {
+    "wrong_study_design": "Wrong study design",
+    "wrong_population": "Wrong population",
+    "wrong_intervention": "Wrong intervention",
+    "wrong_outcome": "Wrong outcome",
+    "not_peer_reviewed": "Not peer-reviewed",
+    "non_english": "Non-English",
+    "duplicate": "Duplicate (manual)",
+    "fulltext_unavailable": "Full-text unavailable",
+    "other": "Other / unspecified",
+}
+
+
 @dataclass
 class PrismaCounts:
     """Counts threaded through a PRISMA 2020 flow diagram."""
@@ -27,6 +40,7 @@ class PrismaCounts:
     other_removed_before_screening: int = 0
     screened: int = 0
     excluded_in_screening: int = 0
+    excluded_by_reason: dict[str, int] = field(default_factory=dict)
     included: int = 0
 
     @property
@@ -34,7 +48,10 @@ class PrismaCounts:
         return sum(self.identified_by_source.values())
 
 
-def compute_counts(steps: Iterable[MethodologyStep]) -> PrismaCounts:
+def compute_counts(
+    steps: Iterable[MethodologyStep],
+    exclusion_summary: dict[str | None, int] | None = None,
+) -> PrismaCounts:
     """Reduce a project's methodology steps to PRISMA flow-diagram counts.
 
     The methodology log is structured as a sequence of phases:
@@ -56,6 +73,21 @@ def compute_counts(steps: Iterable[MethodologyStep]) -> PrismaCounts:
             counts.other_removed_before_screening += step.records_affected
         elif step.phase == "exclusion":
             counts.excluded_in_screening += step.records_affected
+
+    if exclusion_summary:
+        # Surface PRISMA 2020 item 17 — per-reason breakdown of manual exclusions.
+        cleaned: dict[str, int] = {}
+        for reason, n in exclusion_summary.items():
+            if not n:
+                continue
+            key = reason or "other"
+            cleaned[key] = cleaned.get(key, 0) + n
+        counts.excluded_by_reason = cleaned
+        # If the methodology log didn't record an explicit `exclusion` step but rows in
+        # the DB are flagged excluded, surface them in the diagram anyway.
+        total_from_reasons = sum(cleaned.values())
+        if total_from_reasons > counts.excluded_in_screening:
+            counts.excluded_in_screening = total_from_reasons
 
     pre_screening = (
         counts.total_identified
@@ -211,10 +243,19 @@ def _layout(counts: PrismaCounts) -> list[_MainBox]:
 
     side = None
     if counts.excluded_in_screening:
+        if counts.excluded_by_reason:
+            # PRISMA 2020 item 17 — show per-reason breakdown.
+            reason_lines = [
+                f"{_EXCLUSION_REASON_LABELS.get(r, r)}: {n}"
+                for r, n in sorted(counts.excluded_by_reason.items(), key=lambda kv: -kv[1])
+                if n
+            ]
+        else:
+            reason_lines = ["Below citation threshold or", "manual exclusion"]
         side = _SideBox(
-            title=f"Excluded ({counts.excluded_in_screening})",
-            lines=["Below citation threshold or", "manual exclusion"],
-            height=box_height(2),
+            title=f"Records excluded ({counts.excluded_in_screening})",
+            lines=reason_lines,
+            height=box_height(len(reason_lines)),
         )
     screened = _MainBox(
         title=f"Records screened ({counts.screened})",

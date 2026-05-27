@@ -131,6 +131,28 @@ def test_render_svg_escapes_project_name():
     assert "&lt;script&gt;" in svg
 
 
+def test_compute_counts_threads_exclusion_summary():
+    """The PRISMA diagram should surface per-reason exclusion counts (PRISMA 2020 item 17)."""
+    summary = {"non_english": 5, "not_peer_reviewed": 3, None: 0, "other": 1}
+    counts = compute_counts([], exclusion_summary=summary)
+    assert counts.excluded_by_reason == {"non_english": 5, "not_peer_reviewed": 3, "other": 1}
+    # Falls back to sum when no explicit exclusion step exists.
+    assert counts.excluded_in_screening == 9
+
+
+def test_render_svg_shows_per_reason_breakdown_in_side_box():
+    counts = PrismaCounts(
+        identified_by_source={"pubmed": 100},
+        screened=100,
+        excluded_in_screening=8,
+        excluded_by_reason={"non_english": 5, "not_peer_reviewed": 3},
+        included=92,
+    )
+    svg = render_svg(counts, "P")
+    assert "Non-English: 5" in svg
+    assert "Not peer-reviewed: 3" in svg
+
+
 def test_render_svg_omits_side_box_when_no_exclusions():
     counts = PrismaCounts(
         identified_by_source={"pubmed": 100},

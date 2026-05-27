@@ -112,9 +112,10 @@ def export_json(project_id: int, db: Session = Depends(get_db)):
 @router.get("/prisma")
 def export_prisma(project_id: int, db: Session = Depends(get_db)):
     project, steps = _get_project_and_steps(project_id, db)
+    exclusion_summary = _get_exclusion_summary(project_id, db)
     filename = f"{slugify(project.name)}-prisma-{date.today().isoformat()}.svg"
     return StreamingResponse(
-        iter([generate_prisma_svg(project.name, steps)]),
+        iter([generate_prisma_svg(project.name, steps, exclusion_summary)]),
         media_type="image/svg+xml",
         headers=_attachment(filename),
     )

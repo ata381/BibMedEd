@@ -214,8 +214,12 @@ def generate_methodology(
     return "\n".join(lines)
 
 
-def generate_prisma_svg(project_name: str, steps: list[MethodologyStep]) -> str:
-    counts = compute_counts(steps)
+def generate_prisma_svg(
+    project_name: str,
+    steps: list[MethodologyStep],
+    exclusion_summary: dict[str | None, int] | None = None,
+) -> str:
+    counts = compute_counts(steps, exclusion_summary=exclusion_summary)
     return render_svg(counts, project_name)
 
 
@@ -234,7 +238,7 @@ def generate_bundle(
         zf.writestr(f"{slug}-{stamp}.ris", generate_ris(pubs))
         zf.writestr(f"{slug}-{stamp}.json", generate_json(project_name, pubs))
         zf.writestr(f"{slug}-methodology-{stamp}.txt", generate_methodology(project_name, steps, exclusion_summary))
-        zf.writestr(f"{slug}-prisma-{stamp}.svg", generate_prisma_svg(project_name, steps))
+        zf.writestr(f"{slug}-prisma-{stamp}.svg", generate_prisma_svg(project_name, steps, exclusion_summary))
         manifest = (
             f"BibMedEd export bundle\n"
             f"Project: {project_name}\n"
