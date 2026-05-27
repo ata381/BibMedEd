@@ -4,12 +4,56 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import { exportApi } from "@/lib/api";
 import toast from "react-hot-toast";
+import {
+  Badge,
+  Button,
+  Card,
+  CardHeader,
+  EmptyState,
+  Skeleton,
+  Tabs,
+  type TabItem,
+} from "@/components/ui";
+
+type DataFormat = "csv" | "ris";
+type Tab = "data" | "methodology";
+
+const TABS: TabItem<Tab>[] = [
+  { value: "data", label: "Data export", icon: "table_chart" },
+  { value: "methodology", label: "Methodology & PRISMA", icon: "rule" },
+];
+
+const FORMAT_DETAILS: Record<
+  DataFormat,
+  { title: string; subtitle: string; icon: string; bullets: string[] }
+> = {
+  csv: {
+    title: "CSV — spreadsheet",
+    subtitle: "Excel · Google Sheets · pandas · R",
+    icon: "table_chart",
+    bullets: [
+      "Complete metadata (PMID, DOI, authors, journal, year)",
+      "Citation counts and keyword annotations",
+      "Excel / Google Sheets compatible",
+    ],
+  },
+  ris: {
+    title: "RIS — reference manager",
+    subtitle: "Zotero · EndNote · Mendeley",
+    icon: "menu_book",
+    bullets: [
+      "Standard interchange format for reference managers",
+      "Authors, abstract, keywords, DOI preserved",
+      "Imports cleanly into Zotero, EndNote, Mendeley",
+    ],
+  },
+};
 
 export default function ExportManager() {
   const params = useParams<{ id: string }>();
   const projectId = Number(params.id);
-  const [dataFormat, setDataFormat] = useState<"csv" | "ris">("csv");
-  const [activeTab, setActiveTab] = useState<"data" | "methodology">("data");
+  const [activeTab, setActiveTab] = useState<Tab>("data");
+  const [dataFormat, setDataFormat] = useState<DataFormat>("csv");
   const [methodologyText, setMethodologyText] = useState<string | null>(null);
   const [loadingMethodology, setLoadingMethodology] = useState(false);
 
@@ -27,180 +71,238 @@ export default function ExportManager() {
     }
   };
 
+  const handleTabChange = (next: Tab) => {
+    setActiveTab(next);
+    if (next === "methodology") loadMethodology();
+  };
+
   const handleDataExport = () => {
     const url = dataFormat === "csv" ? exportApi.csvUrl(projectId) : exportApi.risUrl(projectId);
     const newWindow = window.open(url, "_blank", "noopener,noreferrer");
-    if (newWindow) {
-      newWindow.opener = null;
-    }
-    toast.success(`${dataFormat.toUpperCase()} download started.`);
+    if (newWindow) newWindow.opener = null;
+    toast.success(`${dataFormat.toUpperCase()} download started`);
   };
 
+  const details = FORMAT_DETAILS[dataFormat];
+
   return (
-    <div className="max-w-7xl mx-auto px-4 py-12">
-      {/* Header */}
-      <header className="mb-12">
-        <div className="flex items-baseline gap-4 mb-2">
-          <h1 className="text-5xl font-extrabold text-[#001e4f] tracking-tight" style={{fontFamily:"'Manrope',sans-serif"}}>Export Manager</h1>
-          <span className="h-1 w-12 bg-[#76d6d5] rounded-full" />
+    <div className="py-10 space-y-10">
+      <header className="space-y-3">
+        <div className="flex items-center gap-3">
+          <Badge tone="primary">Step 4 · Export</Badge>
+          <span className="text-xs text-on-surface-subtle">Project #{projectId}</span>
         </div>
-        <p className="text-[#43474e] text-lg max-w-2xl leading-relaxed">
-          Export your curated bibliometric data. Select from formats optimized for reference managers, spreadsheets, or supplementary submission files.
+        <h1
+          className="text-4xl md:text-5xl font-extrabold text-primary tracking-tight"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          Export your dataset
+        </h1>
+        <p className="text-on-surface-muted text-base md:text-lg max-w-2xl leading-relaxed">
+          Reference-manager files, spreadsheet exports, and the PRISMA-ready methodology log — everything you need for a reproducible submission.
         </p>
+        <div className="pt-2">
+          <Tabs items={TABS} value={activeTab} onChange={handleTabChange} ariaLabel="Export categories" />
+        </div>
       </header>
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-8">
-        <button onClick={() => setActiveTab("data")}
-          className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "data" ? "bg-[#001e4f] text-white" : "bg-[#eceef0] text-[#43474e] hover:bg-[#e6e8ea]"}`}>
-          Data Export
-        </button>
-        <button onClick={() => { setActiveTab("methodology"); loadMethodology(); }}
-          className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "methodology" ? "bg-[#001e4f] text-white" : "bg-[#eceef0] text-[#43474e] hover:bg-[#e6e8ea]"}`}>
-          Methodology Log
-        </button>
-      </div>
-
       {activeTab === "data" && (
-      <>{/* Bento Grid */}
-      <div className="grid grid-cols-12 gap-8">
-        {/* Raw Data Export - Primary */}
-        <section className="col-span-12 lg:col-span-8 bg-white rounded-xl p-10 flex flex-col md:flex-row gap-10 items-center shadow-sm relative overflow-hidden group">
-          <div className="flex-1 space-y-6 z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#001e4f]/5 text-[#001e4f] text-[10px] font-bold uppercase tracking-widest">
-              <span className="material-symbols-outlined text-sm">auto_awesome</span> Recommended
-            </div>
-            <h2 className="text-3xl font-bold text-[#001e4f] leading-tight" style={{fontFamily:"'Manrope',sans-serif"}}>CSV Spreadsheet Export</h2>
-            <p className="text-[#43474e] text-sm leading-relaxed">
-              Full extraction of all publication metadata including authors, journals, citations, keywords, and abstracts in a single spreadsheet.
-            </p>
-            <ul className="space-y-3">
-              <li className="flex items-center gap-3 text-xs font-semibold text-[#191c1e]">
-                <span className="material-symbols-outlined text-[#76d6d5] scale-75" style={{fontVariationSettings:"'FILL' 1"}}>check_circle</span>
-                Complete metadata (PMID, DOI, Authors, Journal, Year)
-              </li>
-              <li className="flex items-center gap-3 text-xs font-semibold text-[#191c1e]">
-                <span className="material-symbols-outlined text-[#76d6d5] scale-75" style={{fontVariationSettings:"'FILL' 1"}}>check_circle</span>
-                Citation counts and keyword annotations
-              </li>
-              <li className="flex items-center gap-3 text-xs font-semibold text-[#191c1e]">
-                <span className="material-symbols-outlined text-[#76d6d5] scale-75" style={{fontVariationSettings:"'FILL' 1"}}>check_circle</span>
-                Excel / Google Sheets compatible
-              </li>
-            </ul>
-            <div className="pt-4">
-              <a href={exportApi.csvUrl(projectId)} download
-                className="inline-flex items-center gap-2 bg-[#001e4f] text-white px-8 py-3 rounded-lg font-bold text-sm hover:opacity-90 transition">
-                Download CSV <span className="material-symbols-outlined text-sm">download</span>
-              </a>
-            </div>
-          </div>
-          <div className="w-full md:w-64 aspect-[3/4] bg-[#eceef0] rounded-lg flex items-center justify-center">
-            <span className="material-symbols-outlined text-6xl text-[#c4c6cf]">table_chart</span>
-          </div>
-        </section>
+        <section id="panel-data" role="tabpanel" aria-labelledby="tab-data" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card padding="lg" className="lg:col-span-2">
+              <div className="flex flex-col md:flex-row gap-8 items-start">
+                <div className="flex-1 space-y-5">
+                  <Badge tone="success" size="md">
+                    <span className="material-symbols-outlined mr-1" aria-hidden="true" style={{ fontSize: "0.95em" }}>
+                      auto_awesome
+                    </span>
+                    Recommended for analysis
+                  </Badge>
+                  <div>
+                    <h2
+                      className="text-3xl font-bold text-on-surface leading-tight"
+                      style={{ fontFamily: "var(--font-display)" }}
+                    >
+                      {details.title}
+                    </h2>
+                    <p className="mt-1 text-sm text-on-surface-muted">{details.subtitle}</p>
+                  </div>
+                  <ul className="space-y-2.5" role="list">
+                    {details.bullets.map((b) => (
+                      <li key={b} className="flex items-start gap-2.5 text-sm text-on-surface">
+                        <span
+                          className="material-symbols-outlined text-success flex-shrink-0 mt-0.5"
+                          aria-hidden="true"
+                          style={{ fontSize: "1.15em", fontVariationSettings: "'FILL' 1" }}
+                        >
+                          check_circle
+                        </span>
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="pt-2 flex flex-wrap items-center gap-3">
+                    <Button onClick={handleDataExport} leadingIcon="download" size="lg">
+                      Download {dataFormat.toUpperCase()}
+                    </Button>
+                    <a
+                      href={exportApi.csvUrl(projectId)}
+                      download
+                      className="text-sm text-on-surface-muted underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-[color:var(--color-focus-ring)] focus-visible:outline-offset-2 rounded-sm"
+                    >
+                      Quick-grab CSV →
+                    </a>
+                  </div>
+                </div>
+                <div className="hidden md:flex w-48 aspect-[3/4] bg-surface-sunken rounded-[var(--radius-lg)] items-center justify-center">
+                  <span
+                    className="material-symbols-outlined text-on-surface-subtle"
+                    aria-hidden="true"
+                    style={{ fontSize: "72px" }}
+                  >
+                    {details.icon}
+                  </span>
+                </div>
+              </div>
+            </Card>
 
-        {/* RIS / Reference Manager */}
-        <section className="col-span-12 lg:col-span-4 bg-[#f2f4f6] rounded-xl p-8 flex flex-col justify-between shadow-sm">
-          <div className="space-y-4">
-            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-[#001e4f] shadow-sm">
-              <span className="material-symbols-outlined text-2xl">menu_book</span>
-            </div>
-            <h3 className="text-xl font-bold text-[#001e4f]" style={{fontFamily:"'Manrope',sans-serif"}}>Reference Manager</h3>
-            <p className="text-xs text-[#43474e] leading-relaxed">Export in formats compatible with EndNote, Zotero, and Mendeley.</p>
-            <div className="space-y-2 pt-2">
-              <label className="flex items-center gap-3 p-3 bg-white rounded-lg cursor-pointer" onClick={() => setDataFormat("csv")}>
-                <input type="radio" name="format" checked={dataFormat === "csv"} readOnly className="text-[#001e4f]" />
-                <span className="text-sm font-semibold flex-1">CSV (Spreadsheet)</span>
-              </label>
-              <label className="flex items-center gap-3 p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white" onClick={() => setDataFormat("ris")}>
-                <input type="radio" name="format" checked={dataFormat === "ris"} readOnly className="text-[#001e4f]" />
-                <span className="text-sm font-semibold flex-1">RIS (EndNote / Zotero)</span>
-              </label>
-            </div>
-          </div>
-          <button onClick={handleDataExport}
-            className="mt-8 w-full py-3 bg-[#191c1e] text-white rounded-lg font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#001e4f] transition">
-            Download {dataFormat.toUpperCase()} <span className="material-symbols-outlined text-sm">download</span>
-          </button>
-        </section>
-
-        {/* Info Banner */}
-        <section className="col-span-12 bg-white rounded-xl p-8 shadow-sm border-l-4 border-[#76d6d5]">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
-            <div className="flex-1 space-y-2">
-              <h3 className="text-xl font-bold text-[#001e4f]" style={{fontFamily:"'Manrope',sans-serif"}}>About Export Formats</h3>
-              <p className="text-sm text-[#43474e]">
-                <strong>CSV</strong> includes all metadata in a flat table — ideal for Excel, Google Sheets, or statistical analysis.
-                <strong className="ml-2">RIS</strong> is the standard interchange format for reference managers (EndNote, Zotero, Mendeley).
+            <Card padding="md">
+              <h3
+                className="text-sm font-bold uppercase tracking-[0.14em] text-on-surface-subtle mb-4"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                Format
+              </h3>
+              <div role="radiogroup" aria-label="Export format" className="space-y-2">
+                {(Object.keys(FORMAT_DETAILS) as DataFormat[]).map((fmt) => {
+                  const f = FORMAT_DETAILS[fmt];
+                  const active = dataFormat === fmt;
+                  return (
+                    <button
+                      key={fmt}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => setDataFormat(fmt)}
+                      className={[
+                        "w-full flex items-center gap-3 p-3 rounded-[var(--radius-md)]",
+                        "border text-left cursor-pointer",
+                        "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)]",
+                        "focus-visible:outline-2 focus-visible:outline-[color:var(--color-focus-ring)] focus-visible:outline-offset-2",
+                        active
+                          ? "border-primary bg-primary-container/60"
+                          : "border-divider hover:bg-surface-hover",
+                      ].join(" ")}
+                    >
+                      <span
+                        className="material-symbols-outlined text-primary"
+                        aria-hidden="true"
+                        style={{ fontSize: "1.4em" }}
+                      >
+                        {f.icon}
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-sm font-bold text-on-surface">{fmt.toUpperCase()}</span>
+                        <span className="block text-xs text-on-surface-muted truncate">{f.subtitle}</span>
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        className={[
+                          "w-4 h-4 rounded-full border-2 transition-colors",
+                          active ? "border-primary bg-primary" : "border-outline",
+                        ].join(" ")}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-4 text-xs text-on-surface-muted leading-relaxed">
+                Switching format updates the call-to-action on the left.
               </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-4 bg-[#f2f4f6] p-3 rounded-lg min-w-[180px]">
-                <span className="material-symbols-outlined text-[#002626]">table_chart</span>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-tighter opacity-60">CSV</p>
-                  <p className="text-sm font-bold">Spreadsheet</p>
-                </div>
-                <a href={exportApi.csvUrl(projectId)} download className="ml-auto p-2 hover:bg-[#e6e8ea] rounded-full transition-colors">
-                  <span className="material-symbols-outlined text-lg">download</span>
-                </a>
-              </div>
-              <div className="flex items-center gap-4 bg-[#f2f4f6] p-3 rounded-lg min-w-[180px]">
-                <span className="material-symbols-outlined text-[#002626]">menu_book</span>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-tighter opacity-60">RIS</p>
-                  <p className="text-sm font-bold">References</p>
-                </div>
-                <a href={exportApi.risUrl(projectId)} download className="ml-auto p-2 hover:bg-[#e6e8ea] rounded-full transition-colors">
-                  <span className="material-symbols-outlined text-lg">download</span>
-                </a>
-              </div>
-            </div>
+            </Card>
           </div>
+
+          <Card padding="md" className="border-l-4 border-l-accent">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+              <div>
+                <h3
+                  className="text-base font-bold text-on-surface"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  Want everything in one click?
+                </h3>
+                <p className="text-sm text-on-surface-muted mt-1">
+                  Grab the full bundle — CSV + RIS + methodology + PRISMA SVG — as separate downloads.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" leadingIcon="download" onClick={() => window.open(exportApi.csvUrl(projectId))}>
+                  CSV
+                </Button>
+                <Button variant="outline" size="sm" leadingIcon="download" onClick={() => window.open(exportApi.risUrl(projectId))}>
+                  RIS
+                </Button>
+                <Button variant="outline" size="sm" leadingIcon="download" onClick={() => window.open(exportApi.methodologyUrl(projectId))}>
+                  Methodology
+                </Button>
+                <Button variant="outline" size="sm" leadingIcon="download" onClick={() => window.open(exportApi.prismaUrl(projectId))}>
+                  PRISMA
+                </Button>
+              </div>
+            </div>
+          </Card>
         </section>
-      </div>
-      </>)}
+      )}
 
       {activeTab === "methodology" && (
-        <div className="space-y-8">
-          <div className="bg-white rounded-xl p-10 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-[#001e4f]" style={{fontFamily:"'Manrope',sans-serif"}}>Methodology Log</h2>
-              <a href={exportApi.methodologyUrl(projectId)} download
-                className="inline-flex items-center gap-2 bg-[#001e4f] text-white px-6 py-2.5 rounded-lg font-bold text-sm hover:opacity-90 transition">
-                Download .txt <span className="material-symbols-outlined text-sm">download</span>
-              </a>
-            </div>
-            <p className="text-sm text-[#43474e] mb-6">
-              A complete record of every pipeline step — citable in your paper&apos;s Methods section.
-            </p>
+        <section
+          id="panel-methodology"
+          role="tabpanel"
+          aria-labelledby="tab-methodology"
+          className="space-y-6"
+        >
+          <Card padding="lg">
+            <CardHeader
+              title="Methodology log"
+              subtitle="A complete record of every pipeline step — citable as supplementary material in your paper's Methods section."
+              action={
+                <Button leadingIcon="download" onClick={() => window.open(exportApi.methodologyUrl(projectId))}>
+                  Download .txt
+                </Button>
+              }
+            />
             {loadingMethodology ? (
-              <div className="text-center py-12 text-[#43474e]">
-                <span className="material-symbols-outlined animate-spin text-2xl">sync</span>
-                <p className="mt-2 text-sm">Loading methodology log...</p>
+              <div className="space-y-3" aria-live="polite" aria-busy="true">
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-11/12" />
+                <Skeleton className="h-3 w-10/12" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-9/12" />
               </div>
             ) : methodologyText ? (
-              <pre className="bg-[#0a1628] text-[#93f2f2] font-mono text-xs rounded-lg p-6 overflow-x-auto whitespace-pre-wrap leading-relaxed">
+              <pre className="bg-[var(--color-on-surface)] text-[var(--color-accent)] font-mono text-xs rounded-[var(--radius-md)] p-6 overflow-x-auto whitespace-pre-wrap leading-relaxed">
                 {methodologyText}
               </pre>
             ) : (
-              <p className="text-sm text-[#43474e]">No methodology data available yet. Run a search first.</p>
+              <EmptyState
+                icon="search_off"
+                title="No methodology data yet"
+                description="Run a search from the Search tab — once records are fetched, every pipeline step is recorded here."
+              />
             )}
-          </div>
+          </Card>
 
-          <div className="bg-white rounded-xl p-10 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-[#001e4f]" style={{fontFamily:"'Manrope',sans-serif"}}>PRISMA 2020 Flow Diagram</h2>
-              <a href={exportApi.prismaUrl(projectId)} download
-                className="inline-flex items-center gap-2 bg-[#001e4f] text-white px-6 py-2.5 rounded-lg font-bold text-sm hover:opacity-90 transition">
-                Download .svg <span className="material-symbols-outlined text-sm">download</span>
-              </a>
-            </div>
-            <p className="text-sm text-[#43474e] mb-6">
-              A self-contained SVG showing identified → screened → included counts per data source. Drop it straight into your supplementary materials — it scales for journal print at any size.
-            </p>
-            <div className="border border-[#e6e8ea] rounded-lg overflow-hidden bg-[#fafafa]">
+          <Card padding="lg">
+            <CardHeader
+              title="PRISMA 2020 flow diagram"
+              subtitle="Self-contained SVG of identified → screened → included counts per data source. Drop it straight into supplementary materials — scales for journal print at any size."
+              action={
+                <Button leadingIcon="download" onClick={() => window.open(exportApi.prismaUrl(projectId))}>
+                  Download .svg
+                </Button>
+              }
+            />
+            <div className="border border-divider rounded-[var(--radius-md)] overflow-hidden bg-surface-sunken">
               <object
                 data={exportApi.prismaUrl(projectId)}
                 type="image/svg+xml"
@@ -208,8 +310,8 @@ export default function ExportManager() {
                 className="w-full h-[520px]"
               />
             </div>
-          </div>
-        </div>
+          </Card>
+        </section>
       )}
     </div>
   );
