@@ -1,6 +1,8 @@
 import math
-import networkx as nx
+from collections import Counter
 from itertools import combinations
+
+import networkx as nx
 from sqlalchemy.orm import Session, joinedload
 from app.models import Publication, SearchProject
 from app.analysis.utils import graph_to_d3
@@ -59,7 +61,7 @@ def analyze_authors(db: Session, project_id: int) -> dict:
     )
     author_stats: dict[int, dict] = {}
     author_citations: dict[int, list[int]] = {}
-    coauthor_pairs = []
+    coauthor_counter: Counter = Counter()
     for pub in pubs:
         author_ids = [a.id for a in pub.authors]
         for author in pub.authors:
@@ -76,8 +78,7 @@ def analyze_authors(db: Session, project_id: int) -> dict:
             author_stats[author.id]["pub_count"] += 1
             author_stats[author.id]["citation_sum"] += cites
             author_citations[author.id].append(cites)
-        for a1, a2 in combinations(author_ids, 2):
-            coauthor_pairs.append(tuple(sorted([a1, a2])))
+        coauthor_counter.update(tuple(sorted([a1, a2])) for a1, a2 in combinations(author_ids, 2))
 
     for aid, stats in author_stats.items():
         stats.update(_compute_indices(author_citations[aid], stats["pub_count"]))
@@ -90,9 +91,6 @@ def analyze_authors(db: Session, project_id: int) -> dict:
     G = nx.Graph()
     for aid, stats in author_stats.items():
         G.add_node(aid, name=stats["name"], pub_count=stats["pub_count"])
-    edge_weights = {}
-    for pair in coauthor_pairs:
-        edge_weights[pair] = edge_weights.get(pair, 0) + 1
-    for (a1, a2), weight in edge_weights.items():
+    for (a1, a2), weight in coauthor_counter.items():
         G.add_edge(a1, a2, weight=weight)
     return {"top_authors": top_authors, "coauthorship_network": graph_to_d3(G), "total_authors": len(author_stats)}

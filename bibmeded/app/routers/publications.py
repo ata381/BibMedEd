@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
@@ -8,6 +10,8 @@ from app.schemas.publication import (
     PublicationResponse,
     ToggleExcludeRequest,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/projects/{project_id}/publications", tags=["publications"])
 
@@ -31,6 +35,7 @@ def list_publications(project_id: int, sort_by: str = Query("year", enum=["year"
         sort_col = sort_col.asc()
     publications = base_query.order_by(sort_col).offset(offset).limit(limit).all()
     items = []
+    skipped = 0
     for pub in publications:
         try:
             item = PublicationResponse(
@@ -42,8 +47,11 @@ def list_publications(project_id: int, sort_by: str = Query("year", enum=["year"
                 authors=[{"id": a.id, "name": a.name, "orcid": a.orcid} for a in pub.authors],
             )
             items.append(item)
-        except Exception:
-            continue  # skip malformed records
+        except Exception as exc:
+            skipped += 1
+            logger.warning("Skipping malformed publication id=%s: %s", pub.id, exc, exc_info=True)
+    if skipped:
+        logger.info("list_publications: %d malformed publications skipped out of %d returned", skipped, len(publications))
     return PublicationListResponse(total=total, excluded_count=excluded_count, items=items)
 
 

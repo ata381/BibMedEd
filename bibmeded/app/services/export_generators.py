@@ -218,8 +218,9 @@ def generate_prisma_svg(
     project_name: str,
     steps: list[MethodologyStep],
     exclusion_summary: dict[str | None, int] | None = None,
+    included_count: int | None = None,
 ) -> str:
-    counts = compute_counts(steps, exclusion_summary=exclusion_summary)
+    counts = compute_counts(steps, exclusion_summary=exclusion_summary, included_override=included_count)
     return render_svg(counts, project_name)
 
 
@@ -232,13 +233,16 @@ def generate_bundle(
     """Produce a single .zip containing CSV, RIS, JSON, methodology .txt, PRISMA .svg, and a manifest."""
     stamp = date.today().isoformat()
     slug = slugify(project_name) or "project"
+    # pubs is already filtered to excluded == False by the caller (_get_project_and_pubs),
+    # so len(pubs) is the authoritative "included" count.
+    included_count = len(pubs)
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         zf.writestr(f"{slug}-{stamp}.csv", generate_csv(pubs))
         zf.writestr(f"{slug}-{stamp}.ris", generate_ris(pubs))
         zf.writestr(f"{slug}-{stamp}.json", generate_json(project_name, pubs))
         zf.writestr(f"{slug}-methodology-{stamp}.txt", generate_methodology(project_name, steps, exclusion_summary))
-        zf.writestr(f"{slug}-prisma-{stamp}.svg", generate_prisma_svg(project_name, steps, exclusion_summary))
+        zf.writestr(f"{slug}-prisma-{stamp}.svg", generate_prisma_svg(project_name, steps, exclusion_summary, included_count=included_count))
         manifest = (
             f"BibMedEd export bundle\n"
             f"Project: {project_name}\n"

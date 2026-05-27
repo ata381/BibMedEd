@@ -76,10 +76,16 @@ export default function ExportManager() {
     if (next === "methodology") loadMethodology();
   };
 
-  const handleDataExport = () => {
-    const url = dataFormat === "csv" ? exportApi.csvUrl(projectId) : exportApi.risUrl(projectId);
+  const openDownload = (url: string) => {
+    // Always open with noopener,noreferrer — prevents the opened tab from navigating
+    // the parent (tabnapping) and keeps the referrer out of the destination request.
     const newWindow = window.open(url, "_blank", "noopener,noreferrer");
     if (newWindow) newWindow.opener = null;
+  };
+
+  const handleDataExport = () => {
+    const url = dataFormat === "csv" ? exportApi.csvUrl(projectId) : exportApi.risUrl(projectId);
+    openDownload(url);
     toast.success(`${dataFormat.toUpperCase()} download started`);
   };
 
@@ -236,23 +242,23 @@ export default function ExportManager() {
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <Button leadingIcon="folder_zip" onClick={() => window.open(exportApi.bundleUrl(projectId))}>
+                <Button leadingIcon="folder_zip" onClick={() => openDownload(exportApi.bundleUrl(projectId))}>
                   Download bundle
                 </Button>
                 <span className="text-xs text-on-surface-subtle hidden lg:inline">or grab individually:</span>
-                <Button variant="outline" size="sm" leadingIcon="download" onClick={() => window.open(exportApi.csvUrl(projectId))}>
+                <Button variant="outline" size="sm" leadingIcon="download" onClick={() => openDownload(exportApi.csvUrl(projectId))}>
                   CSV
                 </Button>
-                <Button variant="outline" size="sm" leadingIcon="download" onClick={() => window.open(exportApi.risUrl(projectId))}>
+                <Button variant="outline" size="sm" leadingIcon="download" onClick={() => openDownload(exportApi.risUrl(projectId))}>
                   RIS
                 </Button>
-                <Button variant="outline" size="sm" leadingIcon="download" onClick={() => window.open(exportApi.jsonUrl(projectId))}>
+                <Button variant="outline" size="sm" leadingIcon="download" onClick={() => openDownload(exportApi.jsonUrl(projectId))}>
                   JSON
                 </Button>
-                <Button variant="outline" size="sm" leadingIcon="download" onClick={() => window.open(exportApi.methodologyUrl(projectId))}>
+                <Button variant="outline" size="sm" leadingIcon="download" onClick={() => openDownload(exportApi.methodologyUrl(projectId))}>
                   Methodology
                 </Button>
-                <Button variant="outline" size="sm" leadingIcon="download" onClick={() => window.open(exportApi.prismaUrl(projectId))}>
+                <Button variant="outline" size="sm" leadingIcon="download" onClick={() => openDownload(exportApi.prismaUrl(projectId))}>
                   PRISMA
                 </Button>
               </div>
@@ -273,7 +279,7 @@ export default function ExportManager() {
               title="Methodology log"
               subtitle="A complete record of every pipeline step — citable as supplementary material in your paper's Methods section."
               action={
-                <Button leadingIcon="download" onClick={() => window.open(exportApi.methodologyUrl(projectId))}>
+                <Button leadingIcon="download" onClick={() => openDownload(exportApi.methodologyUrl(projectId))}>
                   Download .txt
                 </Button>
               }
@@ -304,7 +310,7 @@ export default function ExportManager() {
               title="PRISMA 2020 flow diagram"
               subtitle="Self-contained SVG of identified → screened → included counts per data source. Drop it straight into supplementary materials — scales for journal print at any size."
               action={
-                <Button leadingIcon="download" onClick={() => window.open(exportApi.prismaUrl(projectId))}>
+                <Button leadingIcon="download" onClick={() => openDownload(exportApi.prismaUrl(projectId))}>
                   Download .svg
                 </Button>
               }

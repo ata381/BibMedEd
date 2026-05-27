@@ -1,6 +1,6 @@
-from typing import Literal
+from typing import Literal, get_args
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 # PRISMA 2020 exclusion-reason categories. `None` for the literal type means
 # "no reason recorded" — equivalent to legacy excluded-without-reason rows.
@@ -37,6 +37,18 @@ class PublicationResponse(BaseModel):
     journal_name: str | None = None
     authors: list[AuthorResponse] = []
     model_config = {"from_attributes": True}
+
+    @field_validator("exclusion_reason", mode="before")
+    @classmethod
+    def _coerce_legacy_reason(cls, v):
+        """Coerce DB rows with legacy / unknown exclusion_reason strings to 'other'
+        so a row written before the Literal was introduced doesn't blow up the
+        response serializer and silently drop the publication."""
+        if v is None or v == "":
+            return None
+        if v in get_args(ExclusionReason):
+            return v
+        return "other"
 
 class PublicationListResponse(BaseModel):
     total: int

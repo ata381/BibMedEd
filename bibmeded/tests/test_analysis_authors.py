@@ -50,6 +50,18 @@ def test_compute_indices_g_index_rewards_outliers():
     assert indices["g_index"] == 3
 
 
+def test_compute_indices_g_index_borrowing_with_tail_outlier():
+    """g-index 'borrowing' edge case Egghe documents: a later highly-cited paper
+    can keep the g-core growing even when an interior paper has few citations.
+    For [10, 4, 4, 4, 4, 0]: cumulative=10,14,18,22,26 → g=5 (26 >= 25).
+    Confirms the early-break is correct for sorted-descending lists (cumulative
+    monotonic, i^2 grows quadratically, so once cumulative<i^2 it stays below)."""
+    from app.analysis.authors import _compute_indices
+    indices = _compute_indices([10, 4, 4, 4, 4, 0], pub_count=6)
+    assert indices["h_index"] == 4  # [10,4,4,4] all >= 4; 5th is 4 not >=5
+    assert indices["g_index"] == 5  # cumsum at top-5 is 26 >= 25
+
+
 def test_compute_indices_zero_citations():
     from app.analysis.authors import _compute_indices
     indices = _compute_indices([0, 0, 0], pub_count=3)

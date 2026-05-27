@@ -153,6 +153,23 @@ def test_render_svg_shows_per_reason_breakdown_in_side_box():
     assert "Not peer-reviewed: 3" in svg
 
 
+def test_included_override_wins_over_methodology_log():
+    """When the caller passes an actual non-excluded-publication count, it overrides
+    the methodology log's last-step records_out. Manual exclusions via the UI happen
+    after the worker writes its steps, so the override is the authoritative count."""
+    steps = [
+        _step(phase="search", source="pubmed", records_out=100),
+        _step(phase="fetch", source="pubmed", records_in=100, records_out=100, step_order=2),
+    ]
+    counts = compute_counts(steps, included_override=42)
+    assert counts.included == 42  # not 100 from the fetch step
+
+
+def test_included_override_clamps_at_zero():
+    counts = compute_counts([], included_override=-5)
+    assert counts.included == 0
+
+
 def test_render_svg_omits_side_box_when_no_exclusions():
     counts = PrismaCounts(
         identified_by_source={"pubmed": 100},

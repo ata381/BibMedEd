@@ -113,9 +113,24 @@ def export_json(project_id: int, db: Session = Depends(get_db)):
 def export_prisma(project_id: int, db: Session = Depends(get_db)):
     project, steps = _get_project_and_steps(project_id, db)
     exclusion_summary = _get_exclusion_summary(project_id, db)
+    # Override the methodology-log "included" only when there's a real corpus to count;
+    # if Publication rows haven't been ingested but methodology steps exist, fall back
+    # to the log so the rendered SVG matches the methodology trace.
+    query_ids = [q.id for q in project.queries]
+    total_pubs = (
+        db.query(Publication).filter(Publication.query_id.in_(query_ids)).count()
+        if query_ids else 0
+    )
+    included_count: int | None = None
+    if total_pubs > 0:
+        included_count = (
+            db.query(Publication)
+            .filter(Publication.query_id.in_(query_ids), Publication.excluded == False)
+            .count()
+        )
     filename = f"{slugify(project.name)}-prisma-{date.today().isoformat()}.svg"
     return StreamingResponse(
-        iter([generate_prisma_svg(project.name, steps, exclusion_summary)]),
+        iter([generate_prisma_svg(project.name, steps, exclusion_summary, included_count=included_count)]),
         media_type="image/svg+xml",
         headers=_attachment(filename),
     )

@@ -51,6 +51,7 @@ class PrismaCounts:
 def compute_counts(
     steps: Iterable[MethodologyStep],
     exclusion_summary: dict[str | None, int] | None = None,
+    included_override: int | None = None,
 ) -> PrismaCounts:
     """Reduce a project's methodology steps to PRISMA flow-diagram counts.
 
@@ -96,7 +97,12 @@ def compute_counts(
     )
     counts.screened = max(pre_screening, 0)
 
-    if steps:
+    if included_override is not None:
+        # Prefer the live count of non-excluded publications. Manual exclusions
+        # via the UI happen AFTER the worker writes its methodology steps, so the
+        # last step's records_out can be the pre-exclusion count.
+        counts.included = max(included_override, 0)
+    elif steps:
         last_with_out = next(
             (s for s in reversed(steps) if s.records_out is not None),
             None,

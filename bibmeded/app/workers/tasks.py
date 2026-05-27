@@ -3,8 +3,13 @@ import logging
 from datetime import datetime, timezone
 
 from celery.exceptions import SoftTimeLimitExceeded
+from sqlalchemy.exc import DisconnectionError, OperationalError
 
 logger = logging.getLogger(__name__)
+
+# DB-level exceptions that should propagate immediately rather than be swallowed
+# per-record. A dropped connection isn't a bad record — it's a batch-level failure.
+_FATAL_DB_EXCEPTIONS = (OperationalError, DisconnectionError)
 
 from app.adapters.base import RawRecord
 from app.adapters.registry import get_adapter
@@ -111,18 +116,23 @@ def _persist_records(db, records: list[RawRecord], query_id: int) -> tuple[int, 
         added_author_keys: list[str] = []
         added_affil_keys: list[str] = []
         added_keyword_keys: list[tuple[str, KeywordType]] = []
+        new_journal_in_savepoint: Journal | None = None
         try:
             journal = None
             if record.journal_name:
-                journal = db.query(Journal).filter(Journal.name == record.journal_name).first()
+                # Case-insensitive lookup via name_normalized so "JAMA"/"Jama" don't
+                # produce duplicate Journal rows.
+                j_norm = _norm_cache(norm, record.journal_name)
+                journal = db.query(Journal).filter(Journal.name_normalized == j_norm).first()
                 if not journal:
                     journal = Journal(
                         name=record.journal_name,
                         issn=record.journal_issn,
-                        name_normalized=_norm_cache(norm, record.journal_name),
+                        name_normalized=j_norm,
                     )
                     db.add(journal)
                     db.flush()
+                    new_journal_in_savepoint = journal
 
             normalized_doi = _normalize_doi(record.external_ids.get("doi") or record.doi)
             existing_q = db.query(Publication).filter(Publication.pmid == record.source_id)
@@ -202,6 +212,11 @@ def _persist_records(db, records: list[RawRecord], query_id: int) -> tuple[int, 
             sp.commit()
             persisted += 1
             persisted_pmids.append(pub.pmid)
+        except _FATAL_DB_EXCEPTIONS:
+            # Connection drop / DB unavailability is a batch-level failure — don't
+            # swallow it per-record and silently undercount the methodology log.
+            sp.rollback()
+            raise
         except Exception as exc:
             logger.warning("Skipping record %s: %s", record.source_id, exc)
             sp.rollback()
@@ -212,14 +227,33 @@ def _persist_records(db, records: list[RawRecord], query_id: int) -> tuple[int, 
                 affils_by_norm.pop(k, None)
             for k in added_keyword_keys:
                 keywords_by_key.pop(k, None)
+            if new_journal_in_savepoint is not None:
+                # Same eviction reason — the row was rolled back but the identity
+                # map would otherwise still hold a stale reference.
+                try:
+                    db.expunge(new_journal_in_savepoint)
+                except Exception:
+                    pass
             continue
 
     db.commit()
     return persisted, persisted_pmids
 
 
-def _log_step(db, query_id: int, step_order: int, phase: str, source: str,
+def _next_step_order(db, query_id: int) -> int:
+    """Return MAX(step_order) + 1 for this query so re-runs and resumed tasks
+    don't collide with existing methodology steps."""
+    from sqlalchemy import func as sa_func
+    current = db.query(sa_func.max(MethodologyStep.step_order)).filter(
+        MethodologyStep.query_id == query_id
+    ).scalar()
+    return (current or 0) + 1
+
+
+def _log_step(db, query_id: int, step_order: int | None, phase: str, source: str,
               action: str, records_in: int, records_out: int, parameters: dict | None = None) -> None:
+    if step_order is None:
+        step_order = _next_step_order(db, query_id)
     step = MethodologyStep(
         query_id=query_id,
         step_order=step_order,
@@ -288,7 +322,7 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
             searched_at_iso = ca.astimezone(timezone.utc).isoformat()
         else:
             searched_at_iso = None
-        _log_step(db, query_id, step_order=1, phase="search", source=source,
+        _log_step(db, query_id, step_order=None, phase="search", source=source,
                   action=f"{adapter.methodology_label()} search",
                   records_in=0, records_out=total_found,
                   parameters={"query": query.query_string, "database": source,
@@ -315,13 +349,13 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
                 meta={"phase": "fetch", "current": persisted, "total": len(all_ids)},
             )
 
-        _log_step(db, query_id, step_order=2, phase="fetch", source=source,
+        _log_step(db, query_id, step_order=None, phase="fetch", source=source,
                   action=f"Batch fetch via {adapter.methodology_label()}",
                   records_in=len(all_ids), records_out=persisted,
                   parameters={"batch_size": FETCH_BATCH_SIZE})
 
         if cross_source_removed:
-            _log_step(db, query_id, step_order=3, phase="dedup", source=source,
+            _log_step(db, query_id, step_order=None, phase="dedup", source=source,
                       action="Cross-source deduplication on DOI and PMID",
                       records_in=persisted + cross_source_removed, records_out=persisted,
                       parameters={"method": "exact-match", "fields": "doi,pmid",
@@ -340,7 +374,7 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
                     pub.citation_count = citation_counts.get(pub.pmid)
             db.commit()
             enriched_count = len(citation_counts)
-            _log_step(db, query_id, step_order=4, phase="enrichment", source="icite",
+            _log_step(db, query_id, step_order=None, phase="enrichment", source="icite",
                       action="iCite citation count enrichment",
                       records_in=persisted, records_out=persisted,
                       parameters={"source": "NIH iCite", "enriched": enriched_count,
@@ -348,8 +382,10 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
 
         query.status = QueryStatus.completed
         query.result_count = persisted
-        ids_submitted_for_fetch = len(all_ids)
-        query.duplicate_count = max(0, ids_submitted_for_fetch - persisted)
+        # duplicate_count now reflects ONLY cross-source dedup, not records skipped due
+        # to per-record exceptions or pre-existing DB rows (those are visible in the
+        # methodology log as `records_in - records_out` of the fetch step).
+        query.duplicate_count = cross_source_removed
         query.executed_at = datetime.now(timezone.utc)
         db.commit()
     except SoftTimeLimitExceeded:
@@ -358,12 +394,12 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
             query.status = QueryStatus.failed
             db.commit()
         raise
-    except Exception as e:
+    except Exception:
         query = db.get(SearchQuery, query_id)
         if query:
             query.status = QueryStatus.failed
             db.commit()
-        raise e
+        raise  # bare raise preserves the original traceback for production debugging
     finally:
         await adapter.close()
         await icite.close()

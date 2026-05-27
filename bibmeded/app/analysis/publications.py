@@ -61,6 +61,12 @@ def _classify_maturity(cumulative: list[dict]) -> dict | None:
     else:
         phase = "saturating"
 
+    # Don't report a confident phase label when the logistic fit is poor — common for
+    # corpora with a plateau-and-resurgence shape (e.g. AI-in-medical-education post-2022).
+    # Threshold of 0.85 matches the conservative bar most bibliometric reviewers expect.
+    if r_squared < 0.85:
+        phase = "undetermined"
+
     return {
         "phase": phase,
         "carrying_capacity": round(K, 1),
@@ -68,6 +74,7 @@ def _classify_maturity(cumulative: list[dict]) -> dict | None:
         "growth_rate": round(r, 3),
         "fit_quality": round(r_squared, 3),
         "progress": round(progress, 3),
+        "method": "logistic-growth (Bettencourt & Kaur 2011)",
     }
 
 

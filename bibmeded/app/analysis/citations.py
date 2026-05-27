@@ -45,7 +45,9 @@ def _resolve_refs_in_corpus(pubs: list[Publication]) -> dict[int, set[int]]:
     index = _index_by_identifier(pubs)
     refs_by_pub: dict[int, set[int]] = {}
     for pub in pubs:
-        if not pub.external_references:
+        # The DB column is JSON-typed but only iterable list values are meaningful;
+        # guard against legacy/migrated rows where the field is a string or scalar.
+        if not isinstance(pub.external_references, list) or not pub.external_references:
             refs_by_pub[pub.id] = set()
             continue
         targets: set[int] = set()
@@ -59,6 +61,12 @@ def _resolve_refs_in_corpus(pubs: list[Publication]) -> dict[int, set[int]]:
     return refs_by_pub
 
 
+# Hub papers cited by many in-corpus pubs (or that cite many in-corpus pubs) would
+# produce O(N²) pair updates. Cap each hub's contribution; the final result is already
+# truncated to the top 100 strongest pairs so this only drops noise.
+_HUB_DEGREE_CAP = 75
+
+
 def _build_coupling_pairs(refs_by_pub: dict[int, set[int]]) -> Counter:
     """Pair count weighted by shared references — two pubs that both cite paper R
     accrue +1 for each shared R."""
@@ -70,8 +78,8 @@ def _build_coupling_pairs(refs_by_pub: dict[int, set[int]]) -> Counter:
     for citers in cited_to_citers.values():
         if len(citers) < 2:
             continue
-        for a, b in combinations(sorted(citers), 2):
-            pairs[(a, b)] += 1
+        sorted_citers = sorted(citers)[:_HUB_DEGREE_CAP]
+        pairs.update(combinations(sorted_citers, 2))
     return pairs
 
 
@@ -82,8 +90,8 @@ def _build_cocitation_pairs(refs_by_pub: dict[int, set[int]]) -> Counter:
     for targets in refs_by_pub.values():
         if len(targets) < 2:
             continue
-        for a, b in combinations(sorted(targets), 2):
-            pairs[(a, b)] += 1
+        sorted_targets = sorted(targets)[:_HUB_DEGREE_CAP]
+        pairs.update(combinations(sorted_targets, 2))
     return pairs
 
 

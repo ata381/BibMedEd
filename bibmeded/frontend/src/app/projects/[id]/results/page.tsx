@@ -22,15 +22,36 @@ function ExcludeButton({
   onToggle: (id: number, excluded: boolean, reason: ExclusionReason | null) => void;
 }) {
   const [showMenu, setShowMenu] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const firstItemRef = useRef<HTMLButtonElement>(null);
 
+  // Close on outside click. Use `click` (not `mousedown`) so the trigger's own
+  // click handler can close-then-reopen-then-close without racing.
   useEffect(() => {
     if (!showMenu) return;
     const onDocClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowMenu(false);
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
     };
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowMenu(false);
+        triggerRef.current?.focus();
+      }
+    };
+    document.addEventListener("click", onDocClick);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("click", onDocClick);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [showMenu]);
+
+  // Move focus into the menu when it opens so keyboard users can reach the items.
+  useEffect(() => {
+    if (showMenu) firstItemRef.current?.focus();
   }, [showMenu]);
 
   const doToggle = async (reason?: ExclusionReason) => {
@@ -59,8 +80,9 @@ function ExcludeButton({
   };
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative" ref={containerRef}>
       <button
+        ref={triggerRef}
         onClick={handlePrimary}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
           pub.excluded
@@ -83,20 +105,22 @@ function ExcludeButton({
       {showMenu && !pub.excluded && (
         <div
           role="menu"
+          aria-label="Select exclusion reason"
           className="absolute right-0 mt-1 w-64 bg-surface-raised rounded-lg shadow-lg border border-divider z-10 py-1 text-xs"
         >
           <p className="px-3 pt-2 pb-1 text-[9px] font-bold uppercase tracking-widest text-on-surface-muted">
             Exclude — PRISMA reason
           </p>
-          {(Object.keys(EXCLUSION_REASON_LABELS) as ExclusionReason[]).map((code) => (
+          {(Object.keys(EXCLUSION_REASON_LABELS) as ExclusionReason[]).map((code, idx) => (
             <button
               key={code}
+              ref={idx === 0 ? firstItemRef : undefined}
               role="menuitem"
               onClick={(e) => {
                 e.stopPropagation();
                 doToggle(code);
               }}
-              className="block w-full text-left px-3 py-1.5 hover:bg-surface-hover text-on-surface"
+              className="block w-full text-left px-3 py-1.5 hover:bg-surface-hover focus:bg-surface-hover focus:outline-none text-on-surface"
             >
               {EXCLUSION_REASON_LABELS[code]}
             </button>
@@ -130,6 +154,9 @@ export default function ResultsReview() {
     searchApi.latest(projectId).then(res => setSearchStats(res.data)).catch(() => {});
   }, [projectId]);
 
+  const [refreshTick, setRefreshTick] = useState(0);
+  const refresh = () => setRefreshTick(t => t + 1);
+
   useEffect(() => {
     // One-shot setLoading flag at the start of a fetch is the canonical
     // pattern until we migrate to a fetch library (React Query / SWR /
@@ -137,11 +164,20 @@ export default function ResultsReview() {
     // doesn't apply here because the effect runs once per dep change.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
+    // Use an abort controller so a fast pagination click doesn't race the previous
+    // request and clobber excludedCount with stale data.
+    const ctrl = new AbortController();
     publicationsApi.list(projectId, { sort_by: "citation_count", order: "desc", limit, offset: (page - 1) * limit })
-      .then((res) => { setPublications(res.data.items); setTotal(res.data.total); setExcludedCount(res.data.excluded_count ?? 0); })
-      .catch(() => toast.error("Failed to load publications."))
-      .finally(() => setLoading(false));
-  }, [projectId, page]);
+      .then((res) => {
+        if (ctrl.signal.aborted) return;
+        setPublications(res.data.items);
+        setTotal(res.data.total);
+        setExcludedCount(res.data.excluded_count ?? 0);
+      })
+      .catch(() => { if (!ctrl.signal.aborted) toast.error("Failed to load publications."); })
+      .finally(() => { if (!ctrl.signal.aborted) setLoading(false); });
+    return () => ctrl.abort();
+  }, [projectId, page, refreshTick]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
@@ -257,10 +293,9 @@ export default function ResultsReview() {
             try {
               const res = await publicationsApi.bulkExclude(projectId, 0);
               toast.success(`${res.data.excluded_count} publications excluded.`);
-              setExcludedCount(prev => prev + res.data.excluded_count);
-              setPublications(prev => prev.map(p =>
-                (p.citation_count === null || p.citation_count === 0) && !p.excluded ? { ...p, excluded: true } : p
-              ));
+              // Refetch from server — the optimistic client predicate could diverge from
+              // the server's SQL predicate (especially around NULL citation counts).
+              refresh();
             } catch { toast.error("Bulk exclude failed."); }
           }}
             disabled={total === 0 && !loading}
