@@ -11,8 +11,7 @@ tags:
   - network analysis
 authors:
   - name: Ata Akillioglu
-    # TODO: replace with real ORCID before JOSS submission
-    orcid: 0000-0000-0000-0000
+    orcid: 0009-0005-4533-4594
     affiliation: 1
 affiliations:
   - name: Independent Researcher

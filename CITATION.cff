@@ -5,7 +5,7 @@ type: software
 authors:
   - family-names: Akillioglu
     given-names: Ata
-    # orcid: "https://orcid.org/0000-0000-0000-0000"  # TODO: add real ORCID before JOSS submission
+    orcid: "https://orcid.org/0009-0005-4533-4594"
 repository-code: "https://github.com/ata381/BibMedEd"
 url: "https://ata381.github.io/BibMedEd/"
 abstract: >-
