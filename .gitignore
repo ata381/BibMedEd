@@ -7,3 +7,6 @@ docs/superpowers/
 .env
 .env.*
 !.env.example
+
+# Personal / agent working notes — never published.
+.notes/
