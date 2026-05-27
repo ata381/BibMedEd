@@ -2,6 +2,11 @@ cff-version: 1.2.0
 title: "BibMedEd: Bibliometric Analysis Platform for Medical Education"
 message: "If you use this software, please cite it using the metadata below."
 type: software
+doi: 10.5281/zenodo.20404321
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.20404321
+    description: Concept DOI — resolves to the latest version on Zenodo
 authors:
   - family-names: Akillioglu
     given-names: Ata

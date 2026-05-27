@@ -9,6 +9,7 @@
   <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.12+-green.svg" alt="Python 3.12+"></a>
   <a href="https://docs.docker.com/compose/"><img src="https://img.shields.io/badge/Docker-Compose-2496ED.svg" alt="Docker"></a>
   <a href="https://ata381.github.io/BibMedEd/"><img src="https://img.shields.io/badge/Docs-MkDocs-526CFE.svg" alt="Documentation"></a>
+  <a href="https://doi.org/10.5281/zenodo.20404321"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.20404321.svg" alt="DOI"></a>
   <a href="CITATION.cff"><img src="https://img.shields.io/badge/cite-CITATION.cff-yellow.svg" alt="Cite this software"></a>
   <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome"></a>
   <a href="https://github.com/ata381/BibMedEd/issues"><img src="https://img.shields.io/github/issues/ata381/BibMedEd" alt="GitHub issues"></a>
@@ -133,10 +134,12 @@ If you use BibMedEd in your research, please cite:
 
 ```bibtex
 @software{bibmeded,
-  title={BibMedEd: Bibliometric Analysis Platform for Medical Education},
-  author={Akillioglu, Ata},
-  year={2026},
-  url={https://github.com/ata381/BibMedEd}
+  title   = {BibMedEd: Bibliometric Analysis Platform for Medical Education},
+  author  = {Akillioglu, Ata},
+  year    = {2026},
+  doi     = {10.5281/zenodo.20404321},
+  url     = {https://doi.org/10.5281/zenodo.20404321},
+  note    = {Concept DOI — resolves to latest version. For a specific release, see Zenodo.}
 }
 ```
 
