@@ -280,7 +280,7 @@ export default function ExportManager() {
                 <Skeleton className="h-3 w-9/12" />
               </div>
             ) : methodologyText ? (
-              <pre className="bg-[var(--color-on-surface)] text-[var(--color-accent)] font-mono text-xs rounded-[var(--radius-md)] p-6 overflow-x-auto whitespace-pre-wrap leading-relaxed">
+              <pre className="bg-code-bg text-code-fg font-mono text-xs rounded-[var(--radius-md)] p-6 overflow-x-auto whitespace-pre-wrap leading-relaxed">
                 {methodologyText}
               </pre>
             ) : (

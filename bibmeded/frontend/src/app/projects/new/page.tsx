@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { projectsApi } from "@/lib/api";
 import toast from "react-hot-toast";
+import { Badge, Button, Card } from "@/components/ui";
 
 export default function NewProject() {
   const router = useRouter();
@@ -36,63 +37,121 @@ export default function NewProject() {
   };
 
   return (
-    <div className="max-w-xl mx-auto pt-8">
-      <h1 className="font-serif text-3xl mb-2">New Project</h1>
-      <p className="text-slate-500 mb-8">Set up your bibliometric analysis project.</p>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="block text-xs uppercase tracking-wider text-slate-500 mb-2">Project Name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g., AI in Medical Education Curriculum"
-            className="w-full bg-[#eceef0] rounded-lg px-4 py-3 text-[#191c1e] placeholder-slate-400 focus:outline-none focus:border-[#2b5bb5] focus:bg-[#f2f4f6] border-b-2 border-transparent transition"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs uppercase tracking-wider text-slate-500 mb-2">Description <span className="text-slate-600">(optional)</span></label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Brief description of your analysis..."
-            rows={3}
-            className="w-full bg-[#eceef0] rounded-lg px-4 py-3 text-[#191c1e] placeholder-slate-400 focus:outline-none focus:border-[#2b5bb5] focus:bg-[#f2f4f6] border-b-2 border-transparent transition-all resize-none"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs uppercase tracking-wider text-slate-500 mb-2">Date Range Start</label>
-            <input
-              type="date"
-              value={dateStart}
-              onChange={(e) => setDateStart(e.target.value)}
-              className="w-full bg-[#eceef0] rounded-lg px-4 py-3 text-[#191c1e] focus:outline-none focus:border-[#2b5bb5] focus:bg-[#f2f4f6] border-b-2 border-transparent transition-all"
-            />
-          </div>
-          <div>
-            <label className="block text-xs uppercase tracking-wider text-slate-500 mb-2">Date Range End</label>
-            <input
-              type="date"
-              value={dateEnd}
-              onChange={(e) => setDateEnd(e.target.value)}
-              className="w-full bg-[#eceef0] rounded-lg px-4 py-3 text-[#191c1e] focus:outline-none focus:border-[#2b5bb5] focus:bg-[#f2f4f6] border-b-2 border-transparent transition-all"
-            />
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading || !name.trim()}
-          className="w-full bg-amber-500 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-medium py-3 rounded-lg transition-all hover:shadow-lg hover:shadow-amber-500/20"
+    <div className="max-w-2xl mx-auto py-10 space-y-8">
+      <header className="space-y-3">
+        <Badge tone="primary">Step 1 · Setup</Badge>
+        <h1
+          className="text-4xl md:text-5xl font-extrabold tracking-tight text-primary"
+          style={{ fontFamily: "var(--font-display)" }}
         >
-          {loading ? "Creating..." : "Continue to Search →"}
-        </button>
-      </form>
+          New project
+        </h1>
+        <p className="text-on-surface-muted text-base leading-relaxed">
+          Set up your bibliometric analysis. You can refine sources and search terms in the next step.
+        </p>
+      </header>
+
+      <Card padding="lg" as="section">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Field label="Project name" htmlFor="name" required>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g., AI in Medical Education Curriculum"
+              required
+              className={inputClass}
+              autoFocus
+            />
+          </Field>
+
+          <Field
+            label="Description"
+            htmlFor="description"
+            hint="One or two sentences for your records — shows on the project card."
+          >
+            <textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Brief description of your analysis…"
+              rows={3}
+              className={`${inputClass} resize-none`}
+            />
+          </Field>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <Field label="Date range start" htmlFor="date-start">
+              <input
+                id="date-start"
+                type="date"
+                value={dateStart}
+                onChange={(e) => setDateStart(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Date range end" htmlFor="date-end">
+              <input
+                id="date-end"
+                type="date"
+                value={dateEnd}
+                onChange={(e) => setDateEnd(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </div>
+
+          <div className="pt-2">
+            <Button
+              type="submit"
+              size="lg"
+              fullWidth
+              loading={loading}
+              trailingIcon={loading ? undefined : "arrow_forward"}
+              disabled={!name.trim()}
+            >
+              {loading ? "Creating project…" : "Continue to search"}
+            </Button>
+          </div>
+        </form>
+      </Card>
+    </div>
+  );
+}
+
+const inputClass = [
+  "w-full bg-surface rounded-[var(--radius-md)] px-4 py-3 text-on-surface",
+  "border border-divider placeholder:text-on-surface-subtle",
+  "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)]",
+  "focus:border-primary focus:bg-surface-raised focus:outline-2 focus:outline-[color:var(--color-focus-ring)] focus:outline-offset-2",
+].join(" ");
+
+function Field({
+  label,
+  htmlFor,
+  hint,
+  required = false,
+  children,
+}: {
+  label: string;
+  htmlFor: string;
+  hint?: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label
+        htmlFor={htmlFor}
+        className="block text-xs uppercase tracking-[0.14em] font-bold text-on-surface-muted mb-2"
+      >
+        {label}
+        {required ? <span className="text-danger ml-1" aria-hidden="true">*</span> : null}
+        {!required ? <span className="text-on-surface-subtle ml-1 normal-case font-normal tracking-normal">(optional)</span> : null}
+      </label>
+      {children}
+      {hint ? <p className="mt-1.5 text-xs text-on-surface-subtle">{hint}</p> : null}
     </div>
   );
 }

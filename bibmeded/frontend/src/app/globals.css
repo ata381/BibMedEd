@@ -54,6 +54,10 @@
   --color-overlay: rgba(25, 28, 30, 0.55);
   --color-focus-ring: #00327a;
 
+  /* Terminal-style code surfaces don't flip in dark mode. */
+  --color-code-bg: #0a1628;
+  --color-code-fg: #93f2f2;
+
   /* ----- Typography ---------------------------------------------------- */
   --font-display: 'Manrope', ui-sans-serif, system-ui, sans-serif;
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { projectsApi, Project } from "@/lib/api";
 import toast from "react-hot-toast";
+import { Badge, Button, Card, EmptyState, Skeleton } from "@/components/ui";
 
 export default function Home() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -16,117 +17,164 @@ export default function Home() {
       .finally(() => setLoading(false));
   }, []);
 
-  return (
-    <div>
-      {/* Welcome Hero */}
-      <div className="mb-12">
-        <h2 className="text-4xl font-extrabold tracking-tight text-[#191c1e] mb-2" style={{fontFamily: "'Manrope', sans-serif"}}>
-          Welcome to BibMedEd
-        </h2>
-        <p className="text-[#43474e] max-w-2xl">
-          Your clinical editorial pipeline for bibliometric analysis. Search PubMed, analyze trends, and visualize research networks.
-        </p>
-      </div>
+  const handleDelete = (project: Project) => {
+    if (!confirm(`Delete project "${project.name}"? This will permanently remove all searches, publications, and analyses.`)) return;
+    projectsApi.delete(project.id)
+      .then(() => { setProjects((prev) => prev.filter((p) => p.id !== project.id)); toast.success("Project deleted"); })
+      .catch(() => toast.error("Failed to delete project"));
+  };
 
-      {/* Summary Stats Bar */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <div className="card-elevated p-6 flex flex-col justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#43474e]">Total Publications</span>
-          <div className="flex items-baseline gap-2 mt-4">
-            <span className="text-4xl font-extrabold text-[#001e4f]" style={{fontFamily: "'Manrope', sans-serif"}}>
-              {loading ? "—" : projects.length > 0 ? "—" : "0"}
-            </span>
-            <span className="text-xs text-[#002626] font-bold">across all projects</span>
-          </div>
-        </div>
-        <div className="card-elevated p-6 flex flex-col justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#43474e]">Active Projects</span>
-          <div className="flex items-baseline gap-2 mt-4">
-            <span className="text-4xl font-extrabold text-[#001e4f]" style={{fontFamily: "'Manrope', sans-serif"}}>
-              {loading ? "—" : projects.length.toString().padStart(2, "0")}
-            </span>
-            <span className="material-symbols-outlined text-[#76d6d5]" style={{fontVariationSettings: "'FILL' 1"}}>auto_graph</span>
-          </div>
-        </div>
-        <div className="card-elevated p-6 flex flex-col justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#43474e]">Analysis Types</span>
-          <div className="flex items-baseline gap-2 mt-4">
-            <span className="text-4xl font-extrabold text-[#001e4f]" style={{fontFamily: "'Manrope', sans-serif"}}>06</span>
-            <div className="ml-auto flex -space-x-2">
-              <div className="w-6 h-6 rounded-full bg-[#93f2f2] flex items-center justify-center border-2 border-white text-[8px] font-bold text-[#002626]">PB</div>
-              <div className="w-6 h-6 rounded-full bg-[#d5e3fc] flex items-center justify-center border-2 border-white text-[8px] font-bold text-[#57657a]">AU</div>
-            </div>
-          </div>
-        </div>
+  return (
+    <div className="py-10 space-y-10">
+      <header className="space-y-3">
+        <Badge tone="primary">Workspace</Badge>
+        <h1
+          className="text-4xl md:text-5xl font-extrabold tracking-tight text-primary"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          Welcome to BibMedEd
+        </h1>
+        <p className="text-on-surface-muted text-base md:text-lg max-w-2xl leading-relaxed">
+          Search PubMed, OpenAlex, and CrossRef; deduplicate across sources; run six bibliometric analyses; export a PRISMA-ready methodology log.
+        </p>
+      </header>
+
+      <section aria-label="Workspace summary" className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard label="Active projects" value={loading ? null : projects.length.toString().padStart(2, "0")} icon="folder_open" />
+        <StatCard label="Data sources" value="03" icon="hub" subtitle="PubMed · OpenAlex · CrossRef" />
+        <StatCard label="Analysis modules" value="06" icon="auto_graph" subtitle="Publications · Authors · Keywords · …" />
       </section>
 
-      {/* Projects Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-[#191c1e]" style={{fontFamily: "'Manrope', sans-serif"}}>Active Projects</h3>
-        <span className="text-sm font-semibold text-[#001e4f] cursor-pointer hover:underline">{projects.length} total</span>
-      </div>
-
-      {/* Projects Grid */}
-      {loading ? (
-        <div className="flex items-center justify-center py-20 text-[#43474e]">
-          <span className="material-symbols-outlined animate-spin mr-2">sync</span>
-          Loading projects...
+      <section>
+        <div className="flex items-baseline justify-between mb-5">
+          <h2
+            className="text-xl font-bold text-on-surface"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Projects
+          </h2>
+          <span className="text-sm text-on-surface-muted tabular-nums">
+            {loading ? "—" : `${projects.length} total`}
+          </span>
         </div>
-      ) : (
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
-            <article key={project.id} className="card-elevated p-6 group relative overflow-hidden cursor-pointer"
-              onClick={() => window.location.href = `/projects/${project.id}/results`}>
-              <div className="absolute top-0 right-0 w-24 h-24 bg-[#002626]/5 rounded-bl-full -mr-8 -mt-8 group-hover:bg-[#002626]/10 transition-colors" />
-              <div className="flex justify-between items-start mb-4">
-                <div className="px-3 py-1 bg-[#93f2f2] text-[#002626] text-[10px] font-bold uppercase tracking-widest rounded-full">
-                  Bibliometric
-                </div>
-                <button onClick={(e) => {
-                  e.stopPropagation();
-                  if (!confirm(`Delete project "${project.name}"? This will permanently remove all searches, publications, and analyses.`)) return;
-                  projectsApi.delete(project.id)
-                    .then(() => { setProjects(prev => prev.filter(p => p.id !== project.id)); toast.success("Project deleted."); })
-                    .catch(() => toast.error("Failed to delete project."));
-                }}
-                  className="p-1 rounded-lg hover:bg-red-50 transition-colors z-10"
-                  title="Delete project">
-                  <span className="material-symbols-outlined text-[#43474e] hover:text-red-600 transition-colors">delete</span>
-                </button>
-              </div>
-              <h4 className="text-lg font-bold text-[#191c1e] mb-2" style={{fontFamily: "'Manrope', sans-serif"}}>{project.name}</h4>
-              <p className="text-sm text-[#43474e] mb-6 line-clamp-2">
-                {project.description || "No description provided"}
-              </p>
-              <div className="flex items-center justify-between pt-4 border-t border-[#eceef0]">
-                <div>
-                  <p className="text-[10px] uppercase font-bold text-[#43474e]">Date Range</p>
-                  <p className="text-xs font-semibold text-[#001e4f]">
-                    {project.date_range_start ? new Date(project.date_range_start).getFullYear() : "—"} – {project.date_range_end ? new Date(project.date_range_end).getFullYear() : "—"}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] uppercase font-bold text-[#43474e]">Created</p>
-                  <p className="text-xs font-semibold text-[#191c1e]">{new Date(project.created_at).toLocaleDateString()}</p>
-                </div>
-              </div>
-            </article>
-          ))}
 
-          {/* New Project Card */}
-          <Link href="/projects/new">
-            <button className="w-full bg-[#001e4f]/5 border-2 border-dashed border-[#001e4f]/20 p-6 rounded-xl flex flex-col items-center justify-center gap-4 hover:bg-[#001e4f]/10 transition-colors group min-h-[240px]">
-              <div className="w-16 h-16 rounded-full bg-[#001e4f] text-white flex items-center justify-center shadow-lg group-active:scale-95 transition-transform">
-                <span className="material-symbols-outlined text-3xl">add</span>
-              </div>
-              <div className="text-center">
-                <h4 className="text-lg font-bold text-[#001e4f]" style={{fontFamily: "'Manrope', sans-serif"}}>New Project</h4>
-                <p className="text-xs font-semibold text-[#43474e]">Start a new bibliometric analysis</p>
-              </div>
-            </button>
-          </Link>
-        </section>
-      )}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} rounded="lg" className="h-[240px]" />
+            ))}
+          </div>
+        ) : projects.length === 0 ? (
+          <Card padding="lg">
+            <EmptyState
+              icon="folder_off"
+              title="No projects yet"
+              description="Start a bibliometric analysis by creating your first project."
+              action={
+                <Link href="/projects/new">
+                  <Button leadingIcon="add" size="lg">New project</Button>
+                </Link>
+              }
+            />
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {projects.map((project) => (
+              <ProjectCard key={project.id} project={project} onDelete={handleDelete} />
+            ))}
+            <Link
+              href="/projects/new"
+              className="group flex flex-col items-center justify-center gap-4 min-h-[240px] rounded-[var(--radius-lg)] border-2 border-dashed border-outline hover:border-primary hover:bg-primary-container/30 transition-colors focus-visible:outline-2 focus-visible:outline-[color:var(--color-focus-ring)] focus-visible:outline-offset-2"
+            >
+              <span
+                aria-hidden="true"
+                className="w-14 h-14 rounded-full bg-primary text-on-primary flex items-center justify-center elev-2 group-active:scale-95 transition-transform"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "28px" }}>add</span>
+              </span>
+              <span className="text-center">
+                <span
+                  className="block text-lg font-bold text-primary"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  New project
+                </span>
+                <span className="block text-xs text-on-surface-muted mt-1">
+                  Start a new bibliometric analysis
+                </span>
+              </span>
+            </Link>
+          </div>
+        )}
+      </section>
     </div>
+  );
+}
+
+function StatCard({ label, value, icon, subtitle }: { label: string; value: string | null; icon: string; subtitle?: string }) {
+  return (
+    <Card padding="md">
+      <div className="flex items-start justify-between">
+        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-subtle">{label}</span>
+        <span
+          aria-hidden="true"
+          className="material-symbols-outlined text-accent"
+          style={{ fontVariationSettings: "'FILL' 1" }}
+        >
+          {icon}
+        </span>
+      </div>
+      <p
+        className="mt-3 text-4xl font-extrabold text-primary tabular-nums"
+        style={{ fontFamily: "var(--font-display)" }}
+      >
+        {value ?? "—"}
+      </p>
+      {subtitle ? <p className="mt-1 text-xs text-on-surface-muted">{subtitle}</p> : null}
+    </Card>
+  );
+}
+
+function ProjectCard({ project, onDelete }: { project: Project; onDelete: (p: Project) => void }) {
+  return (
+    <Card padding="md" interactive className="relative group">
+      <Link
+        href={`/projects/${project.id}/results`}
+        aria-label={`Open project ${project.name}`}
+        className="absolute inset-0 rounded-[var(--radius-lg)] focus-visible:outline-2 focus-visible:outline-[color:var(--color-focus-ring)] focus-visible:outline-offset-2"
+      />
+      <div className="relative flex justify-between items-start mb-4">
+        <Badge tone="info">Bibliometric</Badge>
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(project); }}
+          aria-label={`Delete project ${project.name}`}
+          className="relative z-10 p-1.5 rounded-[var(--radius-sm)] text-on-surface-muted hover:text-danger hover:bg-danger-container transition-colors focus-visible:outline-2 focus-visible:outline-[color:var(--color-focus-ring)] focus-visible:outline-offset-2"
+        >
+          <span className="material-symbols-outlined" aria-hidden="true">delete</span>
+        </button>
+      </div>
+      <h3
+        className="relative text-lg font-bold text-on-surface mb-2 line-clamp-2"
+        style={{ fontFamily: "var(--font-display)" }}
+      >
+        {project.name}
+      </h3>
+      <p className="relative text-sm text-on-surface-muted mb-5 line-clamp-2 leading-relaxed">
+        {project.description || "No description provided"}
+      </p>
+      <div className="relative flex items-center justify-between pt-4 border-t border-divider">
+        <div>
+          <p className="text-[10px] uppercase font-bold tracking-[0.14em] text-on-surface-subtle">Date range</p>
+          <p className="text-xs font-semibold text-primary tabular-nums">
+            {project.date_range_start ? new Date(project.date_range_start).getFullYear() : "—"} – {project.date_range_end ? new Date(project.date_range_end).getFullYear() : "—"}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-[10px] uppercase font-bold tracking-[0.14em] text-on-surface-subtle">Created</p>
+          <p className="text-xs font-semibold text-on-surface tabular-nums">{new Date(project.created_at).toLocaleDateString()}</p>
+        </div>
+      </div>
+    </Card>
   );
 }
