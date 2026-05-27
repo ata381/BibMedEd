@@ -145,6 +145,7 @@ def _persist_records(db, records: list[RawRecord], query_id: int) -> tuple[int, 
                 citation_count=None,
                 journal_id=journal.id if journal else None,
                 query_id=query_id,
+                external_references=list(record.references) if record.references else None,
             )
             db.add(pub)
             db.flush()

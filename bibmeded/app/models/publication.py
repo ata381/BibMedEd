@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
@@ -20,6 +20,11 @@ class Publication(Base):
     query_id: Mapped[int | None] = mapped_column(ForeignKey("search_queries.id", ondelete="CASCADE"), nullable=True)
     excluded: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     exclusion_reason: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    # Raw reference list from the adapter. Each entry is a source-native identifier
+    # (PMID for PubMed, DOI for CrossRef, OpenAlex ID for OpenAlex). Used at analysis
+    # time to build bibliographic-coupling and co-citation networks against in-corpus
+    # publications.
+    external_references: Mapped[list | None] = mapped_column(JSON, nullable=True)
     journal: Mapped["Journal | None"] = relationship(back_populates="publications")
     authors: Mapped[list["Author"]] = relationship(secondary="publication_authors", back_populates="publications")
     keywords: Mapped[list["Keyword"]] = relationship(secondary="publication_keywords", back_populates="publications")
