@@ -97,6 +97,8 @@ export const exportApi = {
     `${api.defaults.baseURL}/api/projects/${projectId}/export/ris`,
   methodologyUrl: (projectId: number) =>
     `${api.defaults.baseURL}/api/projects/${projectId}/export/methodology`,
+  prismaUrl: (projectId: number) =>
+    `${api.defaults.baseURL}/api/projects/${projectId}/export/prisma`,
 };
 
 export default api;

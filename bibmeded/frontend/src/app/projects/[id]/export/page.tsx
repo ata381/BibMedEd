@@ -163,29 +163,52 @@ export default function ExportManager() {
       </>)}
 
       {activeTab === "methodology" && (
-        <div className="bg-white rounded-xl p-10 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-[#001e4f]" style={{fontFamily:"'Manrope',sans-serif"}}>Methodology Log</h2>
-            <a href={exportApi.methodologyUrl(projectId)} download
-              className="inline-flex items-center gap-2 bg-[#001e4f] text-white px-6 py-2.5 rounded-lg font-bold text-sm hover:opacity-90 transition">
-              Download .txt <span className="material-symbols-outlined text-sm">download</span>
-            </a>
-          </div>
-          <p className="text-sm text-[#43474e] mb-6">
-            A complete record of every pipeline step — citable in your paper&apos;s Methods section.
-          </p>
-          {loadingMethodology ? (
-            <div className="text-center py-12 text-[#43474e]">
-              <span className="material-symbols-outlined animate-spin text-2xl">sync</span>
-              <p className="mt-2 text-sm">Loading methodology log...</p>
+        <div className="space-y-8">
+          <div className="bg-white rounded-xl p-10 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-[#001e4f]" style={{fontFamily:"'Manrope',sans-serif"}}>Methodology Log</h2>
+              <a href={exportApi.methodologyUrl(projectId)} download
+                className="inline-flex items-center gap-2 bg-[#001e4f] text-white px-6 py-2.5 rounded-lg font-bold text-sm hover:opacity-90 transition">
+                Download .txt <span className="material-symbols-outlined text-sm">download</span>
+              </a>
             </div>
-          ) : methodologyText ? (
-            <pre className="bg-[#0a1628] text-[#93f2f2] font-mono text-xs rounded-lg p-6 overflow-x-auto whitespace-pre-wrap leading-relaxed">
-              {methodologyText}
-            </pre>
-          ) : (
-            <p className="text-sm text-[#43474e]">No methodology data available yet. Run a search first.</p>
-          )}
+            <p className="text-sm text-[#43474e] mb-6">
+              A complete record of every pipeline step — citable in your paper&apos;s Methods section.
+            </p>
+            {loadingMethodology ? (
+              <div className="text-center py-12 text-[#43474e]">
+                <span className="material-symbols-outlined animate-spin text-2xl">sync</span>
+                <p className="mt-2 text-sm">Loading methodology log...</p>
+              </div>
+            ) : methodologyText ? (
+              <pre className="bg-[#0a1628] text-[#93f2f2] font-mono text-xs rounded-lg p-6 overflow-x-auto whitespace-pre-wrap leading-relaxed">
+                {methodologyText}
+              </pre>
+            ) : (
+              <p className="text-sm text-[#43474e]">No methodology data available yet. Run a search first.</p>
+            )}
+          </div>
+
+          <div className="bg-white rounded-xl p-10 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-[#001e4f]" style={{fontFamily:"'Manrope',sans-serif"}}>PRISMA 2020 Flow Diagram</h2>
+              <a href={exportApi.prismaUrl(projectId)} download
+                className="inline-flex items-center gap-2 bg-[#001e4f] text-white px-6 py-2.5 rounded-lg font-bold text-sm hover:opacity-90 transition">
+                Download .svg <span className="material-symbols-outlined text-sm">download</span>
+              </a>
+            </div>
+            <p className="text-sm text-[#43474e] mb-6">
+              A self-contained SVG showing identified → screened → included counts per data source. Drop it straight into your supplementary materials — it scales for journal print at any size.
+            </p>
+            <div className="border border-[#e6e8ea] rounded-lg overflow-hidden bg-[#fafafa]">
+              <object
+                data={exportApi.prismaUrl(projectId)}
+                type="image/svg+xml"
+                aria-label="PRISMA 2020 flow diagram preview"
+                className="w-full h-[520px]"
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -71,6 +71,7 @@ From the **Export** page:
 - **.RIS** — feeds straight into Zotero, EndNote, or Mendeley.
 - **.CSV** — for ad-hoc analysis in pandas, R, or Excel.
 - **Methodology log** — a plain-text file like the sample below. Cite it as supplementary material in your PRISMA Methods section.
+- **PRISMA 2020 flow diagram** — `GET /api/projects/{id}/export/prisma` returns an SVG of the identified → screened → included pipeline with per-source breakdown, derived directly from the methodology log. Drop it into your Supplementary Figure section without re-typing the counts.
 
 ```
 BibMedEd methodology log — Project: AI in UME 2014-2024

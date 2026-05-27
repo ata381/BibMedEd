@@ -5,6 +5,7 @@ All notable changes to BibMedEd are recorded here. This project follows [Keep a 
 ## [Unreleased]
 
 ### Added
+- **PRISMA 2020 flow-diagram export** (`GET /api/projects/{id}/export/prisma`). Closes [#15](https://github.com/ata381/BibMedEd/issues/15). Pure-Python SVG renderer that derives identified / removed-before-screening / screened / excluded / included counts directly from the methodology log; per-source breakdown in the identification box. Exposed in the frontend Export page next to the methodology log download with an inline live preview.
 - **CrossRef adapter** (`app/adapters/crossref.py`). Authoritative DOI metadata source — closes [#6](https://github.com/ata381/BibMedEd/issues/6). Adds significant cross-source deduplication leverage because most other adapters carry a DOI but few normalise it; CrossRef hands you the canonical lowercase form. Polite-pool `mailto`, cursor pagination, references list, year-extraction fallback chain.
 - ESLint flat-config wired into the frontend CI; closes [#25](https://github.com/ata381/BibMedEd/issues/25). React 19 Compiler warnings tracked in [#26](https://github.com/ata381/BibMedEd/issues/26).
 - `tsc --noEmit` is strict in CI (was silently swallowing errors).

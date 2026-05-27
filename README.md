@@ -40,7 +40,7 @@
 - **Six analysis modules** — Publications, authors, countries, keywords, citations, journals
 - **Interactive visualizations** — D3.js co-authorship and keyword co-occurrence network graphs
 - **Reproducible methodology** — Every pipeline step logged, exportable as a citable `.txt` for your Methods section
-- **Standard exports** — .RIS (Zotero/EndNote), .CSV (Excel/Sheets), methodology log
+- **Standard exports** — .RIS (Zotero/EndNote), .CSV (Excel/Sheets), methodology log, PRISMA 2020 flow diagram (.svg)
 - **Self-hostable** — Single `docker compose up` on any lab server, no cloud account needed
 - **Result cap** — Default 2,000 record limit with live progress bar during fetch
 

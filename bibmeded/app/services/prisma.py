@@ -1,0 +1,280 @@
+"""PRISMA 2020 flow-diagram generation from the methodology log.
+
+Produces an SVG that mirrors the four-tier PRISMA 2020 layout
+(Identification → Removed before screening → Screening → Included) using
+counts derived from the project's `MethodologyStep` records.
+
+Pure-Python: no extra dependencies. Returns an `xml.etree.ElementTree`-built
+SVG as a string so the export router can stream it directly with
+`media_type="image/svg+xml"`.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from html import escape
+from typing import Iterable
+
+from app.models.methodology import MethodologyStep
+
+
+@dataclass
+class PrismaCounts:
+    """Counts threaded through a PRISMA 2020 flow diagram."""
+
+    identified_by_source: dict[str, int] = field(default_factory=dict)
+    duplicates_removed: int = 0
+    other_removed_before_screening: int = 0
+    screened: int = 0
+    excluded_in_screening: int = 0
+    included: int = 0
+
+    @property
+    def total_identified(self) -> int:
+        return sum(self.identified_by_source.values())
+
+
+def compute_counts(steps: Iterable[MethodologyStep]) -> PrismaCounts:
+    """Reduce a project's methodology steps to PRISMA flow-diagram counts.
+
+    The methodology log is structured as a sequence of phases:
+    `search` → `fetch` → `dedup` → `enrichment` → `exclusion`. Each step's
+    `records_in`, `records_out`, `records_affected` plus `source` /
+    `parameters` capture exactly what PRISMA boxes need.
+    """
+    counts = PrismaCounts()
+    steps = list(steps)
+
+    for step in steps:
+        if step.phase == "search":
+            counts.identified_by_source[step.source] = (
+                counts.identified_by_source.get(step.source, 0) + step.records_out
+            )
+        elif step.phase == "dedup":
+            counts.duplicates_removed += step.records_affected
+        elif step.phase == "enrichment":
+            counts.other_removed_before_screening += step.records_affected
+        elif step.phase == "exclusion":
+            counts.excluded_in_screening += step.records_affected
+
+    pre_screening = (
+        counts.total_identified
+        - counts.duplicates_removed
+        - counts.other_removed_before_screening
+    )
+    counts.screened = max(pre_screening, 0)
+
+    if steps:
+        last_with_out = next(
+            (s for s in reversed(steps) if s.records_out is not None),
+            None,
+        )
+        if last_with_out is not None:
+            counts.included = max(last_with_out.records_out, 0)
+        else:
+            counts.included = counts.screened - counts.excluded_in_screening
+    else:
+        counts.included = 0
+
+    return counts
+
+
+def render_svg(counts: PrismaCounts, project_name: str) -> str:
+    """Render the PRISMA flow diagram as a standalone SVG string."""
+
+    # Layout constants.
+    width = 720
+    box_w = 380
+    box_h = 80
+    col_x = (width - box_w) // 2          # main column
+    right_col_x = col_x + box_w + 60      # right-side "excluded" callouts
+    right_box_w = 220
+    gap = 36                              # vertical gap between boxes
+    margin_top = 70                        # space for the title
+
+    title_height = 40
+    boxes = _layout(counts)
+    total_height = margin_top + sum(b.height + gap for b in boxes) + 30
+
+    parts: list[str] = []
+    parts.append(
+        f'<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
+        f'<svg xmlns="http://www.w3.org/2000/svg" '
+        f'viewBox="0 0 {width} {total_height}" '
+        f'width="{width}" height="{total_height}" '
+        f'font-family="Helvetica, Arial, sans-serif">'
+    )
+
+    parts.append(
+        f'<text x="{width // 2}" y="30" text-anchor="middle" '
+        f'font-size="18" font-weight="700" fill="#001e4f">'
+        f"PRISMA 2020 flow diagram</text>"
+    )
+    parts.append(
+        f'<text x="{width // 2}" y="52" text-anchor="middle" '
+        f'font-size="12" fill="#43474e">{escape(project_name)}</text>'
+    )
+
+    # Render boxes + connecting arrows.
+    y = margin_top + title_height // 2
+    for i, box in enumerate(boxes):
+        parts.append(_render_box(col_x, y, box_w, box.height, box.title, box.lines))
+
+        if box.side_box is not None:
+            side_y = y + (box.height - box.side_box.height) // 2
+            parts.append(
+                _render_box(
+                    right_col_x,
+                    side_y,
+                    right_box_w,
+                    box.side_box.height,
+                    box.side_box.title,
+                    box.side_box.lines,
+                    stroke="#7d4f00",
+                    title_fill="#7d4f00",
+                )
+            )
+            # Horizontal arrow from main box to side box.
+            parts.append(
+                _render_arrow(
+                    x1=col_x + box_w,
+                    y1=side_y + box.side_box.height // 2,
+                    x2=right_col_x,
+                    y2=side_y + box.side_box.height // 2,
+                )
+            )
+
+        if i < len(boxes) - 1:
+            arrow_y1 = y + box.height
+            arrow_y2 = y + box.height + gap
+            parts.append(
+                _render_arrow(
+                    x1=col_x + box_w // 2,
+                    y1=arrow_y1,
+                    x2=col_x + box_w // 2,
+                    y2=arrow_y2,
+                )
+            )
+
+        y += box.height + gap
+
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+@dataclass
+class _SideBox:
+    title: str
+    lines: list[str]
+    height: int
+
+
+@dataclass
+class _MainBox:
+    title: str
+    lines: list[str]
+    height: int
+    side_box: _SideBox | None = None
+
+
+def _layout(counts: PrismaCounts) -> list[_MainBox]:
+    line_h = 18
+    title_h = 24
+    pad = 12
+
+    def box_height(line_count: int) -> int:
+        return title_h + max(line_count, 1) * line_h + pad
+
+    identified_lines = [
+        f"{src}: {n}" for src, n in counts.identified_by_source.items()
+    ] or ["(no source-level counts available)"]
+    identified = _MainBox(
+        title=f"Records identified ({counts.total_identified})",
+        lines=identified_lines,
+        height=box_height(len(identified_lines) + 1),
+    )
+
+    removed_lines = []
+    if counts.duplicates_removed:
+        removed_lines.append(f"Duplicates removed: {counts.duplicates_removed}")
+    if counts.other_removed_before_screening:
+        removed_lines.append(
+            f"Other reasons: {counts.other_removed_before_screening}"
+        )
+    if not removed_lines:
+        removed_lines.append("None")
+    removed = _MainBox(
+        title=f"Records removed before screening ({counts.duplicates_removed + counts.other_removed_before_screening})",
+        lines=removed_lines,
+        height=box_height(len(removed_lines)),
+    )
+
+    side = None
+    if counts.excluded_in_screening:
+        side = _SideBox(
+            title=f"Excluded ({counts.excluded_in_screening})",
+            lines=["Below citation threshold or", "manual exclusion"],
+            height=box_height(2),
+        )
+    screened = _MainBox(
+        title=f"Records screened ({counts.screened})",
+        lines=[],
+        height=box_height(0),
+        side_box=side,
+    )
+
+    included = _MainBox(
+        title=f"Studies included in review ({counts.included})",
+        lines=[],
+        height=box_height(0),
+    )
+
+    return [identified, removed, screened, included]
+
+
+def _render_box(
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    title: str,
+    lines: list[str],
+    stroke: str = "#001e4f",
+    title_fill: str = "#001e4f",
+) -> str:
+    parts = [
+        f'<rect x="{x}" y="{y}" width="{w}" height="{h}" '
+        f'rx="6" ry="6" fill="white" stroke="{stroke}" stroke-width="1.5"/>'
+    ]
+    parts.append(
+        f'<text x="{x + w // 2}" y="{y + 20}" text-anchor="middle" '
+        f'font-size="13" font-weight="700" fill="{title_fill}">'
+        f"{escape(title)}</text>"
+    )
+    line_y = y + 42
+    for line in lines:
+        parts.append(
+            f'<text x="{x + w // 2}" y="{line_y}" text-anchor="middle" '
+            f'font-size="12" fill="#191c1e">{escape(line)}</text>'
+        )
+        line_y += 18
+    return "".join(parts)
+
+
+def _render_arrow(x1: int, y1: int, x2: int, y2: int) -> str:
+    # Use a marker-less arrow built from a line + polygon for portability.
+    head_size = 5
+    parts = [
+        f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" '
+        f'stroke="#43474e" stroke-width="1.2"/>'
+    ]
+    # Arrowhead: vertical or horizontal, derived from the direction of travel.
+    if x1 == x2 and y2 > y1:
+        head = f"{x2 - head_size},{y2 - head_size} {x2 + head_size},{y2 - head_size} {x2},{y2}"
+    elif y1 == y2 and x2 > x1:
+        head = f"{x2 - head_size},{y2 - head_size} {x2 - head_size},{y2 + head_size} {x2},{y2}"
+    else:
+        head = ""
+    if head:
+        parts.append(f'<polygon points="{head}" fill="#43474e"/>')
+    return "".join(parts)

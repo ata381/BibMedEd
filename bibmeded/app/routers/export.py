@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models import Publication, SearchProject
 from app.models.methodology import MethodologyStep
 from app.models import SearchQuery
+from app.services.prisma import compute_counts, render_svg
 
 router = APIRouter(prefix="/api/projects/{project_id}/export", tags=["export"])
 
@@ -89,6 +90,32 @@ def export_ris(project_id: int, db: Session = Depends(get_db)):
     return StreamingResponse(
         iter([content]),
         media_type="application/x-research-info-systems",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/prisma")
+def export_prisma(project_id: int, db: Session = Depends(get_db)):
+    project = db.get(SearchProject, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    query_ids = [q.id for q in project.queries]
+    steps = []
+    if query_ids:
+        steps = (
+            db.query(MethodologyStep)
+            .filter(MethodologyStep.query_id.in_(query_ids))
+            .order_by(MethodologyStep.query_id, MethodologyStep.step_order)
+            .all()
+        )
+
+    counts = compute_counts(steps)
+    svg = render_svg(counts, project.name)
+    filename = f"{_slugify(project.name)}-prisma-{date.today().isoformat()}.svg"
+    return StreamingResponse(
+        iter([svg]),
+        media_type="image/svg+xml",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
