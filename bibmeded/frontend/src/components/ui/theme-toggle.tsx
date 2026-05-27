@@ -24,6 +24,11 @@ export function ThemeToggle() {
 
   useEffect(() => {
     const stored = (localStorage.getItem(STORAGE_KEY) as Theme | null) ?? "system";
+    // Synchronising React state with localStorage on mount is fundamental
+    // — the layout's beforeInteractive bootstrap script already applied
+    // the right theme class to <html>; we just need to mirror the choice
+    // into React state for the toggle UI.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(stored);
     applyTheme(stored);
 

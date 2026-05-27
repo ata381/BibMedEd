@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import * as d3 from "d3";
 
 interface GraphNode {
@@ -25,18 +25,19 @@ interface ForceGraphProps {
 export function ForceGraph({ nodes, links, width = 400, height = 350 }: ForceGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const maxNodeSize = Math.max(...nodes.map(n => n.size ?? 1), 1);
-  const [minPubs, setMinPubs] = useState(0);
 
-  // Auto-set a reasonable threshold for large graphs
-  useEffect(() => {
-    if (nodes.length > 200) {
-      const sizes = nodes.map(n => n.size ?? 0).sort((a, b) => b - a);
-      const top100 = sizes[Math.min(99, sizes.length - 1)] ?? 0;
-      setMinPubs(top100);
-    } else {
-      setMinPubs(0);
-    }
+  // Derive the auto-threshold during render — no setState in effect.
+  // For large graphs (>200 nodes) we cap to the 100th-densest node so the
+  // network stays readable; smaller graphs show everything.
+  const autoMinPubs = useMemo(() => {
+    if (nodes.length <= 200) return 0;
+    const sizes = nodes.map(n => n.size ?? 0).sort((a, b) => b - a);
+    return sizes[Math.min(99, sizes.length - 1)] ?? 0;
   }, [nodes]);
+
+  // Null = follow auto-floor; a number = explicit user override of the slider.
+  const [userMinPubs, setUserMinPubs] = useState<number | null>(null);
+  const minPubs = userMinPubs ?? autoMinPubs;
 
   const filtered = useMemo(() => {
     const filteredNodes = nodes.filter(n => (n.size ?? 0) >= minPubs);
@@ -136,7 +137,7 @@ export function ForceGraph({ nodes, links, width = 400, height = 350 }: ForceGra
 
   if (nodes.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-[#43474e] text-sm">
+      <div className="flex items-center justify-center h-full text-on-surface-muted text-sm">
         <span className="material-symbols-outlined mr-2">hub</span>
         No network data available
       </div>
@@ -148,7 +149,7 @@ export function ForceGraph({ nodes, links, width = 400, height = 350 }: ForceGra
       <svg ref={svgRef} width={width} height={height} className="w-full h-full" />
       {maxNodeSize > 1 && (
         <div className="absolute top-3 right-3 bg-white/80 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-slate-100">
-          <label className="text-[9px] font-bold text-[#43474e] uppercase tracking-widest block mb-1">
+          <label className="text-[9px] font-bold text-on-surface-muted uppercase tracking-widest block mb-1">
             Min. publications: {minPubs}
           </label>
           <input
@@ -156,10 +157,10 @@ export function ForceGraph({ nodes, links, width = 400, height = 350 }: ForceGra
             min={0}
             max={Math.ceil(maxNodeSize * 0.5)}
             value={minPubs}
-            onChange={(e) => setMinPubs(Number(e.target.value))}
-            className="w-24 h-1 accent-[#001e4f]"
+            onChange={(e) => setUserMinPubs(Number(e.target.value))}
+            className="w-24 h-1 accent-primary"
           />
-          <p className="text-[8px] text-[#74777f] mt-0.5">{filtered.nodes.length} / {nodes.length} nodes</p>
+          <p className="text-[8px] text-on-surface-subtle mt-0.5">{filtered.nodes.length} / {nodes.length} nodes</p>
         </div>
       )}
     </div>

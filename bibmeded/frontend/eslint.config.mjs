@@ -19,15 +19,6 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-explicit-any": "off",
     },
   },
-  {
-    // React 19 Compiler diagnostics flag state-synchronization patterns that
-    // are correct-as-written but worth a follow-up refactor. Downgraded to
-    // warnings so they're visible without blocking CI. Tracked in #26.
-    rules: {
-      "react-hooks/set-state-in-effect": "warn",
-      "react-hooks/preserve-manual-memoization": "warn",
-    },
-  },
 ]);
 
 export default eslintConfig;

@@ -56,6 +56,11 @@ export default function ResultsReview() {
   }, [projectId]);
 
   useEffect(() => {
+    // One-shot setLoading flag at the start of a fetch is the canonical
+    // pattern until we migrate to a fetch library (React Query / SWR /
+    // Next 16 `use(promise)`). The compiler's cascading-renders concern
+    // doesn't apply here because the effect runs once per dep change.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     publicationsApi.list(projectId, { sort_by: "citation_count", order: "desc", limit, offset: (page - 1) * limit })
       .then((res) => { setPublications(res.data.items); setTotal(res.data.total); setExcludedCount(res.data.excluded_count ?? 0); })

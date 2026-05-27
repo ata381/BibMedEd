@@ -88,7 +88,7 @@ export default function SearchConfig() {
       setLoading(false);
       toast.error("Could not start search. Is the backend running?");
     }
-  }, [projectId, queryString, source, router]);
+  }, [projectId, queryString, source, yearStart, yearEnd, router]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-12">
