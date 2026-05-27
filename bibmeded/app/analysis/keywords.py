@@ -83,7 +83,7 @@ def analyze_keywords(db: Session, project_id: int) -> dict:
     total_per_year: Counter = Counter()
     display_by_normalized: dict[str, str] = {}
     cooccurrence_pairs = []
-    cooccurrence_counter: Counter = Counter()
+    cooccurrence_pairs: Counter = Counter()
     for pub in pubs:
         kw_terms = [kw.term.strip() for kw in pub.keywords if kw.term and kw.term.strip()]
         # Record the original display form once per normalized variant; treat duplicate
@@ -103,8 +103,7 @@ def analyze_keywords(db: Session, project_id: int) -> dict:
         if pub.year and unique_terms:
             total_per_year[pub.year] += len(unique_terms)
 
-        cooccurrence_counter.update(combinations(sorted(unique_terms), 2))
-    cooccurrence_pairs = cooccurrence_counter  # alias kept for the downstream block
+        cooccurrence_pairs.update(combinations(sorted(unique_terms), 2))
 
     top_keywords = [
         {"term": display_by_normalized.get(t, t), "count": n}

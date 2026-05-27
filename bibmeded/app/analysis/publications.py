@@ -15,9 +15,22 @@ _EMPTY = {
 def _classify_maturity(cumulative: list[dict]) -> dict | None:
     """Classify field lifecycle by fitting a logistic curve to cumulative counts.
 
-    Returns {phase, carrying_capacity, midpoint_year, fit_quality} where phase is one of
-    "emerging", "growing", "mature", "saturating". Returns None if there are fewer than 4
-    data points or scipy is unavailable.
+    Returns ``None`` if there are fewer than 4 data points or scipy is unavailable.
+    Otherwise returns::
+
+        {
+          "phase": "emerging" | "growing" | "mature" | "saturating" | "undetermined",
+          "carrying_capacity": float,   # estimated asymptote K
+          "midpoint_year": float,       # year at which the curve crosses K/2
+          "growth_rate": float,         # logistic growth rate r
+          "fit_quality": float,         # R^2 of the fit, range [0, 1]
+          "progress": float,            # current_cumulative / K, range [0, 1]
+          "method": "logistic-growth (Bettencourt & Kaur 2011)",
+        }
+
+    ``phase`` is forced to ``"undetermined"`` when ``fit_quality < 0.85`` — common
+    for corpora with a plateau-and-resurgence shape, where the single-growth-phase
+    logistic model does not apply cleanly.
     """
     if len(cumulative) < 4:
         return None

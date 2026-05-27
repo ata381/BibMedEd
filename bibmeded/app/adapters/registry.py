@@ -1,3 +1,13 @@
+"""Adapter registry — auto-discovers any BaseSourceAdapter subclass under
+``app/adapters/``.
+
+**For contributors writing a new adapter**: drop a module here, subclass
+``BaseSourceAdapter``, set ``name``, ``display_name``, and ``requires_api_key``,
+and you're done. There is NO ``__init__.py`` registration step, no schema
+change, and no frontend update needed — the ``/api/adapters`` route reads
+from this registry at request time and the frontend fetches it dynamically.
+"""
+
 import importlib
 import pkgutil
 
@@ -7,7 +17,8 @@ _adapters: dict[str, type[BaseSourceAdapter]] = {}
 
 
 def discover_adapters() -> None:
-    """Scan app/adapters/ for BaseSourceAdapter subclasses."""
+    """Scan ``app/adapters/`` for ``BaseSourceAdapter`` subclasses and populate
+    the registry. Called lazily on first ``get_adapter`` / ``list_adapters``."""
     import app.adapters as pkg
 
     for _, module_name, _ in pkgutil.iter_modules(pkg.__path__):

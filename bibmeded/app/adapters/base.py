@@ -12,7 +12,34 @@ class RawAuthor:
 
 @dataclass
 class RawRecord:
-    """Universal intermediate format — all adapters map to this."""
+    """Universal intermediate format — all adapters map to this.
+
+    Load-bearing invariants every adapter MUST uphold:
+
+    - **DOI must be lowercased**, with any `https://doi.org/`, `http://doi.org/`,
+      or `doi:` prefix stripped. The cross-source deduplication step keys on
+      DOI equality and will silently fail to detect duplicates between sources
+      if cases or prefixes differ. The same value goes into ``external_ids["doi"]``.
+
+    - **PMID** (when present in ``external_ids["pmid"]``) is the bare numeric
+      string with no URL prefix.
+
+    - **mesh_terms** should be an explicit list (possibly empty) per adapter,
+      not ``None``. The default factory protects against ``None`` but pass
+      ``mesh_terms=[]`` explicitly in non-PubMed adapters so the gap vs.
+      PubMed MeSH coverage is visible at construction time.
+
+    - **references** entries are source-native identifiers — PMIDs for PubMed,
+      DOIs (lowercased) for CrossRef, OpenAlex Work IDs for OpenAlex. Downstream
+      bibliographic-coupling / co-citation analysis matches them against
+      `Publication.doi` (case-insensitively) and `Publication.pmid` (which stores
+      the source-native primary id), so any of those shapes resolves correctly.
+
+    - **source_id** is the source's primary identifier — PMID for PubMed,
+      OpenAlex W-ID for OpenAlex, DOI (raw, not lowercased) for CrossRef — and
+      becomes ``Publication.pmid`` in the ORM. The dedup pass keys on this AND
+      on ``doi``, so cross-source duplicates are caught even when source_ids differ.
+    """
     source_id: str
     source_database: str
     title: str

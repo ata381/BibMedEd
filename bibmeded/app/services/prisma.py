@@ -55,10 +55,21 @@ def compute_counts(
 ) -> PrismaCounts:
     """Reduce a project's methodology steps to PRISMA flow-diagram counts.
 
-    The methodology log is structured as a sequence of phases:
-    `search` → `fetch` → `dedup` → `enrichment` → `exclusion`. Each step's
-    `records_in`, `records_out`, `records_affected` plus `source` /
-    `parameters` capture exactly what PRISMA boxes need.
+    Phase → PRISMA box mapping:
+      - ``search`` → "Records identified" (one entry per source).
+      - ``dedup`` → "Duplicates removed before screening".
+      - ``enrichment.records_affected`` → folded into "Other reasons removed
+        before screening" (e.g., DOI resolution misses, iCite lookup failures).
+        This is a pragmatic mapping rather than strict PRISMA 2020 — there is no
+        dedicated PRISMA box for "enrichment failed", but a researcher cannot
+        screen a record we couldn't enrich, so we treat the loss as
+        pre-screening removal. Methodology log preserves the original phase
+        label, so the exact cause is auditable.
+      - ``exclusion`` → "Records excluded in screening".
+      - ``included_override``, when provided by the caller, overrides the
+        post-screening count (it's the live ``excluded == False`` count and
+        reflects manual exclusions that happened after the worker wrote its
+        steps).
     """
     counts = PrismaCounts()
     steps = list(steps)

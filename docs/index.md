@@ -53,11 +53,14 @@ If you use BibMedEd in your research, please cite:
 ```bibtex
 @software{bibmeded,
   title={BibMedEd: Bibliometric Analysis Platform for Medical Education},
-  author={Ata, Aakil},
+  author={Akillioglu, Ata},
   year={2026},
-  url={https://github.com/ata381/BibMedEd}
+  url={https://github.com/ata381/BibMedEd},
+  doi={10.5281/zenodo.20404321}
 }
 ```
+
+The canonical machine-readable citation is [`CITATION.cff`](https://github.com/ata381/BibMedEd/blob/master/CITATION.cff) — GitHub's "Cite this repository" button generates BibTeX from it automatically.
 
 ## License
 

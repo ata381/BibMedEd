@@ -47,6 +47,29 @@ def _compute_indices(citations: list[int], pub_count: int) -> dict[str, float | 
 
 
 def analyze_authors(db: Session, project_id: int) -> dict:
+    """Compute per-author productivity and the project's co-authorship network.
+
+    Returns:
+        {
+          "top_authors": [
+            {
+              "id": int, "name": str, "orcid": str | None,
+              "pub_count": int, "citation_sum": int,
+              "h_index": int, "g_index": int, "e_index": float,
+            },
+            ...  # top 20, sorted by (h_index, citation_sum, pub_count) desc
+          ],
+          "coauthorship_network": {
+            "nodes": [{"id": int, "name": str, "pub_count": int}, ...],
+            "links": [{"source": int, "target": int, "weight": int}, ...],
+          },
+          "total_authors": int,
+        }
+
+    The indices are **corpus-scoped**, not career-wide — they reflect the author's
+    impact within this project's deduplicated record set only. Cite as
+    "h-index within the queried corpus" in any published methods section.
+    """
     project = db.get(SearchProject, project_id)
     if not project:
         return {"top_authors": [], "coauthorship_network": {"nodes": [], "links": []}, "total_authors": 0}

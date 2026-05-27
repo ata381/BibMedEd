@@ -75,7 +75,13 @@ def _publication_to_dict(pub: Publication) -> dict:
 
 
 def generate_json(project_name: str, pubs: list[Publication]) -> str:
-    """JSON-lines-friendly bulk export. Stable schema for downstream pipelines."""
+    """Bulk JSON export with a versioned schema for downstream pipelines.
+
+    Shape: ``{schema_version, project, generated, count, publications: [...]}``.
+    Each publication entry is the dict returned by ``_publication_to_dict``. Encoded
+    with ``ensure_ascii=False`` so non-ASCII titles/abstracts (Turkish, Chinese,
+    Greek) round-trip cleanly.
+    """
     payload = {
         "schema_version": EXPORT_SCHEMA_VERSION,
         "project": project_name,

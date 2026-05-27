@@ -13,10 +13,15 @@ Every new adapter immediately broadens the literature base every BibMedEd user c
 - Open an [adapter request issue](.github/ISSUE_TEMPLATE/adapter_request.yml) to claim a source before you start so we don't duplicate work.
 
 A good adapter PR includes:
-- A class in `bibmeded/app/adapters/<source>.py` subclassing `BaseSourceAdapter`.
-- Registration in `bibmeded/app/adapters/__init__.py`.
+
+- A class in `bibmeded/app/adapters/<source>.py` subclassing `BaseSourceAdapter`. The registry auto-discovers any `BaseSourceAdapter` subclass dropped here — **you do NOT need to touch `__init__.py` or any registration file**. Drop the module, set `name` / `display_name` / `requires_api_key` on the class, and the `/api/adapters` route + the frontend source picker pick it up at the next request.
 - A fixture-based test under `bibmeded/tests/test_adapters_<source>.py` that exercises `search` and `fetch` against captured JSON / XML payloads — no live API calls in CI.
-- A note in `docs/adapters.md` and a one-line mention in `README.md`'s feature list.
+- A one-line mention in `README.md`'s feature list (the `docs/adapters.md` file referenced by the live docs site is generated from inline code samples; you do not need to edit it manually).
+
+**Load-bearing invariants — easy to miss, hard to debug:**
+- Lowercase DOIs at the adapter boundary (`doi.lower()`). The cross-source dedup keys on DOI string equality and will silently miss duplicates across sources if cases differ.
+- Pass `mesh_terms=[]` explicitly when your source doesn't provide MeSH (every non-PubMed adapter does this). The `RawRecord` dataclass default would also work, but explicit empties signal intent and make the gap visible in code review.
+- See `bibmeded/app/adapters/base.py` — the `RawRecord` docstring spells out every invariant in one place.
 
 ### 2. Report a bug or request a feature
 
