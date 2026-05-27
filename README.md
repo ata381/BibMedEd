@@ -161,3 +161,13 @@ By contributing you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md).
 ## License
 
 [MIT](LICENSE) — use it freely in academic and commercial projects.
+
+## Star history
+
+<a href="https://star-history.com/#ata381/BibMedEd&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=ata381/BibMedEd&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=ata381/BibMedEd&type=Date" />
+    <img alt="Star history of ata381/BibMedEd" src="https://api.star-history.com/svg?repos=ata381/BibMedEd&type=Date" />
+  </picture>
+</a>

@@ -1,0 +1,11 @@
+# Default owner for the whole repo.
+# Listed reviewers are auto-requested on every PR (subject to branch settings).
+*                       @ata381
+
+# Citation and licensing files require explicit owner review — never let an
+# automated PR rewrite authorship or licensing terms.
+/CITATION.cff           @ata381
+/.zenodo.json           @ata381
+/LICENSE                @ata381
+/paper.md               @ata381
+/paper.bib              @ata381

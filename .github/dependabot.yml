@@ -1,0 +1,47 @@
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /bibmeded
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      python-minor-and-patch:
+        update-types: [minor, patch]
+    labels: [dependencies, area/backend]
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+
+  - package-ecosystem: npm
+    directory: /bibmeded/frontend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      js-minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # Next.js majors carry breaking changes — review manually
+      - dependency-name: next
+        update-types: [version-update:semver-major]
+      - dependency-name: react
+        update-types: [version-update:semver-major]
+      - dependency-name: react-dom
+        update-types: [version-update:semver-major]
+    labels: [dependencies, area/frontend]
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, ci]
+    commit-message:
+      prefix: "chore(ci)"
+      include: scope
