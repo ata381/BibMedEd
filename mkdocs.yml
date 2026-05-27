@@ -22,6 +22,8 @@ extra_css:
 
 nav:
   - Home: index.md
+  - Why BibMedEd?: why-bibmeded.md
+  - Case Study: case-study.md
   - Self-Hosting: deploy.md
   - Writing Adapters: adapters.md
 

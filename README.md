@@ -17,6 +17,8 @@
 </p>
 
 <p align="center">
+  <a href="https://ata381.github.io/BibMedEd/why-bibmeded/">Why BibMedEd?</a> &bull;
+  <a href="https://ata381.github.io/BibMedEd/case-study/">Case Study</a> &bull;
   <a href="https://ata381.github.io/BibMedEd/">Documentation</a> &bull;
   <a href="https://ata381.github.io/BibMedEd/deploy/">Self-Hosting</a> &bull;
   <a href="https://ata381.github.io/BibMedEd/adapters/">Write an Adapter</a> &bull;
@@ -28,6 +30,8 @@
 ---
 
 > Systematic bibliometric reviews currently require stitching together PubMed search, Covidence, VOSviewer, CiteSpace, and Excel — four tools, manual deduplication, and a methodology section that's painful to reconstruct. **BibMedEd is one application that does all of it**, self-hosts with one command, and exports a citable PRISMA-ready methodology log of every step it took.
+>
+> New here? Read **[Why BibMedEd vs Covidence / VOSviewer / Bibliometrix](https://ata381.github.io/BibMedEd/why-bibmeded/)** for an honest capability comparison, or jump into the **[end-to-end case study](https://ata381.github.io/BibMedEd/case-study/)**.
 
 ## Features
 
