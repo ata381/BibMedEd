@@ -1,0 +1,41 @@
+name: Draft JOSS paper PDF
+
+# Compiles paper.md to the JOSS-styled paper.pdf on every push that
+# touches the paper, and on manual dispatch. The PDF is uploaded as a
+# build artifact so reviewers and editors can verify the rendered
+# output before the official JOSS submission compile.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - paper.md
+      - paper.bib
+      - .github/workflows/draft-pdf.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: draft-pdf-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  paper:
+    name: Build paper.pdf
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build draft PDF
+        uses: openjournals/openjournals-draft-action@master
+        with:
+          journal: joss
+          paper-path: paper.md
+
+      - name: Upload paper.pdf
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper
+          path: paper.pdf
