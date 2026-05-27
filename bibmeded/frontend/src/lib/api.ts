@@ -106,6 +106,8 @@ export const exportApi = {
     `${API_BASE_URL}/api/projects/${projectId}/export/csv`,
   risUrl: (projectId: number) =>
     `${API_BASE_URL}/api/projects/${projectId}/export/ris`,
+  jsonUrl: (projectId: number) =>
+    `${API_BASE_URL}/api/projects/${projectId}/export/json`,
   methodologyUrl: (projectId: number) =>
     `${API_BASE_URL}/api/projects/${projectId}/export/methodology`,
   prismaUrl: (projectId: number) =>

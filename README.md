@@ -40,9 +40,10 @@
 - **Six analysis modules** — Publications, authors, countries, keywords, citations, journals
 - **Interactive visualizations** — D3.js co-authorship and keyword co-occurrence network graphs
 - **Reproducible methodology** — Every pipeline step logged, exportable as a citable `.txt` for your Methods section
-- **Standard exports** — .RIS (Zotero/EndNote), .CSV (Excel/Sheets), methodology log, PRISMA 2020 flow diagram (.svg)
+- **Standard exports** — .RIS (Zotero/EndNote), .CSV (Excel/Sheets), versioned .JSON, methodology log, PRISMA 2020 flow diagram (.svg), and a single-click `.zip` bundle of all five
+- **Programmatic access** — Auto-generated OpenAPI spec at `/openapi.json`, interactive Swagger UI at `/docs`, ReDoc at `/redoc`. Analysis responses carry a `schema_version` field for downstream pinning.
 - **Self-hostable** — Single `docker compose up` on any lab server, no cloud account needed
-- **Result cap** — Default 2,000 record limit with live progress bar during fetch
+- **Result cap** — Default 2,000 records (configurable up to 10,000); results page warns when upstream returned more than was fetched so truncation is never silent
 
 > **See it in action:** [UI Tour with screenshots and demo video](https://ata381.github.io/BibMedEd/#user-interface-tour)
 

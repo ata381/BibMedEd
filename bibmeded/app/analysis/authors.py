@@ -7,14 +7,19 @@ from app.analysis.utils import graph_to_d3
 
 
 def _compute_indices(citations: list[int], pub_count: int) -> dict[str, float | int]:
-    """Compute h, g, e, and hI-norm indices from a list of per-publication citations.
+    """Compute h, g, and e indices from a list of per-publication citations.
 
-    - h-index: largest h such that h papers have >= h citations each.
-    - g-index: largest g such that the top g papers have >= g^2 cumulative citations.
-    - e-index: sqrt of excess citations beyond the h-core. Rewards highly-cited outliers.
-    - hI-norm: h-index divided by average authors per paper (here approximated as 1.0 since
-      author counts per paper are not tracked at the author-level; included as a placeholder
-      so the API surface is stable when per-paper author counts are added later).
+    Precondition: this function sorts internally — callers do not need to pre-sort.
+
+    - h-index (Hirsch, 2005): largest h such that h papers each have >= h citations.
+    - g-index (Egghe, 2006): largest g such that the top g papers have >= g^2 cumulative
+      citations; rewards a small number of highly-cited outliers more than h-index.
+    - e-index (Zhang, 2009): sqrt of the excess citations of the h-core beyond h^2,
+      capturing impact concentrated in the most-cited papers.
+
+    Not implemented: hI-norm (requires per-paper author count, which the current ORM does
+    not track at the publication-author relationship). Excluded from the response rather
+    than returned as a placeholder.
     """
     if not citations:
         return {"h_index": 0, "g_index": 0, "e_index": 0.0}

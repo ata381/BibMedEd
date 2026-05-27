@@ -96,6 +96,23 @@ export default function ResultsReview() {
         </div>
       </section>
 
+      {/* Cap notice */}
+      {searchStats?.raw_result_count != null && total > 0 && searchStats.raw_result_count > total + (searchStats.duplicate_count ?? 0) && (
+        <div className="mb-6 rounded-xl border-l-4 border-warning bg-warning-container/40 px-5 py-4">
+          <div className="flex items-start gap-3">
+            <span className="material-symbols-outlined text-warning mt-0.5" style={{fontVariationSettings:"'FILL' 1"}}>warning</span>
+            <div>
+              <p className="text-sm font-bold text-on-surface">
+                Search returned {searchStats.raw_result_count.toLocaleString()} records — only the first {(total + (searchStats.duplicate_count ?? 0)).toLocaleString()} were fetched.
+              </p>
+              <p className="text-xs text-on-surface-muted mt-1">
+                The remainder were not retrieved. For PRISMA / journal submissions, rerun the search with a higher <code className="font-mono">max_results</code> or narrow the query — silently truncating a systematic review&apos;s record set is not journal-acceptable.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* PRISMA Flow */}
       <div className="bg-surface-raised rounded-xl p-8 shadow-sm mb-10">
         <div className="flex items-center gap-3 mb-6">

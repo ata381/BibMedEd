@@ -10,6 +10,7 @@ from app.models.methodology import MethodologyStep
 from app.services.export_generators import (
     generate_bundle,
     generate_csv,
+    generate_json,
     generate_methodology,
     generate_prisma_svg,
     generate_ris,
@@ -74,6 +75,18 @@ def export_ris(project_id: int, db: Session = Depends(get_db)):
     return StreamingResponse(
         iter([generate_ris(pubs)]),
         media_type="application/x-research-info-systems",
+        headers=_attachment(filename),
+    )
+
+
+@router.get("/json")
+def export_json(project_id: int, db: Session = Depends(get_db)):
+    """Versioned JSON export for programmatic / notebook consumers."""
+    project, pubs = _get_project_and_pubs(project_id, db)
+    filename = f"{slugify(project.name)}-{date.today().isoformat()}.json"
+    return StreamingResponse(
+        iter([generate_json(project.name, pubs)]),
+        media_type="application/json",
         headers=_attachment(filename),
     )
 

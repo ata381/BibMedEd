@@ -246,6 +246,9 @@ export default function ExportManager() {
                 <Button variant="outline" size="sm" leadingIcon="download" onClick={() => window.open(exportApi.risUrl(projectId))}>
                   RIS
                 </Button>
+                <Button variant="outline" size="sm" leadingIcon="download" onClick={() => window.open(exportApi.jsonUrl(projectId))}>
+                  JSON
+                </Button>
                 <Button variant="outline" size="sm" leadingIcon="download" onClick={() => window.open(exportApi.methodologyUrl(projectId))}>
                   Methodology
                 </Button>

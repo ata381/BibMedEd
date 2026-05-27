@@ -257,11 +257,13 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
         all_ids = all_ids[:max_results]  # cap to max_results
         query.raw_result_count = total_found
         db.flush()
+        searched_at_iso = query.created_at.replace(tzinfo=timezone.utc).isoformat() if query.created_at else None
         _log_step(db, query_id, step_order=1, phase="search", source=source,
                   action=f"{adapter.methodology_label()} search",
                   records_in=0, records_out=total_found,
                   parameters={"query": query.query_string, "database": source,
-                              "max_results": max_results, "capped": total_found > max_results})
+                              "max_results": max_results, "capped": total_found > max_results,
+                              "searched_at": searched_at_iso})
 
         # Phase 2: Fetch + cross-source dedup + persist in chunks
         persisted = 0
