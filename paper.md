@@ -10,7 +10,8 @@ tags:
   - OpenAlex
   - network analysis
 authors:
-  - name: Aakil Ata
+  - name: Ata Akillioglu
+    # TODO: replace with real ORCID before JOSS submission
     orcid: 0000-0000-0000-0000
     affiliation: 1
 affiliations:

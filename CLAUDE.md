@@ -1,6 +1,6 @@
-# BibMedEd — Project Conventions for Claude
+# BibMedEd — Project Conventions for AI Coding Agents
 
-This file orients automated reviewers and `@claude` runs to the conventions used in this repo. Humans should also read [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Orients agents (Claude Code, Codex, Cursor, etc.) to the conventions used in this repo. Humans should read [`CONTRIBUTING.md`](CONTRIBUTING.md). An [`AGENTS.md`](AGENTS.md) symlink-equivalent points other agent toolchains here.
 
 ## Repo layout
 
@@ -57,7 +57,7 @@ When reviewing a PR, weight findings in this order:
 
 Style nits below the bar of correctness should be grouped or skipped.
 
-## What `@claude` should and should not do
+## Scope guidance for agents
 
 - ✅ Open PRs that add new adapters, fix bugs, improve docs, add tests.
 - ✅ Respond to review comments by pushing fixes to the existing PR branch.
@@ -65,3 +65,7 @@ Style nits below the bar of correctness should be grouped or skipped.
 - ❌ Modify `LICENSE`, `CITATION.cff` authorship, or `render.yaml` service plans without explicit human approval.
 - ❌ Add dependencies that aren't trivially replaceable (heavyweight ML stacks, paid SaaS SDKs) without flagging in the PR.
 - ❌ Auto-merge — leave merge to a human maintainer.
+
+## Reviewer setup
+
+Codex Cloud handles automatic PR reviews on this repo (see e.g. PR #4). Do not duplicate that loop with a second AI reviewer workflow.

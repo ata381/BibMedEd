@@ -134,7 +134,7 @@ If you use BibMedEd in your research, please cite:
 ```bibtex
 @software{bibmeded,
   title={BibMedEd: Bibliometric Analysis Platform for Medical Education},
-  author={Ata, Aakil},
+  author={Akillioglu, Ata},
   year={2026},
   url={https://github.com/ata381/BibMedEd}
 }
@@ -150,8 +150,6 @@ Contributions are warmly welcome. The fastest path to a merged PR is to write an
 - **Improve docs** — PRs to `docs/` auto-deploy to GitHub Pages on merge.
 
 By contributing you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md). Security issues should be reported via the process in [SECURITY.md](SECURITY.md).
-
-This repository also has [`@claude`](https://code.claude.com/docs/en/github-actions) enabled — mention `@claude` in any issue or PR comment to ask for help or request changes, and every new PR is automatically reviewed.
 
 ## License
 
