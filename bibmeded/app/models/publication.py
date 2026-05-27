@@ -8,7 +8,9 @@ class Publication(Base):
     __tablename__ = "publications"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     pmid: Mapped[str] = mapped_column(String(50), unique=True, index=True)
-    doi: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # `doi` is the cross-source dedup key and the coupling/co-citation join target —
+    # indexed so the bibliographic-coupling lookup at analysis time is sublinear.
+    doi: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     title: Mapped[str] = mapped_column(Text)
     abstract: Mapped[str | None] = mapped_column(Text, nullable=True)
     year: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
@@ -17,8 +19,10 @@ class Publication(Base):
     citation_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     journal_id: Mapped[int | None] = mapped_column(ForeignKey("journals.id"), nullable=True)
     fetched_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    query_id: Mapped[int | None] = mapped_column(ForeignKey("search_queries.id", ondelete="CASCADE"), nullable=True)
-    excluded: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # `query_id` is the hot filter for list_publications, bulk_exclude, and every
+    # analysis function — without an index every request is a full table scan.
+    query_id: Mapped[int | None] = mapped_column(ForeignKey("search_queries.id", ondelete="CASCADE"), nullable=True, index=True)
+    excluded: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", index=True)
     exclusion_reason: Mapped[str | None] = mapped_column(String(100), nullable=True)
     # Raw reference list from the adapter. Each entry is a source-native identifier
     # (PMID for PubMed, DOI for CrossRef, OpenAlex ID for OpenAlex). Used at analysis

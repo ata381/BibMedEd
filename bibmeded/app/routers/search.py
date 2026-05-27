@@ -1,7 +1,10 @@
+import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from app.database import get_db
 from app.models import QueryStatus, SearchProject, SearchQuery
@@ -23,6 +26,10 @@ def trigger_search(project_id: int, body: SearchRequest, db: Session = Depends(g
     db.commit()
     db.refresh(query)
     run_search.delay(query.id, body.source, body.year_start, body.year_end, body.max_results)
+    logger.info(
+        "search dispatched project_id=%d query_id=%d source=%s max_results=%d",
+        project_id, query.id, body.source, body.max_results,
+    )
     return SearchStatusResponse(query_id=query.id, status=query.status.value, result_count=None)
 
 

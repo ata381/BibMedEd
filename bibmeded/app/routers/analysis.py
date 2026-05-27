@@ -1,10 +1,14 @@
 import json
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import SearchProject, AnalysisRun
 from app.analysis import ANALYSIS_FUNCTIONS, ANALYSIS_SCHEMA_VERSION
 from app.schemas.analysis import AnalysisResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/projects/{project_id}/analysis", tags=["analysis"])
 
@@ -20,7 +24,10 @@ def _with_schema_version(results: dict) -> dict:
 @router.post("/{analysis_type}", response_model=AnalysisResponse)
 def run_analysis(project_id: int, analysis_type: str, db: Session = Depends(get_db)):
     if analysis_type not in ANALYSIS_FUNCTIONS:
-        raise HTTPException(status_code=400, detail=f"Unknown analysis type: {analysis_type}")
+        # Sanitize: don't echo the user-controlled `analysis_type` back into a log
+        # line or response that a downstream log aggregator might index — use %r repr.
+        logger.warning("unknown analysis_type requested: %r", analysis_type)
+        raise HTTPException(status_code=400, detail="Unknown analysis type")
     project = db.get(SearchProject, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")

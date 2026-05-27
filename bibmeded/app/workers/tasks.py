@@ -294,9 +294,11 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
     try:
         query = db.get(SearchQuery, query_id)
         if not query:
+            logger.warning("run_search called with unknown query_id=%s", query_id)
             return
         query.status = QueryStatus.running
         db.commit()
+        logger.info("run_search started query_id=%d source=%s max_results=%d", query_id, source, max_results)
 
         # Phase 1: Collect IDs via streaming pagination
         all_ids: list[str] = []
@@ -313,6 +315,10 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
         all_ids = all_ids[:max_results]  # cap to max_results
         query.raw_result_count = total_found
         db.flush()
+        logger.info(
+            "run_search query_id=%d phase=search complete: %d ids found (capped=%s)",
+            query_id, total_found, total_found > max_results,
+        )
         if query.created_at:
             # SQLite returns naive datetimes; Postgres returns tz-aware. astimezone handles
             # both: naive datetimes are first localized to UTC, aware ones are converted.
@@ -388,6 +394,10 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
         query.duplicate_count = cross_source_removed
         query.executed_at = datetime.now(timezone.utc)
         db.commit()
+        logger.info(
+            "run_search query_id=%d completed: persisted=%d cross_source_removed=%d",
+            query_id, persisted, cross_source_removed,
+        )
     except SoftTimeLimitExceeded:
         query = db.get(SearchQuery, query_id)
         if query:
@@ -395,11 +405,15 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
             db.commit()
         raise
     except Exception:
+        # logger.exception captures the full traceback into structured log aggregators
+        # (Sentry, CloudWatch) keyed to the query_id, even though the bare `raise` below
+        # already preserves the traceback for Celery's own handler.
+        logger.exception("run_search failed query_id=%s", query_id)
         query = db.get(SearchQuery, query_id)
         if query:
             query.status = QueryStatus.failed
             db.commit()
-        raise  # bare raise preserves the original traceback for production debugging
+        raise
     finally:
         await adapter.close()
         await icite.close()

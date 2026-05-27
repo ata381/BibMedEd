@@ -22,7 +22,9 @@ class Author(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
     orcid: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=True)
-    name_normalized: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # `name_normalized` is the per-batch lookup key in the ingestion path; the bulk
+    # prefetch in workers.tasks issues a `WHERE name_normalized IN (...)` per batch.
+    name_normalized: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     publications: Mapped[list["Publication"]] = relationship(secondary=publication_authors, back_populates="authors")
     affiliations: Mapped[list["Affiliation"]] = relationship(secondary=author_affiliations, back_populates="authors")
 
@@ -31,6 +33,12 @@ class Affiliation(Base):
     __tablename__ = "affiliations"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(Text)
-    country: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    country: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    # Affiliation strings are long ("Department of Internal Medicine, X University,
+    # ...") so a btree index over the full Text column is impractical in Postgres
+    # (`btree row length limit`). Index just the first 255 chars via a SQLAlchemy
+    # Index(func.substr(...)) when Postgres-only support is needed; for now match
+    # the lookup pattern (equality on the whole normalized string) and accept the
+    # scan cost since Affiliation is a smaller table than Author/Keyword.
     name_normalized: Mapped[str | None] = mapped_column(Text, nullable=True)
     authors: Mapped[list["Author"]] = relationship(secondary=author_affiliations, back_populates="affiliations")

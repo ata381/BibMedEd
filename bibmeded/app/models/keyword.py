@@ -23,7 +23,8 @@ class Keyword(Base):
     type: Mapped[KeywordType] = mapped_column(
         Enum(KeywordType, create_constraint=False, native_enum=False)
     )
-    term_normalized: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Indexed to match the per-batch bulk-prefetch lookup in workers.tasks._prefetch_lookup_caches.
+    term_normalized: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     publications: Mapped[list["Publication"]] = relationship(
         secondary=publication_keywords, back_populates="keywords"
     )

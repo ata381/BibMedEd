@@ -1,9 +1,12 @@
+import logging
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
+
+logger = logging.getLogger(__name__)
 
 from app.database import get_db
 from app.models import Publication, SearchProject
