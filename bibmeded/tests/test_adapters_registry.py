@@ -34,3 +34,12 @@ def test_list_adapters_returns_metadata():
     pubmed = next(a for a in adapters if a["name"] == "pubmed")
     assert pubmed["display_name"] == "PubMed"
     assert pubmed["requires_api_key"] is False
+
+
+def test_auto_discovery_finds_all_shipped_adapters():
+    """The four adapters shipped with BibMedEd should all be auto-discovered.
+    Regression guard for the 'drop a file, no registration needed' contract
+    documented in CONTRIBUTING.md."""
+    discover_adapters()
+    names = {a["name"] for a in list_adapters()}
+    assert {"pubmed", "openalex", "crossref", "semanticscholar"}.issubset(names)

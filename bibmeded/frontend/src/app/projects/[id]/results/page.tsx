@@ -207,10 +207,13 @@ export default function ResultsReview() {
         </div>
       </section>
 
-      {/* Cap notice — compares the upstream record count against what BibMedEd actually fetched.
-          Uses searchStats.result_count (persisted by the pipeline) + duplicate_count (within-DB
-          duplicates submitted for fetch), NOT the publications-list `total` which would shift
-          if the list endpoint is ever filtered. */}
+      {/* Cap notice — compares the upstream record count against what BibMedEd processed.
+          `result_count` is records persisted to the DB; `duplicate_count` is records removed
+          by cross-source deduplication (so the sum is "records the pipeline saw"). NOT the
+          publications-list `total`, which would shift if the list endpoint were ever filtered.
+          For fresh projects this is exact; for re-runs over a corpus with pre-existing rows
+          some records may have been skipped as duplicates of in-DB pubs without being counted
+          here — the cap-notice may therefore under-trigger on re-runs but never over-trigger. */}
       {(() => {
         const raw = searchStats?.raw_result_count ?? 0;
         const fetched = (searchStats?.result_count ?? 0) + (searchStats?.duplicate_count ?? 0);

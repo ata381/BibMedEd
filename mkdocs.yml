@@ -25,6 +25,7 @@ nav:
   - Why BibMedEd?: why-bibmeded.md
   - Case Study: case-study.md
   - Self-Hosting: deploy.md
+  - Scripting & API: scripting.md
   - Writing Adapters: adapters.md
 
 exclude_docs: |

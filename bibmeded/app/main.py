@@ -13,8 +13,19 @@ logger = logging.getLogger(__name__)
 def create_app() -> FastAPI:
     app = FastAPI(
         title="BibMedEd",
-        description="Bibliometric Analysis Platform for Medical Education",
-        version="0.1.0",
+        description=(
+            "Bibliometric Analysis Platform for Medical Education.\n\n"
+            "**Programmatic access**: this is the auto-generated OpenAPI surface. "
+            "Interactive Swagger UI lives at [`/docs`](/docs), ReDoc at [`/redoc`](/redoc), "
+            "and the raw spec at [`/openapi.json`](/openapi.json) for client codegen. "
+            "Analysis responses are stamped with a `schema_version` field so downstream "
+            "pipelines can pin against a known shape. See "
+            "[`docs/scripting.md`](https://github.com/ata381/BibMedEd/blob/master/docs/scripting.md) "
+            "for an end-to-end Jupyter-notebook example."
+        ),
+        version="0.2.0",
+        contact={"name": "BibMedEd", "url": "https://github.com/ata381/BibMedEd"},
+        license_info={"name": "MIT", "url": "https://github.com/ata381/BibMedEd/blob/master/LICENSE"},
     )
     app.add_middleware(
         CORSMiddleware,
