@@ -62,6 +62,8 @@ def _publication_to_dict(pub: Publication) -> dict:
         "publication_type": pub.publication_type,
         "source_database": pub.source_database,
         "citation_count": pub.citation_count,
+        "excluded": pub.excluded,
+        "exclusion_reason": pub.exclusion_reason,
         "journal_name": pub.journal.name if pub.journal else None,
         "journal_issn": pub.journal.issn if pub.journal else None,
         "authors": [
@@ -107,7 +109,24 @@ def generate_ris(pubs: list[Publication]) -> str:
     return "\n".join(lines)
 
 
-def generate_methodology(project_name: str, steps: list[MethodologyStep]) -> str:
+EXCLUSION_REASON_LABELS = {
+    "wrong_study_design": "Wrong study design",
+    "wrong_population": "Wrong population",
+    "wrong_intervention": "Wrong intervention",
+    "wrong_outcome": "Wrong outcome",
+    "not_peer_reviewed": "Not peer-reviewed (conference abstract, preprint, editorial)",
+    "non_english": "Non-English language",
+    "duplicate": "Duplicate not caught by automated dedup",
+    "fulltext_unavailable": "Full-text not retrievable",
+    "other": "Other / unspecified",
+}
+
+
+def generate_methodology(
+    project_name: str,
+    steps: list[MethodologyStep],
+    exclusion_summary: dict[str | None, int] | None = None,
+) -> str:
     lines = [
         f'METHODOLOGY LOG — Project: "{project_name}"',
         f"Generated: {date.today().isoformat()}",
@@ -177,6 +196,17 @@ def generate_methodology(project_name: str, steps: list[MethodologyStep]) -> str
             )
         lines.append("")
 
+    if exclusion_summary:
+        total_excluded = sum(exclusion_summary.values())
+        if total_excluded > 0:
+            lines.append("MANUAL EXCLUSIONS BY REASON (PRISMA 2020 item 17)")
+            for reason_code, n in sorted(exclusion_summary.items(), key=lambda kv: -kv[1]):
+                if n <= 0:
+                    continue
+                label = EXCLUSION_REASON_LABELS.get(reason_code or "other", reason_code or "Other / unspecified")
+                lines.append(f"  {label}: {n}")
+            lines.append("")
+
     last_step = steps[-1]
     lines.append("FINAL DATASET")
     lines.append(f"  Studies included: {last_step.records_out}")
@@ -190,7 +220,10 @@ def generate_prisma_svg(project_name: str, steps: list[MethodologyStep]) -> str:
 
 
 def generate_bundle(
-    project_name: str, pubs: list[Publication], steps: list[MethodologyStep]
+    project_name: str,
+    pubs: list[Publication],
+    steps: list[MethodologyStep],
+    exclusion_summary: dict[str | None, int] | None = None,
 ) -> bytes:
     """Produce a single .zip containing CSV, RIS, JSON, methodology .txt, PRISMA .svg, and a manifest."""
     stamp = date.today().isoformat()
@@ -200,7 +233,7 @@ def generate_bundle(
         zf.writestr(f"{slug}-{stamp}.csv", generate_csv(pubs))
         zf.writestr(f"{slug}-{stamp}.ris", generate_ris(pubs))
         zf.writestr(f"{slug}-{stamp}.json", generate_json(project_name, pubs))
-        zf.writestr(f"{slug}-methodology-{stamp}.txt", generate_methodology(project_name, steps))
+        zf.writestr(f"{slug}-methodology-{stamp}.txt", generate_methodology(project_name, steps, exclusion_summary))
         zf.writestr(f"{slug}-prisma-{stamp}.svg", generate_prisma_svg(project_name, steps))
         manifest = (
             f"BibMedEd export bundle\n"

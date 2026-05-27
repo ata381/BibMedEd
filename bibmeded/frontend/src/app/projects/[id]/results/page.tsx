@@ -1,34 +1,109 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { publicationsApi, searchApi, Publication, SearchStatus } from "@/lib/api";
+import {
+  publicationsApi,
+  searchApi,
+  Publication,
+  SearchStatus,
+  ExclusionReason,
+  EXCLUSION_REASON_LABELS,
+} from "@/lib/api";
 import toast from "react-hot-toast";
 
-function ExcludeButton({ pub, projectId, onToggle }: { pub: Publication; projectId: number; onToggle: (id: number, excluded: boolean) => void }) {
-  const handleClick = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+function ExcludeButton({
+  pub,
+  projectId,
+  onToggle,
+}: {
+  pub: Publication;
+  projectId: number;
+  onToggle: (id: number, excluded: boolean, reason: ExclusionReason | null) => void;
+}) {
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showMenu) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowMenu(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [showMenu]);
+
+  const doToggle = async (reason?: ExclusionReason) => {
+    setShowMenu(false);
     try {
-      const res = await publicationsApi.toggleExclude(projectId, pub.id);
-      onToggle(pub.id, res.data.excluded);
-      toast.success(res.data.excluded ? "Publication excluded" : "Publication included");
+      const res = await publicationsApi.toggleExclude(projectId, pub.id, reason);
+      onToggle(pub.id, res.data.excluded, res.data.exclusion_reason);
+      if (res.data.excluded) {
+        const label = res.data.exclusion_reason ? EXCLUSION_REASON_LABELS[res.data.exclusion_reason] : "Excluded";
+        toast.success(`Excluded: ${label}`);
+      } else {
+        toast.success("Publication included");
+      }
     } catch {
       toast.error("Failed to update publication.");
     }
   };
 
+  const handlePrimary = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (pub.excluded) {
+      doToggle();  // re-include
+    } else {
+      setShowMenu((v) => !v);
+    }
+  };
+
   return (
-    <button onClick={handleClick}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
-        pub.excluded
-          ? "bg-red-50 text-red-600 hover:bg-red-100"
-          : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-      }`}>
-      <span className="material-symbols-outlined text-sm" style={{fontVariationSettings:"'FILL' 1"}}>
-        {pub.excluded ? "close" : "check_circle"}
-      </span>
-      {pub.excluded ? "Excluded" : "Included"}
-    </button>
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={handlePrimary}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
+          pub.excluded
+            ? "bg-red-50 text-red-600 hover:bg-red-100"
+            : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+        }`}
+        aria-haspopup={!pub.excluded ? "menu" : undefined}
+        aria-expanded={!pub.excluded ? showMenu : undefined}
+      >
+        <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
+          {pub.excluded ? "close" : "check_circle"}
+        </span>
+        {pub.excluded ? "Excluded" : "Included"}
+      </button>
+      {pub.excluded && pub.exclusion_reason && (
+        <span className="block mt-1 text-[9px] text-red-600/80 text-center max-w-[150px] truncate" title={EXCLUSION_REASON_LABELS[pub.exclusion_reason]}>
+          {EXCLUSION_REASON_LABELS[pub.exclusion_reason]}
+        </span>
+      )}
+      {showMenu && !pub.excluded && (
+        <div
+          role="menu"
+          className="absolute right-0 mt-1 w-64 bg-surface-raised rounded-lg shadow-lg border border-divider z-10 py-1 text-xs"
+        >
+          <p className="px-3 pt-2 pb-1 text-[9px] font-bold uppercase tracking-widest text-on-surface-muted">
+            Exclude — PRISMA reason
+          </p>
+          {(Object.keys(EXCLUSION_REASON_LABELS) as ExclusionReason[]).map((code) => (
+            <button
+              key={code}
+              role="menuitem"
+              onClick={(e) => {
+                e.stopPropagation();
+                doToggle(code);
+              }}
+              className="block w-full text-left px-3 py-1.5 hover:bg-surface-hover text-on-surface"
+            >
+              {EXCLUSION_REASON_LABELS[code]}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -46,8 +121,8 @@ export default function ResultsReview() {
 
   const includedCount = total - excludedCount;
 
-  const handleToggleExclude = (pubId: number, excluded: boolean) => {
-    setPublications(prev => prev.map(p => p.id === pubId ? { ...p, excluded } : p));
+  const handleToggleExclude = (pubId: number, excluded: boolean, reason: ExclusionReason | null) => {
+    setPublications(prev => prev.map(p => p.id === pubId ? { ...p, excluded, exclusion_reason: reason } : p));
     setExcludedCount(prev => excluded ? prev + 1 : prev - 1);
   };
 
@@ -96,14 +171,21 @@ export default function ResultsReview() {
         </div>
       </section>
 
-      {/* Cap notice */}
-      {searchStats?.raw_result_count != null && total > 0 && searchStats.raw_result_count > total + (searchStats.duplicate_count ?? 0) && (
+      {/* Cap notice — compares the upstream record count against what BibMedEd actually fetched.
+          Uses searchStats.result_count (persisted by the pipeline) + duplicate_count (within-DB
+          duplicates submitted for fetch), NOT the publications-list `total` which would shift
+          if the list endpoint is ever filtered. */}
+      {(() => {
+        const raw = searchStats?.raw_result_count ?? 0;
+        const fetched = (searchStats?.result_count ?? 0) + (searchStats?.duplicate_count ?? 0);
+        if (raw <= 0 || fetched <= 0 || raw <= fetched) return null;
+        return (
         <div className="mb-6 rounded-xl border-l-4 border-warning bg-warning-container/40 px-5 py-4">
           <div className="flex items-start gap-3">
             <span className="material-symbols-outlined text-warning mt-0.5" style={{fontVariationSettings:"'FILL' 1"}}>warning</span>
             <div>
               <p className="text-sm font-bold text-on-surface">
-                Search returned {searchStats.raw_result_count.toLocaleString()} records — only the first {(total + (searchStats.duplicate_count ?? 0)).toLocaleString()} were fetched.
+                Search returned {raw.toLocaleString()} records — only the first {fetched.toLocaleString()} were fetched.
               </p>
               <p className="text-xs text-on-surface-muted mt-1">
                 The remainder were not retrieved. For PRISMA / journal submissions, rerun the search with a higher <code className="font-mono">max_results</code> or narrow the query — silently truncating a systematic review&apos;s record set is not journal-acceptable.
@@ -111,7 +193,8 @@ export default function ResultsReview() {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* PRISMA Flow */}
       <div className="bg-surface-raised rounded-xl p-8 shadow-sm mb-10">

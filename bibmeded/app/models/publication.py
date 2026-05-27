@@ -19,6 +19,7 @@ class Publication(Base):
     fetched_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     query_id: Mapped[int | None] = mapped_column(ForeignKey("search_queries.id", ondelete="CASCADE"), nullable=True)
     excluded: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    exclusion_reason: Mapped[str | None] = mapped_column(String(100), nullable=True)
     journal: Mapped["Journal | None"] = relationship(back_populates="publications")
     authors: Mapped[list["Author"]] = relationship(secondary="publication_authors", back_populates="publications")
     keywords: Mapped[list["Keyword"]] = relationship(secondary="publication_keywords", back_populates="publications")

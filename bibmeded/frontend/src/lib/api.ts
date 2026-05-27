@@ -24,6 +24,29 @@ export interface ProjectUpdateInput {
   date_range_end?: string | null;
 }
 
+export type ExclusionReason =
+  | "wrong_study_design"
+  | "wrong_population"
+  | "wrong_intervention"
+  | "wrong_outcome"
+  | "not_peer_reviewed"
+  | "non_english"
+  | "duplicate"
+  | "fulltext_unavailable"
+  | "other";
+
+export const EXCLUSION_REASON_LABELS: Record<ExclusionReason, string> = {
+  wrong_study_design: "Wrong study design",
+  wrong_population: "Wrong population",
+  wrong_intervention: "Wrong intervention",
+  wrong_outcome: "Wrong outcome",
+  not_peer_reviewed: "Not peer-reviewed (abstract / preprint / editorial)",
+  non_english: "Non-English language",
+  duplicate: "Duplicate (missed by automated dedup)",
+  fulltext_unavailable: "Full-text not retrievable",
+  other: "Other / unspecified",
+};
+
 export interface Publication {
   id: number;
   pmid: string;
@@ -34,6 +57,7 @@ export interface Publication {
   publication_type: string | null;
   citation_count: number | null;
   excluded: boolean;
+  exclusion_reason: ExclusionReason | null;
   journal_name: string | null;
   authors: { id: number; name: string; orcid: string | null }[];
 }
@@ -84,10 +108,16 @@ export const searchApi = {
 export const publicationsApi = {
   list: (projectId: number, params?: { sort_by?: string; order?: string; limit?: number; offset?: number }) =>
     api.get<{ total: number; excluded_count: number; items: Publication[] }>(`/api/projects/${projectId}/publications`, { params }),
-  toggleExclude: (projectId: number, publicationId: number) =>
-    api.patch<{ id: number; excluded: boolean }>(`/api/projects/${projectId}/publications/${publicationId}/exclude`),
-  bulkExclude: (projectId: number, citationThreshold: number) =>
-    api.post<{ excluded_count: number }>(`/api/projects/${projectId}/publications/bulk-exclude`, { citation_threshold: citationThreshold }),
+  toggleExclude: (projectId: number, publicationId: number, reason?: ExclusionReason) =>
+    api.patch<{ id: number; excluded: boolean; exclusion_reason: ExclusionReason | null }>(
+      `/api/projects/${projectId}/publications/${publicationId}/exclude`,
+      reason ? { reason } : {},
+    ),
+  bulkExclude: (projectId: number, citationThreshold: number, reason: ExclusionReason = "other") =>
+    api.post<{ excluded_count: number; reason: ExclusionReason }>(
+      `/api/projects/${projectId}/publications/bulk-exclude`,
+      { citation_threshold: citationThreshold, reason },
+    ),
 };
 
 export const analysisApi = {

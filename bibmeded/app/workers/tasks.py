@@ -96,7 +96,9 @@ def _persist_records(db, records: list[RawRecord], query_id: int) -> tuple[int, 
 
     Each record is wrapped in a SAVEPOINT so a single bad row does not roll back its
     siblings. Authors, affiliations, and keywords are bulk-prefetched per batch to avoid
-    N+1 SELECTs.
+    N+1 SELECTs. Cache entries added during a record that ultimately rolls back are
+    evicted so subsequent records do not reuse phantom ORM objects whose underlying rows
+    no longer exist.
     """
     norm, authors_by_norm, affils_by_norm, keywords_by_key = _prefetch_lookup_caches(db, records)
 
@@ -105,6 +107,10 @@ def _persist_records(db, records: list[RawRecord], query_id: int) -> tuple[int, 
     pub_authors_tbl = Publication.__table__.metadata.tables["publication_authors"]
     for record in records:
         sp = db.begin_nested()
+        # Track keys we add to caches in this record so we can evict on rollback.
+        added_author_keys: list[str] = []
+        added_affil_keys: list[str] = []
+        added_keyword_keys: list[tuple[str, KeywordType]] = []
         try:
             journal = None
             if record.journal_name:
@@ -151,6 +157,7 @@ def _persist_records(db, records: list[RawRecord], query_id: int) -> tuple[int, 
                     db.add(author)
                     db.flush()
                     authors_by_norm[a_norm] = author
+                    added_author_keys.append(a_norm)
                 db.execute(
                     pub_authors_tbl.insert().values(
                         publication_id=pub.id, author_id=author.id, author_position=pos
@@ -169,19 +176,26 @@ def _persist_records(db, records: list[RawRecord], query_id: int) -> tuple[int, 
                         db.add(aff)
                         db.flush()
                         affils_by_norm[af_norm] = aff
+                        added_affil_keys.append(af_norm)
                     if aff not in author.affiliations:
                         author.affiliations.append(aff)
 
             for term in record.mesh_terms:
-                kw = _get_or_create_keyword(
-                    db, keywords_by_key, term, _norm_cache(norm, term), KeywordType.mesh_term
-                )
+                k_norm = _norm_cache(norm, term)
+                key = (k_norm, KeywordType.mesh_term)
+                pre_existed = key in keywords_by_key
+                kw = _get_or_create_keyword(db, keywords_by_key, term, k_norm, KeywordType.mesh_term)
+                if not pre_existed:
+                    added_keyword_keys.append(key)
                 pub.keywords.append(kw)
 
             for term in record.keywords:
-                kw = _get_or_create_keyword(
-                    db, keywords_by_key, term, _norm_cache(norm, term), KeywordType.author_keyword
-                )
+                k_norm = _norm_cache(norm, term)
+                key = (k_norm, KeywordType.author_keyword)
+                pre_existed = key in keywords_by_key
+                kw = _get_or_create_keyword(db, keywords_by_key, term, k_norm, KeywordType.author_keyword)
+                if not pre_existed:
+                    added_keyword_keys.append(key)
                 pub.keywords.append(kw)
 
             sp.commit()
@@ -190,6 +204,13 @@ def _persist_records(db, records: list[RawRecord], query_id: int) -> tuple[int, 
         except Exception as exc:
             logger.warning("Skipping record %s: %s", record.source_id, exc)
             sp.rollback()
+            # Evict phantom cache entries — their underlying rows were rolled back.
+            for k in added_author_keys:
+                authors_by_norm.pop(k, None)
+            for k in added_affil_keys:
+                affils_by_norm.pop(k, None)
+            for k in added_keyword_keys:
+                keywords_by_key.pop(k, None)
             continue
 
     db.commit()
@@ -257,7 +278,15 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
         all_ids = all_ids[:max_results]  # cap to max_results
         query.raw_result_count = total_found
         db.flush()
-        searched_at_iso = query.created_at.replace(tzinfo=timezone.utc).isoformat() if query.created_at else None
+        if query.created_at:
+            # SQLite returns naive datetimes; Postgres returns tz-aware. astimezone handles
+            # both: naive datetimes are first localized to UTC, aware ones are converted.
+            ca = query.created_at
+            if ca.tzinfo is None:
+                ca = ca.replace(tzinfo=timezone.utc)
+            searched_at_iso = ca.astimezone(timezone.utc).isoformat()
+        else:
+            searched_at_iso = None
         _log_step(db, query_id, step_order=1, phase="search", source=source,
                   action=f"{adapter.methodology_label()} search",
                   records_in=0, records_out=total_found,
