@@ -79,11 +79,19 @@ function ExcludeButton({
     }
   };
 
+  // Truncate the title for the accessible label so a screen reader announcing 20
+  // identical "Included" buttons gets enough context to disambiguate.
+  const labelTitle = (pub.title || "Untitled").slice(0, 60);
+  const triggerLabel = pub.excluded
+    ? `Re-include "${labelTitle}"`
+    : `Exclude "${labelTitle}" — open PRISMA reason picker`;
+
   return (
     <div className="relative" ref={containerRef}>
       <button
         ref={triggerRef}
         onClick={handlePrimary}
+        aria-label={triggerLabel}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
           pub.excluded
             ? "bg-red-50 text-red-600 hover:bg-red-100"
@@ -92,7 +100,7 @@ function ExcludeButton({
         aria-haspopup={!pub.excluded ? "menu" : undefined}
         aria-expanded={!pub.excluded ? showMenu : undefined}
       >
-        <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
+        <span aria-hidden="true" className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
           {pub.excluded ? "close" : "check_circle"}
         </span>
         {pub.excluded ? "Excluded" : "Included"}
@@ -197,9 +205,9 @@ export default function ResultsReview() {
     <div className="max-w-6xl mx-auto px-4 py-10">
       {/* Editorial Header */}
       <section className="mb-12 border-l-4 border-primary pl-8">
-        <h2 className="text-4xl font-extrabold text-primary tracking-tight mb-2" style={{fontFamily:"var(--font-display)"}}>
+        <h1 className="text-4xl font-extrabold text-primary tracking-tight mb-2" style={{fontFamily:"var(--font-display)"}}>
           Results Review
-        </h2>
+        </h1>
         <div className="flex items-center gap-4">
           <p className="text-on-surface-muted font-medium">{total} unique publications found</p>
           <span className="w-1.5 h-1.5 bg-accent rounded-full" />
@@ -220,8 +228,8 @@ export default function ResultsReview() {
         if (raw <= 0 || fetched <= 0 || raw <= fetched) return null;
         return (
         <div className="mb-6 rounded-xl border-l-4 border-warning bg-warning-container/40 px-5 py-4">
-          <div className="flex items-start gap-3">
-            <span className="material-symbols-outlined text-warning mt-0.5" style={{fontVariationSettings:"'FILL' 1"}}>warning</span>
+          <div className="flex items-start gap-3" role="status">
+            <span aria-hidden="true" className="material-symbols-outlined text-warning mt-0.5" style={{fontVariationSettings:"'FILL' 1"}}>warning</span>
             <div>
               <p className="text-sm font-bold text-on-surface">
                 Search returned {raw.toLocaleString()} records — only the first {fetched.toLocaleString()} were fetched.
@@ -236,13 +244,15 @@ export default function ResultsReview() {
       })()}
 
       {/* PRISMA Flow */}
-      <div className="bg-surface-raised rounded-xl p-8 shadow-sm mb-10">
+      <section
+        aria-label={`PRISMA flow: ${(searchStats?.raw_result_count ?? 0).toLocaleString()} identified, ${searchStats?.duplicate_count ?? 0} duplicates removed, ${excludedCount} manually excluded, ${includedCount.toLocaleString()} included`}
+        className="bg-surface-raised rounded-xl p-8 shadow-sm mb-10">
         <div className="flex items-center gap-3 mb-6">
-          <span className="material-symbols-outlined text-primary">account_tree</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-primary">account_tree</span>
           <h3 className="font-bold text-xl text-primary" style={{fontFamily:"var(--font-display)"}}>PRISMA Flow</h3>
           <span className="text-[10px] font-bold py-1 px-2 bg-primary-container text-primary rounded-full uppercase tracking-widest">Identification</span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 overflow-x-auto pb-1 -mx-2 px-2 [&>div]:flex-shrink-0 [&>div.flex-1]:min-w-[140px]">
           {/* Raw Results */}
           <div className="flex-1 bg-surface-sunken rounded-xl p-5 text-center">
             <p className="text-[10px] font-bold text-on-surface-muted uppercase tracking-widest mb-2">Records Identified</p>
@@ -251,7 +261,7 @@ export default function ResultsReview() {
             </p>
             <p className="text-[10px] text-on-surface-muted mt-1">via database search</p>
           </div>
-          <span className="material-symbols-outlined text-on-surface-subtle text-2xl">arrow_forward</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-on-surface-subtle text-2xl">arrow_forward</span>
           {/* Duplicates Removed */}
           <div className="flex-1 bg-danger-container rounded-xl p-5 text-center group relative">
             <p className="text-[10px] font-bold text-on-surface-muted uppercase tracking-widest mb-2">Duplicates Removed</p>
@@ -263,7 +273,7 @@ export default function ResultsReview() {
               Matched via exact PMID and DOI cross-check
             </div>
           </div>
-          <span className="material-symbols-outlined text-on-surface-subtle text-2xl">arrow_forward</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-on-surface-subtle text-2xl">arrow_forward</span>
           {/* Manually Excluded */}
           {excludedCount > 0 && (
             <>
@@ -274,7 +284,7 @@ export default function ResultsReview() {
                 </p>
                 <p className="text-[10px] text-on-surface-muted mt-1">by reviewer</p>
               </div>
-              <span className="material-symbols-outlined text-on-surface-subtle text-2xl">arrow_forward</span>
+              <span aria-hidden="true" className="material-symbols-outlined text-on-surface-subtle text-2xl">arrow_forward</span>
             </>
           )}
           {/* Included */}
@@ -286,7 +296,7 @@ export default function ResultsReview() {
             <p className="text-[10px] mt-1 opacity-70">for analysis</p>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Action Bar */}
       <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
@@ -303,14 +313,14 @@ export default function ResultsReview() {
           }}
             disabled={total === 0 && !loading}
             className="flex items-center gap-2 px-4 py-2 bg-warning-container text-warning rounded-lg font-bold text-xs hover:bg-warning-container transition disabled:opacity-40 disabled:cursor-not-allowed">
-            <span className="material-symbols-outlined text-sm">filter_alt</span>
+            <span aria-hidden="true" className="material-symbols-outlined text-sm">filter_alt</span>
             Exclude 0-citation papers
           </button>
         </div>
         <button onClick={() => includedCount > 0 ? router.push(`/projects/${projectId}/dashboard`) : toast.error("No publications to analyze. Run a search first.")}
           disabled={includedCount === 0 && !loading}
           className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-lg font-bold text-sm hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed">
-          <span className="material-symbols-outlined text-sm">auto_awesome</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-sm">auto_awesome</span>
           Run Bibliometric Analysis
         </button>
       </div>
@@ -373,30 +383,32 @@ export default function ResultsReview() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-12 flex justify-center">
-          <nav className="flex items-center gap-1 bg-surface-sunken rounded-full px-2 py-1">
-            <button onClick={() => setPage(Math.max(1, page - 1))} className="p-2 hover:bg-surface-hover rounded-full transition-colors">
-              <span className="material-symbols-outlined text-sm">chevron_left</span>
+          <nav aria-label="Pagination" className="flex items-center gap-1 bg-surface-sunken rounded-full px-2 py-1">
+            <button onClick={() => setPage(Math.max(1, page - 1))} aria-label="Previous page" disabled={page === 1} className="p-2 hover:bg-surface-hover rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+              <span aria-hidden="true" className="material-symbols-outlined text-sm">chevron_left</span>
             </button>
             {pageWindow[0] > 1 && (
               <>
-                <button onClick={() => setPage(1)} className="px-4 py-1.5 hover:bg-surface-hover rounded-full text-xs font-bold">1</button>
-                {pageWindow[0] > 2 && <span className="px-2 text-on-surface-subtle text-xs">...</span>}
+                <button onClick={() => setPage(1)} aria-label="Page 1" className="px-4 py-1.5 hover:bg-surface-hover rounded-full text-xs font-bold">1</button>
+                {pageWindow[0] > 2 && <span aria-hidden="true" className="px-2 text-on-surface-subtle text-xs">...</span>}
               </>
             )}
             {pageWindow.map((p) => (
               <button key={p} onClick={() => setPage(p)}
+                aria-label={`Page ${p}`}
+                aria-current={page === p ? "page" : undefined}
                 className={`px-4 py-1.5 rounded-full text-xs font-bold ${page === p ? "bg-primary text-white" : "hover:bg-surface-hover"}`}>
                 {p}
               </button>
             ))}
             {pageWindow[pageWindow.length - 1] < totalPages && (
               <>
-                {pageWindow[pageWindow.length - 1] < totalPages - 1 && <span className="px-2 text-on-surface-subtle text-xs">...</span>}
-                <button onClick={() => setPage(totalPages)} className="px-4 py-1.5 hover:bg-surface-hover rounded-full text-xs font-bold">{totalPages}</button>
+                {pageWindow[pageWindow.length - 1] < totalPages - 1 && <span aria-hidden="true" className="px-2 text-on-surface-subtle text-xs">...</span>}
+                <button onClick={() => setPage(totalPages)} aria-label={`Page ${totalPages}`} className="px-4 py-1.5 hover:bg-surface-hover rounded-full text-xs font-bold">{totalPages}</button>
               </>
             )}
-            <button onClick={() => setPage(Math.min(totalPages, page + 1))} className="p-2 hover:bg-surface-hover rounded-full transition-colors">
-              <span className="material-symbols-outlined text-sm">chevron_right</span>
+            <button onClick={() => setPage(Math.min(totalPages, page + 1))} aria-label="Next page" disabled={page === totalPages} className="p-2 hover:bg-surface-hover rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+              <span aria-hidden="true" className="material-symbols-outlined text-sm">chevron_right</span>
             </button>
           </nav>
         </div>

@@ -83,7 +83,7 @@ export default function Dashboard() {
     <div className="max-w-7xl mx-auto px-2 py-6">
       {/* Header */}
       <section className="mb-8">
-        <h2 className="text-3xl font-extrabold text-on-surface tracking-tight" style={{fontFamily:"var(--font-display)"}}>Analysis Overview</h2>
+        <h1 className="text-3xl font-extrabold text-on-surface tracking-tight" style={{fontFamily:"var(--font-display)"}}>Analysis Overview</h1>
         <p className="text-on-surface-muted font-medium">{project?.name}</p>
       </section>
 

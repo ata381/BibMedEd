@@ -102,20 +102,22 @@ export default function SearchConfig() {
       </section>
 
       {/* Mode Toggle */}
-      <div className="flex items-center gap-4 mb-8">
+      <div role="group" aria-label="Query mode" className="flex items-center gap-4 mb-8">
         <button onClick={() => {
           if (advancedMode && rawQuery && rawQuery !== builtQuery) {
             if (!confirm("Switching to Query Builder will discard your raw query edits. Continue?")) return;
           }
           setAdvancedMode(false);
         }}
+          aria-pressed={!advancedMode}
           className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${!advancedMode ? "bg-primary text-white" : "bg-surface-sunken text-on-surface-muted hover:bg-surface-hover"}`}>
-          <span className="material-symbols-outlined text-sm mr-1 align-middle">tune</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-sm mr-1 align-middle">tune</span>
           Query Builder
         </button>
         <button onClick={() => { if (!advancedMode) { setAdvancedMode(true); setRawQuery(builtQuery); } }}
+          aria-pressed={advancedMode}
           className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${advancedMode ? "bg-primary text-white" : "bg-surface-sunken text-on-surface-muted hover:bg-surface-hover"}`}>
-          <span className="material-symbols-outlined text-sm mr-1 align-middle">terminal</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-sm mr-1 align-middle">terminal</span>
           Advanced Query (Raw)
         </button>
       </div>
@@ -235,8 +237,8 @@ export default function SearchConfig() {
               )}
             </div>
             {status && (
-              <div className="mb-4">
-                <div className="text-xs text-accent mb-2">{loading && <span className="material-symbols-outlined animate-spin text-sm mr-1 inline-block">sync</span>}{status}</div>
+              <div className="mb-4" role="status" aria-live="polite" aria-atomic="true">
+                <div className="text-xs text-accent mb-2">{loading && <span aria-hidden="true" className="material-symbols-outlined animate-spin text-sm mr-1 inline-block">sync</span>}{status}</div>
                 {progress && progress.total > 0 && (
                   <div className="w-full bg-primary-hover rounded-full h-2 overflow-hidden">
                     <div className="bg-secondary-container h-2 rounded-full transition-all duration-500"

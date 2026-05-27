@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-AdapterSource = Literal["pubmed", "openalex", "crossref"]
+AdapterSource = Literal["pubmed", "openalex", "crossref", "semanticscholar"]
 
 
 class SearchRequest(BaseModel):

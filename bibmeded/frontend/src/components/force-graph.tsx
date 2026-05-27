@@ -144,21 +144,47 @@ export function ForceGraph({ nodes, links, width = 400, height = 350 }: ForceGra
     );
   }
 
+  // Top nodes summary — exposed as a visually-hidden table for screen-reader users
+  // who can't operate the interactive SVG. Order matches the rendered force layout.
+  const summaryNodes = [...filtered.nodes]
+    .sort((a, b) => (b.size ?? 0) - (a.size ?? 0))
+    .slice(0, 10);
+  const sliderId = "force-graph-min-pubs";
+
   return (
     <div className="relative w-full h-full">
-      <svg ref={svgRef} width={width} height={height} className="w-full h-full" />
+      <svg
+        ref={svgRef}
+        width={width}
+        height={height}
+        className="w-full h-full"
+        role="img"
+        aria-label={`Network graph: ${filtered.nodes.length} nodes, ${filtered.links.length} links. Pan and zoom to explore.`}
+      />
+      {/* Visually-hidden top-nodes table — gives non-sighted users an accessible
+          alternative to the interactive SVG (WCAG 1.1.1 non-text content). */}
+      <div className="sr-only">
+        <p>Top {summaryNodes.length} nodes by size:</p>
+        <ul>
+          {summaryNodes.map((n) => (
+            <li key={n.id}>{n.label ?? n.id} — {n.size ?? 0}</li>
+          ))}
+        </ul>
+      </div>
       {maxNodeSize > 1 && (
         <div className="absolute top-3 right-3 bg-white/80 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-slate-100">
-          <label className="text-[9px] font-bold text-on-surface-muted uppercase tracking-widest block mb-1">
+          <label htmlFor={sliderId} className="text-[9px] font-bold text-on-surface-muted uppercase tracking-widest block mb-1">
             Min. publications: {minPubs}
           </label>
           <input
+            id={sliderId}
             type="range"
             min={0}
             max={Math.ceil(maxNodeSize * 0.5)}
             value={minPubs}
             onChange={(e) => setUserMinPubs(Number(e.target.value))}
             className="w-24 h-1 accent-primary"
+            aria-label={`Filter nodes by minimum publication count, currently ${minPubs}`}
           />
           <p className="text-[8px] text-on-surface-subtle mt-0.5">{filtered.nodes.length} / {nodes.length} nodes</p>
         </div>

@@ -84,3 +84,24 @@ Verify the API is running:
 curl http://localhost:8000/api/health
 # {"status": "ok"}
 ```
+
+## Liveness and readiness probes
+
+For Docker / Kubernetes / Render and any orchestrator that needs a deep healthcheck, BibMedEd exposes two split probes:
+
+- **`GET /api/live`** — liveness. Returns `{"status": "alive"}` with no I/O. Suitable for the docker-compose `healthcheck.test` on the `api` service and the Kubernetes `livenessProbe`. Never fails as long as the process is up.
+- **`GET /api/ready`** — readiness. Pings Postgres (`SELECT 1`) and Redis (`PING`). Returns `200 {"status":"ready","checks":{"db":"ok","redis":"ok"}}` when both are reachable, `503 {"status":"not_ready","checks":{...}}` otherwise. Use as the Kubernetes `readinessProbe` or the load balancer healthcheck.
+
+Example docker-compose snippet:
+
+```yaml
+services:
+  api:
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/api/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+```
+
+Every API response includes an `X-Request-ID` header (auto-generated unless the client supplies one). When filing a bug, include this id so logs can be correlated end-to-end.
