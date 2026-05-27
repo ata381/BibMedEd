@@ -24,14 +24,85 @@ from app.services.icite import ICiteClient
 from app.workers.celery_app import celery_app
 
 
+def _norm_cache(cache: dict[str, str], value: str) -> str:
+    """Memoize normalize_name() within a batch so each unique string is normalized once."""
+    if value not in cache:
+        cache[value] = normalize_name(value)
+    return cache[value]
+
+
+def _prefetch_lookup_caches(db, records: list[RawRecord]) -> tuple[
+    dict[str, str], dict[str, Author], dict[str, Affiliation], dict[tuple[str, KeywordType], Keyword]
+]:
+    """Build single-query lookup dicts for authors, affiliations, and keywords used by this batch.
+
+    Collapses ~14k per-record SELECTs (2k records * 5 authors * 2 lookups + keywords) into a
+    handful of `WHERE column IN (...)` queries.
+    """
+    norm: dict[str, str] = {}
+    author_names: set[str] = set()
+    affil_names: set[str] = set()
+    mesh_terms: set[str] = set()
+    kw_terms: set[str] = set()
+    for r in records:
+        for a in r.authors:
+            author_names.add(_norm_cache(norm, a.name))
+            if a.affiliation:
+                affil_names.add(_norm_cache(norm, a.affiliation))
+        for t in r.mesh_terms:
+            mesh_terms.add(_norm_cache(norm, t))
+        for t in r.keywords:
+            kw_terms.add(_norm_cache(norm, t))
+
+    authors_by_norm: dict[str, Author] = {}
+    if author_names:
+        for a in db.query(Author).filter(Author.name_normalized.in_(author_names)).all():
+            authors_by_norm[a.name_normalized] = a
+    affils_by_norm: dict[str, Affiliation] = {}
+    if affil_names:
+        for a in db.query(Affiliation).filter(Affiliation.name_normalized.in_(affil_names)).all():
+            affils_by_norm[a.name_normalized] = a
+    keywords_by_key: dict[tuple[str, KeywordType], Keyword] = {}
+    if mesh_terms:
+        for k in db.query(Keyword).filter(
+            Keyword.term_normalized.in_(mesh_terms),
+            Keyword.type == KeywordType.mesh_term,
+        ).all():
+            keywords_by_key[(k.term_normalized, KeywordType.mesh_term)] = k
+    if kw_terms:
+        for k in db.query(Keyword).filter(
+            Keyword.term_normalized.in_(kw_terms),
+            Keyword.type == KeywordType.author_keyword,
+        ).all():
+            keywords_by_key[(k.term_normalized, KeywordType.author_keyword)] = k
+    return norm, authors_by_norm, affils_by_norm, keywords_by_key
+
+
+def _get_or_create_keyword(
+    db, cache: dict[tuple[str, KeywordType], Keyword], term: str, normalized: str, type_: KeywordType,
+) -> Keyword:
+    key = (normalized, type_)
+    kw = cache.get(key)
+    if kw is None:
+        kw = Keyword(term=term, type=type_, term_normalized=normalized)
+        db.add(kw)
+        db.flush()
+        cache[key] = kw
+    return kw
+
+
 def _persist_records(db, records: list[RawRecord], query_id: int) -> tuple[int, list[str]]:
     """Persist a batch of RawRecords. Returns (count_persisted, persisted_pmids).
 
-    Each record is wrapped in a SAVEPOINT so a single bad row does not roll back
-    its siblings in the same batch.
+    Each record is wrapped in a SAVEPOINT so a single bad row does not roll back its
+    siblings. Authors, affiliations, and keywords are bulk-prefetched per batch to avoid
+    N+1 SELECTs.
     """
+    norm, authors_by_norm, affils_by_norm, keywords_by_key = _prefetch_lookup_caches(db, records)
+
     persisted = 0
     persisted_pmids: list[str] = []
+    pub_authors_tbl = Publication.__table__.metadata.tables["publication_authors"]
     for record in records:
         sp = db.begin_nested()
         try:
@@ -42,7 +113,7 @@ def _persist_records(db, records: list[RawRecord], query_id: int) -> tuple[int, 
                     journal = Journal(
                         name=record.journal_name,
                         issn=record.journal_issn,
-                        name_normalized=normalize_name(record.journal_name),
+                        name_normalized=_norm_cache(norm, record.journal_name),
                     )
                     db.add(journal)
                     db.flush()
@@ -73,67 +144,44 @@ def _persist_records(db, records: list[RawRecord], query_id: int) -> tuple[int, 
             db.flush()
 
             for pos, author_data in enumerate(record.authors):
-                author = db.query(Author).filter(
-                    Author.name_normalized == normalize_name(author_data.name)
-                ).first()
-                if not author:
-                    author = Author(
-                        name=author_data.name,
-                        orcid=author_data.orcid,
-                        name_normalized=normalize_name(author_data.name),
-                    )
+                a_norm = _norm_cache(norm, author_data.name)
+                author = authors_by_norm.get(a_norm)
+                if author is None:
+                    author = Author(name=author_data.name, orcid=author_data.orcid, name_normalized=a_norm)
                     db.add(author)
                     db.flush()
+                    authors_by_norm[a_norm] = author
                 db.execute(
-                    Publication.__table__.metadata.tables["publication_authors"]
-                    .insert()
-                    .values(publication_id=pub.id, author_id=author.id, author_position=pos)
+                    pub_authors_tbl.insert().values(
+                        publication_id=pub.id, author_id=author.id, author_position=pos
+                    )
                 )
 
                 if author_data.affiliation:
-                    country = extract_country(author_data.affiliation)
-                    aff = db.query(Affiliation).filter(
-                        Affiliation.name_normalized == normalize_name(author_data.affiliation)
-                    ).first()
-                    if not aff:
+                    af_norm = _norm_cache(norm, author_data.affiliation)
+                    aff = affils_by_norm.get(af_norm)
+                    if aff is None:
                         aff = Affiliation(
                             name=author_data.affiliation,
-                            country=country,
-                            name_normalized=normalize_name(author_data.affiliation),
+                            country=extract_country(author_data.affiliation),
+                            name_normalized=af_norm,
                         )
                         db.add(aff)
                         db.flush()
+                        affils_by_norm[af_norm] = aff
                     if aff not in author.affiliations:
                         author.affiliations.append(aff)
 
             for term in record.mesh_terms:
-                kw = db.query(Keyword).filter(
-                    Keyword.term_normalized == normalize_name(term),
-                    Keyword.type == KeywordType.mesh_term,
-                ).first()
-                if not kw:
-                    kw = Keyword(
-                        term=term,
-                        type=KeywordType.mesh_term,
-                        term_normalized=normalize_name(term),
-                    )
-                    db.add(kw)
-                    db.flush()
+                kw = _get_or_create_keyword(
+                    db, keywords_by_key, term, _norm_cache(norm, term), KeywordType.mesh_term
+                )
                 pub.keywords.append(kw)
 
             for term in record.keywords:
-                kw = db.query(Keyword).filter(
-                    Keyword.term_normalized == normalize_name(term),
-                    Keyword.type == KeywordType.author_keyword,
-                ).first()
-                if not kw:
-                    kw = Keyword(
-                        term=term,
-                        type=KeywordType.author_keyword,
-                        term_normalized=normalize_name(term),
-                    )
-                    db.add(kw)
-                    db.flush()
+                kw = _get_or_create_keyword(
+                    db, keywords_by_key, term, _norm_cache(norm, term), KeywordType.author_keyword
+                )
                 pub.keywords.append(kw)
 
             sp.commit()
@@ -218,6 +266,7 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
         # Phase 2: Fetch + cross-source dedup + persist in chunks
         persisted = 0
         all_persisted_pmids: list[str] = []
+        track_pmids = source == "pubmed"  # only PubMed source needs iCite enrichment
         cross_source_removed = 0
         dedup_breakdown: dict[str, int] = {"doi": 0, "pmid": 0}
         async for records in adapter.fetch_stream(all_ids, batch_size=FETCH_BATCH_SIZE):
@@ -227,7 +276,8 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
                 dedup_breakdown[k] = dedup_breakdown.get(k, 0) + v
             count, batch_pmids = _persist_records(db, deduped, query_id)
             persisted += count
-            all_persisted_pmids.extend(batch_pmids)
+            if track_pmids:
+                all_persisted_pmids.extend(batch_pmids)
             task.update_state(
                 state="PROGRESS",
                 meta={"phase": "fetch", "current": persisted, "total": len(all_ids)},
@@ -246,12 +296,16 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
                                   "removed_by": dedup_breakdown})
 
         # Phase 4: iCite enrichment (PubMed-sourced records only)
-        if source == "pubmed" and all_persisted_pmids:
+        if track_pmids and all_persisted_pmids:
             citation_counts = await icite.get_citations(all_persisted_pmids)
-            for pmid_str, count in citation_counts.items():
-                pub = db.query(Publication).filter(Publication.pmid == pmid_str).first()
-                if pub:
-                    pub.citation_count = count
+            if citation_counts:
+                pubs_to_update = (
+                    db.query(Publication)
+                    .filter(Publication.pmid.in_(citation_counts.keys()))
+                    .all()
+                )
+                for pub in pubs_to_update:
+                    pub.citation_count = citation_counts.get(pub.pmid)
             db.commit()
             enriched_count = len(citation_counts)
             _log_step(db, query_id, step_order=4, phase="enrichment", source="icite",

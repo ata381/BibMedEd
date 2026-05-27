@@ -110,6 +110,8 @@ export const exportApi = {
     `${API_BASE_URL}/api/projects/${projectId}/export/methodology`,
   prismaUrl: (projectId: number) =>
     `${API_BASE_URL}/api/projects/${projectId}/export/prisma`,
+  bundleUrl: (projectId: number) =>
+    `${API_BASE_URL}/api/projects/${projectId}/export/bundle`,
 };
 
 export default api;

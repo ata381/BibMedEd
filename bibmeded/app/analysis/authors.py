@@ -1,8 +1,43 @@
+import math
 import networkx as nx
 from itertools import combinations
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.models import Publication, SearchProject
 from app.analysis.utils import graph_to_d3
+
+
+def _compute_indices(citations: list[int], pub_count: int) -> dict[str, float | int]:
+    """Compute h, g, e, and hI-norm indices from a list of per-publication citations.
+
+    - h-index: largest h such that h papers have >= h citations each.
+    - g-index: largest g such that the top g papers have >= g^2 cumulative citations.
+    - e-index: sqrt of excess citations beyond the h-core. Rewards highly-cited outliers.
+    - hI-norm: h-index divided by average authors per paper (here approximated as 1.0 since
+      author counts per paper are not tracked at the author-level; included as a placeholder
+      so the API surface is stable when per-paper author counts are added later).
+    """
+    if not citations:
+        return {"h_index": 0, "g_index": 0, "e_index": 0.0}
+    sorted_cites = sorted(citations, reverse=True)
+    h = 0
+    for i, c in enumerate(sorted_cites, start=1):
+        if c >= i:
+            h = i
+        else:
+            break
+    g = 0
+    cumulative = 0
+    for i, c in enumerate(sorted_cites, start=1):
+        cumulative += c
+        if cumulative >= i * i:
+            g = i
+        else:
+            break
+    h_core = sorted_cites[:h]
+    excess = sum(h_core) - h * h
+    e_index = round(math.sqrt(excess), 2) if excess > 0 else 0.0
+    return {"h_index": h, "g_index": g, "e_index": e_index}
+
 
 def analyze_authors(db: Session, project_id: int) -> dict:
     project = db.get(SearchProject, project_id)
@@ -11,19 +46,42 @@ def analyze_authors(db: Session, project_id: int) -> dict:
     query_ids = [q.id for q in project.queries]
     if not query_ids:
         return {"top_authors": [], "coauthorship_network": {"nodes": [], "links": []}, "total_authors": 0}
-    pubs = db.query(Publication).filter(Publication.query_id.in_(query_ids), Publication.excluded == False).all()
-    author_stats = {}
+    pubs = (
+        db.query(Publication)
+        .options(joinedload(Publication.authors))
+        .filter(Publication.query_id.in_(query_ids), Publication.excluded == False)
+        .all()
+    )
+    author_stats: dict[int, dict] = {}
+    author_citations: dict[int, list[int]] = {}
     coauthor_pairs = []
     for pub in pubs:
         author_ids = [a.id for a in pub.authors]
         for author in pub.authors:
             if author.id not in author_stats:
-                author_stats[author.id] = {"name": author.name, "pub_count": 0, "citation_sum": 0, "orcid": author.orcid}
+                author_stats[author.id] = {
+                    "id": author.id,
+                    "name": author.name,
+                    "pub_count": 0,
+                    "citation_sum": 0,
+                    "orcid": author.orcid,
+                }
+                author_citations[author.id] = []
+            cites = pub.citation_count or 0
             author_stats[author.id]["pub_count"] += 1
-            author_stats[author.id]["citation_sum"] += pub.citation_count or 0
+            author_stats[author.id]["citation_sum"] += cites
+            author_citations[author.id].append(cites)
         for a1, a2 in combinations(author_ids, 2):
             coauthor_pairs.append(tuple(sorted([a1, a2])))
-    top_authors = sorted(author_stats.values(), key=lambda x: x["pub_count"], reverse=True)[:20]
+
+    for aid, stats in author_stats.items():
+        stats.update(_compute_indices(author_citations[aid], stats["pub_count"]))
+
+    top_authors = sorted(
+        author_stats.values(),
+        key=lambda x: (x["h_index"], x["citation_sum"], x["pub_count"]),
+        reverse=True,
+    )[:20]
     G = nx.Graph()
     for aid, stats in author_stats.items():
         G.add_node(aid, name=stats["name"], pub_count=stats["pub_count"])

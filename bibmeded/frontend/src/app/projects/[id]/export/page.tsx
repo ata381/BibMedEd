@@ -232,10 +232,14 @@ export default function ExportManager() {
                   Want everything in one click?
                 </h3>
                 <p className="text-sm text-on-surface-muted mt-1">
-                  Grab the full bundle — CSV + RIS + methodology + PRISMA SVG — as separate downloads.
+                  One <code className="font-mono text-xs">.zip</code> with the CSV, RIS, methodology log, PRISMA SVG, and a manifest — drop straight into your submission.
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button leadingIcon="folder_zip" onClick={() => window.open(exportApi.bundleUrl(projectId))}>
+                  Download bundle
+                </Button>
+                <span className="text-xs text-on-surface-subtle hidden lg:inline">or grab individually:</span>
                 <Button variant="outline" size="sm" leadingIcon="download" onClick={() => window.open(exportApi.csvUrl(projectId))}>
                   CSV
                 </Button>
