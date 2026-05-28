@@ -15,6 +15,11 @@ dependencies = [
     "httpx>=0.27.0",
     "lxml>=5.0.0",
     "networkx>=3.0.0",
+    # numpy + scipy power the logistic field-maturity curve fit in
+    # analysis/publications.py. In-domain for a scientometrics tool (not an ML
+    # stack); without them _classify_maturity silently returns None.
+    "numpy>=1.26.0",
+    "scipy>=1.11.0",
 ]
 
 [project.optional-dependencies]

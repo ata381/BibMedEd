@@ -16,12 +16,11 @@ export function Sidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  // Close the drawer whenever the route changes — desktop layout already shows the
-  // sidebar so this is a no-op above the md breakpoint, but on mobile it keeps the
-  // drawer from staying open after a nav tap.
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
+  // Close the drawer on nav — handled via each link's onClick (closeDrawer) rather
+  // than a pathname effect, to avoid synchronous setState-in-effect (React Compiler
+  // flags it as a cascading-render risk). Desktop is unaffected; the drawer only
+  // exists below the md breakpoint.
+  const closeDrawer = () => setOpen(false);
 
   // Escape closes the drawer on mobile for keyboard parity.
   useEffect(() => {
@@ -90,6 +89,7 @@ export function Sidebar() {
         <div className="mb-8 px-4 pt-2">
           <Link
             href="/"
+            onClick={closeDrawer}
             aria-label="BibMedEd — go to project list"
             className="inline-flex items-baseline gap-2 focus-visible:outline-2 focus-visible:outline-[color:var(--color-focus-ring)] focus-visible:outline-offset-2 rounded-[var(--radius-sm)]"
           >
@@ -109,6 +109,7 @@ export function Sidebar() {
         <nav aria-label="Workspace" className="flex-1 flex flex-col gap-1" style={{ fontFamily: "var(--font-display)" }}>
           <Link
             href="/"
+            onClick={closeDrawer}
             aria-current={pathname === "/" ? "page" : undefined}
             className={linkClasses(pathname === "/")}
           >
@@ -128,6 +129,7 @@ export function Sidebar() {
                   <Link
                     key={item.suffix}
                     href={href}
+                    onClick={closeDrawer}
                     aria-current={active ? "page" : undefined}
                     className={linkClasses(active)}
                   >
