@@ -6,6 +6,10 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     pubmed_api_key: str = ""
     pubmed_rate_limit: float = 3.0  # requests/sec, 10 with API key
+    ncbi_email: str = ""
+    openalex_email: str = ""
+    crossref_email: str = ""
+    semantic_scholar_api_key: str = ""  # optional — keyed S2 tier is 1 req/s instead of ~100/5min
     icite_base_url: str = "https://icite.od.nih.gov/api"
     cors_origins: list[str] = ["http://localhost:3000"]
     debug: bool = False

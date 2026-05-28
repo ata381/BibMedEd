@@ -5,21 +5,23 @@ import { useParams, useRouter } from "next/navigation";
 import { analysisApi, projectsApi, Project } from "@/lib/api";
 import toast from "react-hot-toast";
 import { ForceGraph } from "@/components/force-graph";
+import { Tabs, type TabItem } from "@/components/ui";
 
 type AnalysisData = Record<string, unknown>;
+type DashboardTab = "overview" | "authors" | "networks" | "citations";
 
-const TABS = [
-  { key: "overview", label: "Overview" },
-  { key: "authors", label: "Authors" },
-  { key: "networks", label: "Networks" },
-  { key: "citations", label: "Citations" },
+const TABS: TabItem<DashboardTab>[] = [
+  { value: "overview", label: "Overview" },
+  { value: "authors", label: "Authors" },
+  { value: "networks", label: "Networks" },
+  { value: "citations", label: "Citations" },
 ];
 
 export default function Dashboard() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const projectId = Number(params.id);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
   const [project, setProject] = useState<Project | null>(null);
   const [analyses, setAnalyses] = useState<Record<string, AnalysisData>>({});
   const [loading, setLoading] = useState(true);
@@ -88,13 +90,8 @@ export default function Dashboard() {
       </section>
 
       {/* Tabs */}
-      <div className="flex gap-8 mb-8 overflow-x-auto">
-        {TABS.map(tab => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`pb-3 px-1 border-b-2 text-sm whitespace-nowrap transition-colors ${activeTab === tab.key ? "border-primary text-primary font-bold" : "border-transparent text-on-surface-muted font-medium hover:text-primary"}`}>
-            {tab.label}
-          </button>
-        ))}
+      <div className="mb-8">
+        <Tabs items={TABS} value={activeTab} onChange={setActiveTab} ariaLabel="Dashboard sections" />
       </div>
 
       {/* Metric Grid */}
