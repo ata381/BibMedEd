@@ -26,7 +26,7 @@ AND education[Filter]
 
 ## 2. Create the project
 
-In BibMedEd's UI, **New project → name it "AI in UME 2014-2024"**. Pick the data sources for this run — for an OA-leaning sweep we'd choose **PubMed + OpenAlex** (both ship by default; CrossRef and Europe PMC are [open contribution issues](https://github.com/ata381/BibMedEd/issues?q=is%3Aissue+is%3Aopen+label%3Aadapter) if you want broader coverage).
+In BibMedEd's UI, **New project → name it "AI in UME 2014-2024"**. Pick the data sources for this run — for an OA-leaning sweep we'd choose **PubMed + OpenAlex** (PubMed, OpenAlex, CrossRef, and Semantic Scholar all ship by default; Europe PMC and others are [open contribution issues](https://github.com/ata381/BibMedEd/issues?q=is%3Aissue+is%3Aopen+label%3Aadapter) if you want broader coverage).
 
 Pasted into the search box, the query runs concurrently against both sources via Celery workers. The progress bar on the search page shows live record counts as each source streams in.
 

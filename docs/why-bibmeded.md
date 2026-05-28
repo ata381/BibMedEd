@@ -10,10 +10,10 @@ You arrived here because you were searching for something like *"Covidence alter
 
 | Capability | BibMedEd | Covidence | VOSviewer | CiteSpace | Bibliometrix (R) | pyBibX |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Multi-database search built-in** | ✅ PubMed + OpenAlex (extensible) | ❌ (import only) | ❌ (import only) | ❌ (import only) | ⚠️ via WoS/Scopus importers | ❌ (file import) |
+| **Multi-database search built-in** | ✅ PubMed + OpenAlex + CrossRef + Semantic Scholar (extensible) | ❌ (import only) | ❌ (import only) | ❌ (import only) | ⚠️ via WoS/Scopus importers | ❌ (file import) |
 | **Automatic cross-source dedup** | ✅ DOI + PMID | ✅ | ❌ | ❌ | ⚠️ manual | ❌ |
-| **Screening workflow** | 📋 single-reviewer (dual planned) | ✅ dual-reviewer | ❌ | ❌ | ❌ | ❌ |
-| **Bibliometric analyses** | ✅ 6 modules | ❌ | ⚠️ network only | ✅ many | ✅ many | ✅ many + AI |
+| **Screening workflow** | 📋 single-reviewer with PRISMA-2020 exclusion reasons (dual planned) | ✅ dual-reviewer | ❌ | ❌ | ❌ | ❌ |
+| **Bibliometric analyses** | ✅ 6 modules + h/g/e-index, coupling, co-citation, burst detection, field maturity | ❌ | ⚠️ network only | ✅ many | ✅ many | ✅ many + AI |
 | **Network visualisation** | ✅ D3.js interactive | ❌ | ✅ desktop | ✅ desktop | ✅ static | ✅ static |
 | **PRISMA-ready methodology log** | ✅ auto-generated | ✅ manual | ❌ | ❌ | ❌ | ❌ |
 | **Self-hostable** | ✅ `docker compose up` | ❌ SaaS only | ✅ desktop binary | ✅ desktop binary | ✅ R/RStudio | ✅ Python lib |
@@ -61,7 +61,7 @@ Legend: ✅ first-class · ⚠️ partial · 📋 on roadmap · ❌ not supporte
 
 - **Single-reviewer screening only.** Dual-reviewer with conflict resolution is on the [roadmap](https://github.com/ata381/BibMedEd/blob/master/ROADMAP.md) but Covidence ships it today.
 - **Frontend visualisations are interactive but not publication-ready.** VOSviewer and CiteSpace produce better static images for journal figures; BibMedEd exports the underlying data so you can re-render in either if needed.
-- **Adapter coverage is intentionally narrow at launch.** PubMed and OpenAlex ship; CrossRef, Europe PMC, Semantic Scholar, arXiv, Scopus, and Web of Science are open issues waiting on contributors ([#6–#14](https://github.com/ata381/BibMedEd/issues?q=is%3Aissue+is%3Aopen+label%3Aadapter)).
+- **Adapter coverage is still growing.** PubMed, OpenAlex, CrossRef, and Semantic Scholar ship; Europe PMC, arXiv, DOAJ, OpenCitations, CORE, BASE, and Lens.org are open issues waiting on contributors ([adapter label](https://github.com/ata381/BibMedEd/issues?q=is%3Aissue+is%3Aopen+label%3Aadapter)). Scopus and Web of Science require paid API agreements.
 - **No published bibliometric methodology paper yet** — JOSS submission is in flight. Bibliometrix's [methodology paper](https://doi.org/10.1016/j.joi.2017.08.007) has thousands of citations; we have zero so far.
 
 We'd rather be honest about these gaps than oversell. If any of them are dealbreakers, pick a tool above and come back when the gap closes (or — better — [open the PR that closes it](https://github.com/ata381/BibMedEd/blob/master/CONTRIBUTING.md)).
@@ -69,7 +69,7 @@ We'd rather be honest about these gaps than oversell. If any of them are dealbre
 ## Where BibMedEd is structurally better
 
 - **The methodology log is novel.** No other tool on this list emits a citable text record of every pipeline step — search query, source, retrieval timestamp, dedup decisions, exclusion filters, analysis runs — that you paste straight into your [PRISMA 2020](https://doi.org/10.1136/bmj.n71) Methods section. This isn't a feature you can bolt onto the others.
-- **The adapter pattern is the entire extensibility story.** Every other tool above either accepts a fixed set of import formats or is single-source. BibMedEd contributors have shipped two adapters (PubMed, OpenAlex) in ~50 lines each; nine more are open issues with claim-it labels.
+- **The adapter pattern is the entire extensibility story.** Every other tool above either accepts a fixed set of import formats or is single-source. BibMedEd ships four adapters (PubMed, OpenAlex, CrossRef, Semantic Scholar) at ~50-150 lines each; more are open issues with claim-it labels, and the registry auto-discovers any new `BaseSourceAdapter` dropped into `app/adapters/` — no registration step.
 - **Cross-source deduplication is automatic, not "import then dedupe in Excel."** DOI and PMID matching happens at retrieval time and is logged.
 - **Web-native, multi-user-ready architecture.** VOSviewer and CiteSpace are desktop tools; Bibliometrix is R-bound; pyBibX is a Python library. BibMedEd is a FastAPI service designed to run on a lab server with shared access — a deployment shape none of the alternatives offer.
 
