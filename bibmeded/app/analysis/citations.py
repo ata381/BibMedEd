@@ -62,37 +62,72 @@ def _resolve_refs_in_corpus(pubs: list[Publication]) -> dict[int, set[int]]:
 
 
 # Hub papers cited by many in-corpus pubs (or that cite many in-corpus pubs) would
-# produce O(N²) pair updates. Cap each hub's contribution; the final result is already
-# truncated to the top 100 strongest pairs so this only drops noise.
+# produce O(N^2) pair updates for that single hub. Cap each hub's contribution so a
+# handful of extreme hubs can't blow up runtime on large (~100k-edge) corpora.
+#
+# The subset kept per hub is NOT an arbitrary/noise-dropping slice: papers are ranked
+# by their overall reference-degree (how many in-corpus papers they themselves cite),
+# a proxy for how "connected" a paper already is in the network, and the highest-degree
+# papers are kept. This is a degree-aware heuristic, not an ID-ordered slice -- it does
+# not systematically favor low database IDs, and it biases toward retaining the papers
+# most likely to also participate in other strong pairs. Any hub that exceeds the cap
+# is still an incomplete/truncated view of the true pairwise graph for that hub, so
+# callers must check the returned `truncated` flag rather than assume exact counts.
 _HUB_DEGREE_CAP = 75
 
 
-def _build_coupling_pairs(refs_by_pub: dict[int, set[int]]) -> Counter:
+def _select_hub_subset(citers: set[int], degree_by_pub: dict[int, int]) -> tuple[list[int], bool]:
+    """Return (subset, was_truncated) -- `citers` capped to `_HUB_DEGREE_CAP`,
+    keeping the highest reference-degree publications first (ties broken by id
+    for determinism)."""
+    if len(citers) <= _HUB_DEGREE_CAP:
+        return sorted(citers), False
+    ranked = sorted(citers, key=lambda pid: (-degree_by_pub.get(pid, 0), pid))
+    return sorted(ranked[:_HUB_DEGREE_CAP]), True
+
+
+def _build_coupling_pairs(refs_by_pub: dict[int, set[int]]) -> tuple[Counter, dict]:
     """Pair count weighted by shared references — two pubs that both cite paper R
-    accrue +1 for each shared R."""
+    accrue +1 for each shared R.
+
+    Returns ``(pairs, truncation_info)`` where ``truncation_info`` reports whether
+    any hub exceeded ``_HUB_DEGREE_CAP`` and had to be truncated, so the omission
+    is surfaced to callers instead of silently dropping in-corpus publications."""
+    degree_by_pub = {pub_id: len(targets) for pub_id, targets in refs_by_pub.items()}
     cited_to_citers: dict[int, set[int]] = defaultdict(set)
     for pub_id, targets in refs_by_pub.items():
         for t in targets:
             cited_to_citers[t].add(pub_id)
     pairs: Counter = Counter()
+    truncated_hub_count = 0
     for citers in cited_to_citers.values():
         if len(citers) < 2:
             continue
-        sorted_citers = sorted(citers)[:_HUB_DEGREE_CAP]
-        pairs.update(combinations(sorted_citers, 2))
-    return pairs
+        subset, was_truncated = _select_hub_subset(citers, degree_by_pub)
+        if was_truncated:
+            truncated_hub_count += 1
+        pairs.update(combinations(subset, 2))
+    truncation_info = {"truncated": truncated_hub_count > 0, "truncated_hub_count": truncated_hub_count}
+    return pairs, truncation_info
 
 
-def _build_cocitation_pairs(refs_by_pub: dict[int, set[int]]) -> Counter:
+def _build_cocitation_pairs(refs_by_pub: dict[int, set[int]]) -> tuple[Counter, dict]:
     """Pair count weighted by shared citing papers — two pubs co-cited by paper C
-    accrue +1 for each such C."""
+    accrue +1 for each such C.
+
+    Returns ``(pairs, truncation_info)`` -- see ``_build_coupling_pairs``."""
+    degree_by_pub = {pub_id: len(targets) for pub_id, targets in refs_by_pub.items()}
     pairs: Counter = Counter()
+    truncated_hub_count = 0
     for targets in refs_by_pub.values():
         if len(targets) < 2:
             continue
-        sorted_targets = sorted(targets)[:_HUB_DEGREE_CAP]
-        pairs.update(combinations(sorted_targets, 2))
-    return pairs
+        subset, was_truncated = _select_hub_subset(targets, degree_by_pub)
+        if was_truncated:
+            truncated_hub_count += 1
+        pairs.update(combinations(subset, 2))
+    truncation_info = {"truncated": truncated_hub_count > 0, "truncated_hub_count": truncated_hub_count}
+    return pairs, truncation_info
 
 
 def _pairs_to_d3(pubs: list[Publication], pairs: Counter, top_k: int = 100) -> dict:
@@ -125,7 +160,9 @@ def analyze_citations(db: Session, project_id: int) -> dict:
         "most_cited": [],
         "citation_network": {"nodes": [], "links": []},
         "coupling_network": {"nodes": [], "links": []},
+        "coupling_truncated": False,
         "cocitation_network": {"nodes": [], "links": []},
+        "cocitation_truncated": False,
         "total_citations": 0,
     }
     project = db.get(SearchProject, project_id)
@@ -177,13 +214,15 @@ def analyze_citations(db: Session, project_id: int) -> dict:
 
     # Bibliographic coupling + co-citation, computed from external_references.
     refs_by_pub = _resolve_refs_in_corpus(pubs)
-    coupling_pairs = _build_coupling_pairs(refs_by_pub)
-    cocitation_pairs = _build_cocitation_pairs(refs_by_pub)
+    coupling_pairs, coupling_truncation = _build_coupling_pairs(refs_by_pub)
+    cocitation_pairs, cocitation_truncation = _build_cocitation_pairs(refs_by_pub)
 
     return {
         "most_cited": most_cited,
         "citation_network": graph_to_d3(citation_graph),
         "coupling_network": _pairs_to_d3(pubs, coupling_pairs),
+        "coupling_truncated": coupling_truncation["truncated"],
         "cocitation_network": _pairs_to_d3(pubs, cocitation_pairs),
+        "cocitation_truncated": cocitation_truncation["truncated"],
         "total_citations": total_citations,
     }

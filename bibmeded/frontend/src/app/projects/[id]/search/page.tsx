@@ -30,15 +30,21 @@ export default function SearchConfig() {
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelledRef = useRef(false);
 
-  // Cleanup polling + pending redirect on unmount to prevent memory leaks
-  // and setState-on-unmounted-component warnings during fast navigation.
+  // Cleanup polling + pending redirect on unmount AND whenever the viewed
+  // project changes. The App Router does not remount this page when only the
+  // `[id]` segment changes, so a search started on a previous project would
+  // otherwise keep polling/redirecting in the background after the user
+  // navigates to a different project's search page.
   useEffect(() => {
+    cancelledRef.current = false;
     return () => {
+      cancelledRef.current = true;
       if (pollRef.current) clearInterval(pollRef.current);
       if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
     };
-  }, []);
+  }, [projectId]);
 
   useEffect(() => {
     adaptersApi.list().then(res => setAdapters(res.data)).catch(() => {});
@@ -49,13 +55,17 @@ export default function SearchConfig() {
     setStatus("Submitting search...");
     try {
       const res = await searchApi.trigger(projectId, queryString, source, yearStart, yearEnd);
+      if (cancelledRef.current) return;
       const queryId = res.data.query_id;
       setStatus("Search dispatched...");
       setProgress(null);
       if (pollRef.current) clearInterval(pollRef.current);
+      if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
       pollRef.current = setInterval(async () => {
+        if (cancelledRef.current) return;
         try {
           const s = await searchApi.status(projectId, queryId);
+          if (cancelledRef.current) return;
           const found = s.data.raw_result_count ?? 0;
           const fetched = s.data.result_count ?? 0;
           if (found > 0 && fetched === 0) {
@@ -70,7 +80,10 @@ export default function SearchConfig() {
             if (pollRef.current) clearInterval(pollRef.current);
             setProgress({ found, fetched, total: fetched });
             toast.success(`${fetched.toLocaleString()} publications ready.`);
-            redirectTimeoutRef.current = setTimeout(() => router.push(`/projects/${projectId}/results`), 500);
+            redirectTimeoutRef.current = setTimeout(() => {
+              if (cancelledRef.current) return;
+              router.push(`/projects/${projectId}/results`);
+            }, 500);
           } else if (s.data.status === "failed") {
             if (pollRef.current) clearInterval(pollRef.current);
             setStatus("Search failed.");
@@ -79,6 +92,7 @@ export default function SearchConfig() {
             toast.error("Search failed. Please try again.");
           }
         } catch {
+          if (cancelledRef.current) return;
           if (pollRef.current) clearInterval(pollRef.current);
           setStatus("Error polling status.");
           setProgress(null);
@@ -87,6 +101,7 @@ export default function SearchConfig() {
         }
       }, 2000);
     } catch {
+      if (cancelledRef.current) return;
       setStatus("Failed to start search.");
       setLoading(false);
       toast.error("Could not start search. Is the backend running?");

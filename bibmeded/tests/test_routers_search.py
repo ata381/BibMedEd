@@ -15,6 +15,26 @@ def test_trigger_search(client, db):
     assert data["query_id"] is not None
     mock_task.delay.assert_called_once()
 
+def test_trigger_search_forwards_request_id_to_run_search_task(client, db):
+    """The dispatch site must propagate the inbound x-request-id so the Celery
+    task can log/record it, honoring the documented API->Celery correlation."""
+    project = SearchProject(name="Test")
+    db.add(project)
+    db.commit()
+    db.refresh(project)
+    with patch("app.routers.search.run_search") as mock_task:
+        mock_task.delay.return_value = None
+        response = client.post(
+            f"/api/projects/{project.id}/search",
+            json={"query_string": "test"},
+            headers={"x-request-id": "corr-id-999"},
+        )
+    assert response.status_code == 202
+    mock_task.delay.assert_called_once()
+    args, kwargs = mock_task.delay.call_args
+    assert "corr-id-999" in args or kwargs.get("request_id") == "corr-id-999"
+
+
 def test_get_search_status(client, db):
     project = SearchProject(name="Test")
     db.add(project)

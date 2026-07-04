@@ -55,16 +55,22 @@ export default function ExportManager() {
   const [activeTab, setActiveTab] = useState<Tab>("data");
   const [dataFormat, setDataFormat] = useState<DataFormat>("csv");
   const [methodologyText, setMethodologyText] = useState<string | null>(null);
+  const [methodologyError, setMethodologyError] = useState(false);
   const [loadingMethodology, setLoadingMethodology] = useState(false);
 
   const loadMethodology = async () => {
     if (methodologyText) return;
     setLoadingMethodology(true);
+    setMethodologyError(false);
     try {
       const response = await fetch(exportApi.methodologyUrl(projectId));
+      if (!response.ok) {
+        throw new Error(`Methodology fetch failed with status ${response.status}`);
+      }
       const text = await response.text();
       setMethodologyText(text);
     } catch {
+      setMethodologyError(true);
       toast.error("Failed to load methodology log.");
     } finally {
       setLoadingMethodology(false);
@@ -296,6 +302,12 @@ export default function ExportManager() {
               <pre className="bg-code-bg text-code-fg font-mono text-xs rounded-[var(--radius-md)] p-6 overflow-x-auto whitespace-pre-wrap leading-relaxed">
                 {methodologyText}
               </pre>
+            ) : methodologyError ? (
+              <EmptyState
+                icon="error"
+                title="Couldn't load methodology log"
+                description="The project may have been deleted, or the server is temporarily unavailable. Switch tabs and back to retry."
+              />
             ) : (
               <EmptyState
                 icon="search_off"

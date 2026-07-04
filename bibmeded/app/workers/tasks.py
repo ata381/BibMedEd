@@ -38,18 +38,21 @@ def _norm_cache(cache: dict[str, str], value: str) -> str:
 
 
 def _prefetch_lookup_caches(db, records: list[RawRecord]) -> tuple[
-    dict[str, str], dict[str, Author], dict[str, Affiliation], dict[tuple[str, KeywordType], Keyword]
+    dict[str, str], dict[str, Author], dict[str, Affiliation],
+    dict[tuple[str, KeywordType], Keyword], dict[str, Journal],
 ]:
-    """Build single-query lookup dicts for authors, affiliations, and keywords used by this batch.
+    """Build single-query lookup dicts for authors, affiliations, keywords, and journals
+    used by this batch.
 
-    Collapses ~14k per-record SELECTs (2k records * 5 authors * 2 lookups + keywords) into a
-    handful of `WHERE column IN (...)` queries.
+    Collapses ~14k per-record SELECTs (2k records * 5 authors * 2 lookups + keywords +
+    journal) into a handful of `WHERE column IN (...)` queries.
     """
     norm: dict[str, str] = {}
     author_names: set[str] = set()
     affil_names: set[str] = set()
     mesh_terms: set[str] = set()
     kw_terms: set[str] = set()
+    journal_names: set[str] = set()
     for r in records:
         for a in r.authors:
             author_names.add(_norm_cache(norm, a.name))
@@ -59,6 +62,8 @@ def _prefetch_lookup_caches(db, records: list[RawRecord]) -> tuple[
             mesh_terms.add(_norm_cache(norm, t))
         for t in r.keywords:
             kw_terms.add(_norm_cache(norm, t))
+        if r.journal_name:
+            journal_names.add(_norm_cache(norm, r.journal_name))
 
     authors_by_norm: dict[str, Author] = {}
     if author_names:
@@ -81,7 +86,11 @@ def _prefetch_lookup_caches(db, records: list[RawRecord]) -> tuple[
             Keyword.type == KeywordType.author_keyword,
         ).all():
             keywords_by_key[(k.term_normalized, KeywordType.author_keyword)] = k
-    return norm, authors_by_norm, affils_by_norm, keywords_by_key
+    journals_by_norm: dict[str, Journal] = {}
+    if journal_names:
+        for j in db.query(Journal).filter(Journal.name_normalized.in_(journal_names)).all():
+            journals_by_norm[j.name_normalized] = j
+    return norm, authors_by_norm, affils_by_norm, keywords_by_key, journals_by_norm
 
 
 def _get_or_create_keyword(
@@ -109,7 +118,7 @@ def _persist_records(db, records: list[RawRecord], query_id: int, project_id: in
     The pre-existence check is scoped to ``project_id``: each project owns its own copy
     of a shared paper, so a PMID/DOI claimed by another project must not starve this one.
     """
-    norm, authors_by_norm, affils_by_norm, keywords_by_key = _prefetch_lookup_caches(db, records)
+    norm, authors_by_norm, affils_by_norm, keywords_by_key, journals_by_norm = _prefetch_lookup_caches(db, records)
 
     persisted = 0
     persisted_pmids: list[str] = []
@@ -120,15 +129,17 @@ def _persist_records(db, records: list[RawRecord], query_id: int, project_id: in
         added_author_keys: list[str] = []
         added_affil_keys: list[str] = []
         added_keyword_keys: list[tuple[str, KeywordType]] = []
+        added_journal_key: str | None = None
         new_journal_in_savepoint: Journal | None = None
         try:
             journal = None
             if record.journal_name:
                 # Case-insensitive lookup via name_normalized so "JAMA"/"Jama" don't
-                # produce duplicate Journal rows.
+                # produce duplicate Journal rows. Prefetched per-batch (see
+                # _prefetch_lookup_caches) to avoid an N+1 SELECT per record.
                 j_norm = _norm_cache(norm, record.journal_name)
-                journal = db.query(Journal).filter(Journal.name_normalized == j_norm).first()
-                if not journal:
+                journal = journals_by_norm.get(j_norm)
+                if journal is None:
                     journal = Journal(
                         name=record.journal_name,
                         issn=record.journal_issn,
@@ -136,6 +147,8 @@ def _persist_records(db, records: list[RawRecord], query_id: int, project_id: in
                     )
                     db.add(journal)
                     db.flush()
+                    journals_by_norm[j_norm] = journal
+                    added_journal_key = j_norm
                     new_journal_in_savepoint = journal
 
             normalized_doi = _normalize_doi(record.external_ids.get("doi") or record.doi)
@@ -227,6 +240,13 @@ def _persist_records(db, records: list[RawRecord], query_id: int, project_id: in
             sp.commit()
             persisted += 1
             persisted_pmids.append(pub.pmid)
+        except SoftTimeLimitExceeded:
+            # Celery's cooperative soft-timeout signal is a plain Exception
+            # subclass (billiard/celery.exceptions) — it must propagate so the
+            # task can shut down gracefully instead of being treated as an
+            # ordinary bad record and swallowed.
+            sp.rollback()
+            raise
         except _FATAL_DB_EXCEPTIONS:
             # Connection drop / DB unavailability is a batch-level failure — don't
             # swallow it per-record and silently undercount the methodology log.
@@ -242,6 +262,8 @@ def _persist_records(db, records: list[RawRecord], query_id: int, project_id: in
                 affils_by_norm.pop(k, None)
             for k in added_keyword_keys:
                 keywords_by_key.pop(k, None)
+            if added_journal_key is not None:
+                journals_by_norm.pop(added_journal_key, None)
             if new_journal_in_savepoint is not None:
                 # Same eviction reason — the row was rolled back but the identity
                 # map would otherwise still hold a stale reference.
@@ -311,8 +333,9 @@ def _adapter_kwargs(source: str) -> dict:
 
 @celery_app.task(bind=True, name="app.workers.tasks.run_search", soft_time_limit=600, time_limit=660)
 def run_search(self, query_id: int, source: str = "pubmed", year_start: str | None = None,
-               year_end: str | None = None, max_results: int = DEFAULT_MAX_RESULTS):
-    asyncio.run(_run_search(self, query_id, source, year_start, year_end, max_results))
+               year_end: str | None = None, max_results: int = DEFAULT_MAX_RESULTS,
+               request_id: str | None = None):
+    asyncio.run(_run_search(self, query_id, source, year_start, year_end, max_results, request_id))
 
 
 # Register the old task name so queued messages from before the rename still get processed
@@ -322,18 +345,22 @@ def run_pubmed_search(self, query_id: int):
 
 
 async def _run_search(task, query_id: int, source: str, year_start: str | None = None,
-                      year_end: str | None = None, max_results: int = DEFAULT_MAX_RESULTS):
+                      year_end: str | None = None, max_results: int = DEFAULT_MAX_RESULTS,
+                      request_id: str | None = None):
+    # Binds request_id onto every log record emitted by this task run so the
+    # originating API request can be grepped across the API -> Celery -> DB path.
+    log = logging.LoggerAdapter(logger, {"request_id": request_id or "-"})
     adapter = get_adapter(source, **_adapter_kwargs(source))
     db = SessionLocal()
     icite = ICiteClient()
     try:
         query = db.get(SearchQuery, query_id)
         if not query:
-            logger.warning("run_search called with unknown query_id=%s", query_id)
+            log.warning("run_search called with unknown query_id=%s", query_id)
             return
         query.status = QueryStatus.running
         db.commit()
-        logger.info("run_search started query_id=%d source=%s max_results=%d", query_id, source, max_results)
+        log.info("run_search started query_id=%d source=%s max_results=%d", query_id, source, max_results)
 
         # Phase 1: Collect IDs via streaming pagination
         all_ids: list[str] = []
@@ -350,7 +377,7 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
         all_ids = all_ids[:max_results]  # cap to max_results
         query.raw_result_count = total_found
         db.flush()
-        logger.info(
+        log.info(
             "run_search query_id=%d phase=search complete: %d ids found (capped=%s)",
             query_id, total_found, total_found > max_results,
         )
@@ -368,7 +395,7 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
                   records_in=0, records_out=total_found,
                   parameters={"query": query.query_string, "database": source,
                               "max_results": max_results, "capped": total_found > max_results,
-                              "searched_at": searched_at_iso})
+                              "searched_at": searched_at_iso, "request_id": request_id})
 
         # Phase 2: Fetch + cross-source dedup + persist in chunks
         persisted = 0
@@ -393,14 +420,21 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
         _log_step(db, query_id, step_order=None, phase="fetch", source=source,
                   action=f"Batch fetch via {adapter.methodology_label()}",
                   records_in=len(all_ids), records_out=persisted,
-                  parameters={"batch_size": FETCH_BATCH_SIZE})
+                  parameters={"batch_size": FETCH_BATCH_SIZE, "request_id": request_id})
 
         if cross_source_removed:
             _log_step(db, query_id, step_order=None, phase="dedup", source=source,
                       action="Cross-source deduplication on DOI and PMID",
                       records_in=persisted + cross_source_removed, records_out=persisted,
                       parameters={"method": "exact-match", "fields": "doi,pmid",
-                                  "removed_by": dedup_breakdown})
+                                  "removed_by": dedup_breakdown, "request_id": request_id})
+
+        # Commit the fetch/dedup methodology steps now, before enrichment runs.
+        # Enrichment failure below does db.rollback() on its own transaction —
+        # if these steps were still only flush()'d (uncommitted), that rollback
+        # would silently wipe them too. Committing here scopes any later
+        # enrichment failure to the enrichment step alone.
+        db.commit()
 
         # Phase 4: iCite enrichment (PubMed-sourced records only). Enrichment is
         # best-effort supplementary metadata, not a precondition for search
@@ -430,19 +464,20 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
                           records_in=persisted, records_out=persisted,
                           parameters={"source": "NIH iCite", "status": "completed",
                                       "enriched": enriched_count,
-                                      "missing": persisted - enriched_count})
+                                      "missing": persisted - enriched_count,
+                                      "request_id": request_id})
             except SoftTimeLimitExceeded:
                 raise
             except _FATAL_DB_EXCEPTIONS:
                 raise
             except Exception as exc:
                 db.rollback()
-                logger.warning("iCite enrichment failed query_id=%d: %s", query_id, exc)
+                log.warning("iCite enrichment failed query_id=%d: %s", query_id, exc)
                 _log_step(db, query_id, step_order=None, phase="enrichment", source="icite",
                           action="iCite citation count enrichment (failed)",
                           records_in=persisted, records_out=0,
                           parameters={"source": "NIH iCite", "status": "failed",
-                                      "error": str(exc)})
+                                      "error": str(exc), "request_id": request_id})
 
         query.status = QueryStatus.completed
         query.result_count = persisted
@@ -452,7 +487,7 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
         query.duplicate_count = cross_source_removed
         query.executed_at = datetime.now(timezone.utc)
         db.commit()
-        logger.info(
+        log.info(
             "run_search query_id=%d completed: persisted=%d cross_source_removed=%d",
             query_id, persisted, cross_source_removed,
         )
@@ -463,10 +498,10 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
             db.commit()
         raise
     except Exception:
-        # logger.exception captures the full traceback into structured log aggregators
+        # log.exception captures the full traceback into structured log aggregators
         # (Sentry, CloudWatch) keyed to the query_id, even though the bare `raise` below
         # already preserves the traceback for Celery's own handler.
-        logger.exception("run_search failed query_id=%s", query_id)
+        log.exception("run_search failed query_id=%s", query_id)
         query = db.get(SearchQuery, query_id)
         if query:
             query.status = QueryStatus.failed

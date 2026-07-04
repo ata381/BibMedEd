@@ -85,6 +85,8 @@ See the full [Self-Hosting Guide](https://ata381.github.io/BibMedEd/deploy/) for
 
 One click provisions PostgreSQL, Redis, FastAPI, Celery, and the Next.js frontend on Render.com's free tier.
 
+> **Security model:** BibMedEd has **no built-in authentication**. It is a single-tenant tool meant for one research team, and every API endpoint trusts the numeric ID in the URL with no notion of an "owner" — there is no login, no per-project access control, nothing. The one-click deploy above provisions a **publicly reachable** `*.onrender.com` URL with zero credentials required, so anyone who has (or guesses) that link can list every project, export or bulk-edit their data, or delete them. Read the [Security model](https://ata381.github.io/BibMedEd/deploy/#security-model) section of the Self-Hosting Guide before deploying publicly, and put an IP allowlist or auth proxy in front — or just keep it on `localhost` / a private network, which is how BibMedEd is designed to be run.
+
 ## Write Your Own Adapter
 
 Adding a new bibliographic database is a single Python file (~50 lines):

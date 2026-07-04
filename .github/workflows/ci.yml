@@ -90,6 +90,55 @@ jobs:
       - name: Build docs
         run: mkdocs build --strict --config-file ../mkdocs.yml
 
+  migrations-postgres:
+    name: Migrations (Postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: bibmeded
+          POSTGRES_PASSWORD: bibmeded
+          POSTGRES_DB: bibmeded
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U bibmeded"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    defaults:
+      run:
+        working-directory: bibmeded
+    env:
+      BIBMEDED_DATABASE_URL: postgresql://bibmeded:bibmeded@localhost:5432/bibmeded
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: bibmeded/pyproject.toml
+
+      - name: Install dependencies
+        run: pip install -e .
+
+      - name: Fresh-DB guard path (alembic upgrade head on empty Postgres)
+        run: alembic upgrade head
+
+      - name: Seed pre-0002 schema fixture (globally-unique pmid, no project_id)
+        run: python scripts/ci/seed_pre_0002_fixture.py
+
+      - name: Stamp alembic at 0001_baseline (simulates a pre-0002 production DB)
+        run: alembic stamp 0001_baseline
+
+      - name: Run alembic upgrade head to exercise the real project_id backfill
+        run: alembic upgrade head
+
+      - name: Verify publications.project_id was backfilled and is NOT NULL
+        run: python scripts/ci/verify_0002_backfill.py
+
   docker-build:
     name: Docker build smoke test
     runs-on: ubuntu-latest

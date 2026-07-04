@@ -104,15 +104,32 @@ def analyze_publication_trends(db: Session, project_id: int) -> dict:
         return dict(_EMPTY)
 
     yearly_counter = Counter(int(year) for (year,) in pubs if year is not None)
-    yearly_items = sorted(yearly_counter.items())
+    # Zero-fill years with no publications so every entry in `yearly_items` is
+    # calendar-adjacent to the next. Without this, a corpus with a gap year
+    # (e.g. 3 pubs in 2015, none in 2016-2018, 9 in 2019) would silently
+    # compress that 4-year gap into a single "growth_rates" entry -- reporting
+    # a fabricated "200% YoY" surge for 2019 instead of the true multi-year
+    # change. Zero-filling is also the most honest representation of
+    # `yearly_counts` itself: the zero-output years are real data, not absent.
+    min_year, max_year = min(yearly_counter), max(yearly_counter)
+    yearly_items = [(year, yearly_counter.get(year, 0)) for year in range(min_year, max_year + 1)]
     yearly_counts = [{"year": year, "count": count} for year, count in yearly_items]
     counts = [count for _, count in yearly_items]
 
     growth_rates = []
     for i in range(1, len(counts)):
         prev = counts[i - 1]
-        rate = ((counts[i] - prev) / prev * 100) if prev > 0 else 0
-        growth_rates.append({"year": yearly_items[i][0], "rate": round(rate, 1)})
+        curr = counts[i]
+        if prev > 0:
+            rate = round((curr - prev) / prev * 100, 1)
+        elif curr == 0:
+            rate = 0.0
+        else:
+            # Growth from a zero-publication year is mathematically undefined
+            # (division by zero) -- report `None` rather than a misleading 0%
+            # or an inflated/fabricated percentage.
+            rate = None
+        growth_rates.append({"year": yearly_items[i][0], "rate": rate})
 
     cumulative = []
     total = 0

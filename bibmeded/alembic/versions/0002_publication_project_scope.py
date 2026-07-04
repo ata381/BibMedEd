@@ -51,6 +51,25 @@ def upgrade() -> None:
         """
     )
 
+    # 2b. The backfill's join can never match a row whose query_id is NULL, or
+    #     one that points at a search_queries row that no longer exists --
+    #     such rows are left with project_id still NULL. Fail loudly here
+    #     with a clear, actionable message instead of letting the next step
+    #     abort with an opaque NOT NULL violation (or, worse, silently
+    #     dropping audit data by deleting the rows on their behalf).
+    orphan_count = bind.execute(
+        sa.text("SELECT COUNT(*) FROM publications WHERE project_id IS NULL")
+    ).scalar()
+    if orphan_count:
+        raise RuntimeError(
+            f"0002_publication_project_scope: {orphan_count} publication(s) have a "
+            "NULL or orphaned query_id and could not be backfilled with a "
+            "project_id. Resolve these rows before re-running `alembic upgrade "
+            "head` -- e.g. assign each one to the correct project manually, or "
+            "delete them if they are confirmed junk. Refusing to silently drop "
+            "or corrupt reproducibility-critical publication data."
+        )
+
     # 3. Enforce NOT NULL + FK once every row has a project.
     op.alter_column("publications", "project_id", existing_type=sa.Integer(), nullable=False)
     op.create_foreign_key(

@@ -6,3 +6,24 @@ services:
     volumes:
       - .:/app
     command: sh -c "python -c 'from app.database import Base, get_engine; import app.models; Base.metadata.create_all(get_engine())' && echo 'DB ready' && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  # The production frontend/Dockerfile now runs a compiled `next start`
+  # (see bibmeded/frontend/Dockerfile), so dev needs its own override to get
+  # the hot-reloading `next dev` server back. Build only the `deps` stage
+  # (has node_modules from `npm ci`, no baked-in source) and bind-mount the
+  # live source over it. `frontend_node_modules` is a named volume mounted
+  # at /app/node_modules so the bind mount above doesn't shadow the
+  # container's installed dependencies with the host's (possibly
+  # missing/incompatible) node_modules -- Docker seeds that volume from the
+  # `deps` image layer the first time it's mounted.
+  frontend:
+    build:
+      context: ./frontend
+      target: deps
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    command: npm run dev
+
+volumes:
+  frontend_node_modules:

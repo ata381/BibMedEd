@@ -25,10 +25,15 @@ def trigger_search(project_id: int, body: SearchRequest, db: Session = Depends(g
     db.add(query)
     db.commit()
     db.refresh(query)
-    run_search.delay(query.id, body.source, body.year_start, body.year_end, body.max_results)
+    # Lazy import: app.main isn't fully initialized yet when this module is first
+    # imported (app.main imports app.routers.search while defining request_id_ctx),
+    # so importing at call time avoids a circular-import failure.
+    from app.main import request_id_ctx
+    request_id = request_id_ctx.get()
+    run_search.delay(query.id, body.source, body.year_start, body.year_end, body.max_results, request_id)
     logger.info(
-        "search dispatched project_id=%d query_id=%d source=%s max_results=%d",
-        project_id, query.id, body.source, body.max_results,
+        "search dispatched project_id=%d query_id=%d source=%s max_results=%d request_id=%s",
+        project_id, query.id, body.source, body.max_results, request_id,
     )
     return SearchStatusResponse(query_id=query.id, status=query.status.value, result_count=None)
 

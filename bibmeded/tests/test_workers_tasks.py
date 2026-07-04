@@ -1,6 +1,9 @@
 import asyncio
+import logging
 
 import pytest
+from celery.exceptions import SoftTimeLimitExceeded
+from sqlalchemy import event
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 
@@ -314,6 +317,24 @@ def test_run_search_enrichment_failure_still_completes_with_result_count(
     assert "iCite 503" in step.parameters["error"]
     assert step.records_in == 2
 
+    # Regression guard for the CRITICAL bug: the enrichment failure's
+    # db.rollback() must not wipe the flush-only 'fetch' (and 'search')
+    # MethodologyStep rows logged earlier in the same task run.
+    fetch_steps = (
+        db.query(MethodologyStep)
+        .filter(MethodologyStep.query_id == query.id, MethodologyStep.phase == "fetch")
+        .all()
+    )
+    assert len(fetch_steps) == 1
+    assert fetch_steps[0].records_out == 2
+
+    search_steps = (
+        db.query(MethodologyStep)
+        .filter(MethodologyStep.query_id == query.id, MethodologyStep.phase == "search")
+        .all()
+    )
+    assert len(search_steps) == 1
+
 
 def test_run_search_enrichment_success_updates_citation_counts(
     db, monkeypatch, task_session_factory
@@ -479,3 +500,158 @@ def test_persist_records_intra_project_dedup_uses_external_ids_pmid(db):
     pubs = db.query(Publication).filter(Publication.query_id == query.id).all()
     assert len(pubs) == 1
     assert pubs[0].pmid == "777"
+
+
+# ---------------------------------------------------------------------------
+# (e) SoftTimeLimitExceeded must propagate out of the per-record loop, not be
+#     swallowed by the generic `except Exception` in _persist_records.
+# ---------------------------------------------------------------------------
+
+def test_persist_records_propagates_soft_time_limit_exceeded(db, monkeypatch):
+    query = _make_query(db)
+    records = [
+        _make_record("9001", affiliation="Good Hospital, USA"),
+        _make_record("9002", affiliation="TRIGGER_TIMEOUT"),
+        _make_record("9003", affiliation="Another Hospital, USA"),
+    ]
+
+    real_extract_country = tasks.extract_country
+
+    def timeout_extract_country(affiliation):
+        if affiliation == "TRIGGER_TIMEOUT":
+            raise SoftTimeLimitExceeded()
+        return real_extract_country(affiliation)
+
+    monkeypatch.setattr(tasks, "extract_country", timeout_extract_country)
+
+    with pytest.raises(SoftTimeLimitExceeded):
+        tasks._persist_records(db, records, query.id, query.project_id)
+
+    # The record that triggered the soft timeout must not have been silently
+    # skipped-and-continued; the batch aborts instead of finishing 9001/9003
+    # and swallowing the timeout as if it were an ordinary bad record.
+    pubs = db.query(Publication).filter(Publication.pmid == "9002").first()
+    assert pubs is None
+
+
+# ---------------------------------------------------------------------------
+# (f) Journal lookups must be prefetched per-batch, not re-queried per record
+#     (N+1 regression guard, mirroring authors/affiliations/keywords).
+# ---------------------------------------------------------------------------
+
+def test_persist_records_prefetches_journals_avoiding_n_plus_one(db):
+    query = _make_query(db)
+    # All records share the same journal_name ("Journal of Testing" from
+    # _make_record) so a non-prefetched implementation would issue one
+    # SELECT per record for the *same* journal row.
+    records = [_make_record(f"70{i:02d}") for i in range(5)]
+
+    select_statements: list[str] = []
+
+    def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+        if "journals" in statement.lower() and statement.strip().lower().startswith("select"):
+            select_statements.append(statement)
+
+    bind = db.get_bind()
+    event.listen(bind, "before_cursor_execute", before_cursor_execute)
+    try:
+        count, pmids = tasks._persist_records(db, records, query.id, query.project_id)
+    finally:
+        event.remove(bind, "before_cursor_execute", before_cursor_execute)
+
+    assert count == 5
+    assert len(select_statements) <= 1, (
+        f"expected at most 1 SELECT against journals (batch prefetch), "
+        f"got {len(select_statements)}: {select_statements}"
+    )
+
+
+def test_persist_records_evicts_phantom_journal_on_savepoint_rollback(db, monkeypatch):
+    """A new Journal created+rolled-back within a failed record's savepoint must not
+    leave a phantom entry in the prefetch cache for a later record in the same batch."""
+    query = _make_query(db)
+    records = [
+        _make_record("9101", affiliation="TRIGGER_FAIL", title="First (fails)"),
+        _make_record("9102", affiliation="Good Hospital, USA", title="Second (succeeds)"),
+    ]
+
+    real_extract_country = tasks.extract_country
+
+    def flaky_extract_country(affiliation):
+        if affiliation == "TRIGGER_FAIL":
+            raise ValueError("simulated per-record failure after journal creation")
+        return real_extract_country(affiliation)
+
+    monkeypatch.setattr(tasks, "extract_country", flaky_extract_country)
+
+    count, pmids = tasks._persist_records(db, records, query.id, query.project_id)
+
+    assert count == 1
+    assert pmids == ["9102"]
+    pub = db.query(Publication).filter(Publication.pmid == "9102").first()
+    assert pub is not None
+    assert pub.journal_id is not None
+    assert pub.journal.name_normalized == "journal of testing"
+
+
+# ---------------------------------------------------------------------------
+# (g) request_id correlation — API → Celery task log records & methodology log
+# ---------------------------------------------------------------------------
+
+def test_run_search_binds_request_id_into_log_records_and_methodology_steps(
+    db, monkeypatch, task_session_factory, caplog
+):
+    query = _make_query(db)
+    records = [_make_record("8001")]
+    stub_adapter = _StubAdapter(ids=["8001"], records=records)
+
+    monkeypatch.setattr(tasks, "get_adapter", lambda source, **kwargs: stub_adapter)
+    monkeypatch.setattr(tasks, "SessionLocal", task_session_factory)
+    monkeypatch.setattr(
+        tasks, "ICiteClient", lambda: _FailingICiteClient(RuntimeError("iCite down"))
+    )
+
+    with caplog.at_level(logging.INFO, logger="app.workers.tasks"):
+        asyncio.run(
+            tasks._run_search(
+                _StubTask(), query.id, "pubmed", None, None, tasks.DEFAULT_MAX_RESULTS,
+                request_id="req-abc123",
+            )
+        )
+
+    assert any(getattr(r, "request_id", None) == "req-abc123" for r in caplog.records), (
+        "expected at least one log record emitted during _run_search to carry "
+        "request_id='req-abc123'"
+    )
+
+    db.expire_all()
+    steps = db.query(MethodologyStep).filter(MethodologyStep.query_id == query.id).all()
+    assert steps
+    assert all(s.parameters.get("request_id") == "req-abc123" for s in steps)
+
+
+def test_run_search_defaults_request_id_when_not_provided(db, monkeypatch, task_session_factory):
+    """Backwards compatibility: callers (e.g. the legacy run_pubmed_search task) that
+    don't pass request_id must not crash — methodology steps just carry a sentinel."""
+    query = _make_query(db)
+    records = [_make_record("8101")]
+    stub_adapter = _StubAdapter(ids=["8101"], records=records)
+
+    class _WorkingICiteClient:
+        async def get_citations(self, pmids):
+            return {}
+
+        async def close(self):
+            pass
+
+    monkeypatch.setattr(tasks, "get_adapter", lambda source, **kwargs: stub_adapter)
+    monkeypatch.setattr(tasks, "SessionLocal", task_session_factory)
+    monkeypatch.setattr(tasks, "ICiteClient", lambda: _WorkingICiteClient())
+
+    asyncio.run(
+        tasks._run_search(_StubTask(), query.id, "pubmed", None, None, tasks.DEFAULT_MAX_RESULTS)
+    )
+
+    db.expire_all()
+    refreshed = db.get(SearchQuery, query.id)
+    assert refreshed.status == QueryStatus.completed

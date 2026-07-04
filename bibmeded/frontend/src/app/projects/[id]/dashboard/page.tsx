@@ -27,23 +27,31 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Use an abort controller so a slow analysis chain for a previously-viewed
+    // project can't resolve after navigation and clobber the currently-viewed
+    // project's state (same pattern as results/page.tsx).
+    const ctrl = new AbortController();
     const load = async () => {
       try {
         const proj = await projectsApi.get(projectId);
+        if (ctrl.signal.aborted) return;
         setProject(proj.data);
         const types = ["publications", "authors", "countries", "keywords", "citations", "journals"];
         const results: Record<string, AnalysisData> = {};
         for (const t of types) {
+          if (ctrl.signal.aborted) return;
           try { const r = await analysisApi.get(projectId, t); results[t] = r.data.results as AnalysisData; }
           catch { try { const r = await analysisApi.run(projectId, t); results[t] = r.data.results as AnalysisData; } catch {} }
         }
+        if (ctrl.signal.aborted) return;
         setAnalyses(results);
       } catch {
-        toast.error("Failed to load analysis data.");
+        if (!ctrl.signal.aborted) toast.error("Failed to load analysis data.");
       }
-      setLoading(false);
+      if (!ctrl.signal.aborted) setLoading(false);
     };
     load();
+    return () => ctrl.abort();
   }, [projectId]);
 
   if (loading) return (

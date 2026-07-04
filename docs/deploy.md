@@ -28,6 +28,19 @@ This starts five services:
 
 The database schema is created automatically on first startup.
 
+## Security model
+
+!!! warning "BibMedEd has no built-in authentication"
+    BibMedEd is designed as a **single-tenant, self-hosted** tool for one research team — there is no login, no user accounts, and no per-project access control anywhere in the API. Every endpoint (list projects, run searches, read or export publications, bulk-exclude records, delete a project) trusts the numeric ID in the URL with no notion of an "owner." That's a reasonable tradeoff for a tool that runs on `localhost` or inside a lab's private network, but it means **anyone who can reach the API has full read/write access to every project** — including via the [one-click "Deploy to Cloud" button](https://github.com/ata381/BibMedEd#deploy-to-cloud), which provisions a publicly reachable `*.onrender.com` URL by default with no credentials required.
+
+    Before exposing BibMedEd to the public internet, do one of the following:
+
+    - **Keep it private (recommended)** — run it on `localhost` or inside a VPN/private network, which is the default `docker compose up` setup. Don't forward ports 3000/8000 to the public internet.
+    - **Restrict by IP** — Render's [Inbound IP Rules](https://render.com/docs/inbound-ip-rules) (Scale/Enterprise plans) let you allowlist your lab's IP range for the `bibmeded-api` and `bibmeded-frontend` web services so only your team can reach them.
+    - **Put an auth proxy in front** — add HTTP basic auth with a reverse proxy such as [Caddy's `basicauth` directive](https://caddyserver.com/docs/caddyfile/directives/basicauth) or nginx's `auth_basic`, so every request needs a shared password before it reaches BibMedEd.
+
+    Treat an unprotected BibMedEd deployment the same way you'd treat an admin panel with no login screen — because that's exactly what it is.
+
 ## Configuration
 
 Copy `.env.example` to `.env` to customize:
