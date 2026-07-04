@@ -97,7 +97,7 @@ def _get_or_create_keyword(
     return kw
 
 
-def _persist_records(db, records: list[RawRecord], query_id: int) -> tuple[int, list[str]]:
+def _persist_records(db, records: list[RawRecord], query_id: int, project_id: int) -> tuple[int, list[str]]:
     """Persist a batch of RawRecords. Returns (count_persisted, persisted_pmids).
 
     Each record is wrapped in a SAVEPOINT so a single bad row does not roll back its
@@ -105,6 +105,9 @@ def _persist_records(db, records: list[RawRecord], query_id: int) -> tuple[int, 
     N+1 SELECTs. Cache entries added during a record that ultimately rolls back are
     evicted so subsequent records do not reuse phantom ORM objects whose underlying rows
     no longer exist.
+
+    The pre-existence check is scoped to ``project_id``: each project owns its own copy
+    of a shared paper, so a PMID/DOI claimed by another project must not starve this one.
     """
     norm, authors_by_norm, affils_by_norm, keywords_by_key = _prefetch_lookup_caches(db, records)
 
@@ -136,12 +139,22 @@ def _persist_records(db, records: list[RawRecord], query_id: int) -> tuple[int, 
                     new_journal_in_savepoint = journal
 
             normalized_doi = _normalize_doi(record.external_ids.get("doi") or record.doi)
-            existing_q = db.query(Publication).filter(Publication.pmid == record.source_id)
+            # `Publication.pmid` stores source_id (the source-native primary id), but a
+            # non-PubMed record's real PMID lives in external_ids["pmid"]. Check both so
+            # a PubMed-first-persisted paper (Publication.pmid == its PMID, often no DOI)
+            # is deduped when the same paper re-arrives via OpenAlex/CrossRef.
+            pmid_candidates = {record.source_id}
+            real_pmid = record.external_ids.get("pmid")
+            if real_pmid:
+                pmid_candidates.add(real_pmid)
+            id_match = Publication.pmid.in_(pmid_candidates)
             if normalized_doi:
-                existing_q = db.query(Publication).filter(
-                    (Publication.pmid == record.source_id) | (Publication.doi == normalized_doi)
-                )
-            existing = existing_q.first()
+                id_match = id_match | (Publication.doi == normalized_doi)
+            existing = (
+                db.query(Publication)
+                .filter(Publication.project_id == project_id, id_match)
+                .first()
+            )
             if existing:
                 sp.rollback()
                 continue
@@ -156,6 +169,7 @@ def _persist_records(db, records: list[RawRecord], query_id: int) -> tuple[int, 
                 citation_count=None,
                 journal_id=journal.id if journal else None,
                 query_id=query_id,
+                project_id=project_id,
                 external_references=list(record.references) if record.references else None,
             )
             db.add(pub)
@@ -367,7 +381,7 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
             cross_source_removed += batch_removed
             for k, v in batch_breakdown.items():
                 dedup_breakdown[k] = dedup_breakdown.get(k, 0) + v
-            count, batch_pmids = _persist_records(db, deduped, query_id)
+            count, batch_pmids = _persist_records(db, deduped, query_id, query.project_id)
             persisted += count
             if track_pmids:
                 all_persisted_pmids.extend(batch_pmids)
@@ -397,9 +411,14 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
             try:
                 citation_counts = await icite.get_citations(all_persisted_pmids)
                 if citation_counts:
+                    # Scope to this project — pmid is only unique per project now, so an
+                    # unscoped IN(...) would clobber other projects' rows sharing a PMID.
                     pubs_to_update = (
                         db.query(Publication)
-                        .filter(Publication.pmid.in_(citation_counts.keys()))
+                        .filter(
+                            Publication.project_id == query.project_id,
+                            Publication.pmid.in_(citation_counts.keys()),
+                        )
                         .all()
                     )
                     for pub in pubs_to_update:

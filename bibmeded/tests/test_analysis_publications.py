@@ -9,7 +9,7 @@ def test_publication_trends(db):
     db.add(query)
     db.flush()
     for i, year in enumerate([2022, 2022, 2023, 2023, 2023, 2024]):
-        db.add(Publication(pmid=f"trend{i}", title=f"P{i}", year=year, query_id=query.id))
+        db.add(Publication(pmid=f"trend{i}", title=f"P{i}", year=year, query_id=query.id, project_id=project.id))
     db.commit()
     result = analyze_publication_trends(db, project.id)
     assert result["total"] == 6
@@ -39,7 +39,7 @@ def test_field_maturity_classified_when_enough_years(db):
     pmid_counter = 0
     for year, n in yearly_totals:
         for _ in range(n):
-            db.add(Publication(pmid=f"m{pmid_counter}", title=f"P{pmid_counter}", year=year, query_id=query.id))
+            db.add(Publication(pmid=f"m{pmid_counter}", title=f"P{pmid_counter}", year=year, query_id=query.id, project_id=project.id))
             pmid_counter += 1
     db.commit()
     result = analyze_publication_trends(db, project.id)
@@ -58,7 +58,7 @@ def test_field_maturity_skipped_when_too_few_years(db):
     db.add(query)
     db.flush()
     for i, year in enumerate([2023, 2024]):
-        db.add(Publication(pmid=f"s{i}", title=f"P{i}", year=year, query_id=query.id))
+        db.add(Publication(pmid=f"s{i}", title=f"P{i}", year=year, query_id=query.id, project_id=project.id))
     db.commit()
     result = analyze_publication_trends(db, project.id)
     assert result["field_maturity"] is None

@@ -11,9 +11,9 @@ def test_author_analysis(db):
     a1 = Author(name="Smith, John", name_normalized="smith john")
     a2 = Author(name="Chen, Li", name_normalized="chen li")
     a3 = Author(name="Patel, Raj", name_normalized="patel raj")
-    pub1 = Publication(pmid="auth1", title="Paper 1", year=2024, citation_count=10, query_id=query.id)
+    pub1 = Publication(pmid="auth1", title="Paper 1", year=2024, citation_count=10, query_id=query.id, project_id=project.id)
     pub1.authors.extend([a1, a2])
-    pub2 = Publication(pmid="auth2", title="Paper 2", year=2024, citation_count=5, query_id=query.id)
+    pub2 = Publication(pmid="auth2", title="Paper 2", year=2024, citation_count=5, query_id=query.id, project_id=project.id)
     pub2.authors.extend([a1, a3])
     db.add_all([pub1, pub2])
     db.commit()
@@ -83,7 +83,7 @@ def test_author_top_includes_h_index(db):
     db.flush()
     a = Author(name="Doe, Jane", name_normalized="doe jane")
     pubs = [
-        Publication(pmid=f"h{i}", title=f"P{i}", year=2024, citation_count=c, query_id=query.id)
+        Publication(pmid=f"h{i}", title=f"P{i}", year=2024, citation_count=c, query_id=query.id, project_id=project.id)
         for i, c in enumerate([10, 8, 5, 2, 1])
     ]
     for p in pubs:

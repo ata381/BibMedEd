@@ -42,8 +42,8 @@ def _make_record(
     )
 
 
-def _make_query(db) -> SearchQuery:
-    project = SearchProject(name="Test project")
+def _make_query(db, project_name: str = "Test project") -> SearchQuery:
+    project = SearchProject(name=project_name)
     db.add(project)
     db.commit()
     db.refresh(project)
@@ -57,6 +57,31 @@ def _make_query(db) -> SearchQuery:
     db.commit()
     db.refresh(query)
     return query
+
+
+def _make_openalex_record(
+    source_id: str, *, pmid: str | None = None, doi: str | None = None, title: str = "A Study"
+) -> RawRecord:
+    """An OpenAlex-shaped record whose primary id (source_id) is a W-id, not a PMID.
+    Any real PMID it carries lives in external_ids['pmid'] per the RawRecord contract."""
+    external_ids: dict[str, str] = {}
+    if pmid:
+        external_ids["pmid"] = pmid
+    if doi:
+        external_ids["doi"] = doi
+    return RawRecord(
+        source_id=source_id,
+        source_database="openalex",
+        title=title,
+        abstract="Abstract text",
+        doi=doi,
+        year=2024,
+        journal_name="Journal of Testing",
+        authors=[RawAuthor(name=f"Author {source_id}", affiliation="Some Hospital, USA")],
+        mesh_terms=[],
+        keywords=["medical education"],
+        external_ids=external_ids,
+    )
 
 
 class _StubTask:
@@ -109,7 +134,7 @@ def test_persist_records_persists_valid_records_with_relations(db):
     query = _make_query(db)
     records = [_make_record("1001"), _make_record("1002")]
 
-    count, pmids = tasks._persist_records(db, records, query.id)
+    count, pmids = tasks._persist_records(db, records, query.id, query.project_id)
 
     assert count == 2
     assert sorted(pmids) == ["1001", "1002"]
@@ -124,7 +149,7 @@ def test_persist_records_persists_valid_records_with_relations(db):
 def test_persist_records_returns_zero_for_empty_batch(db):
     query = _make_query(db)
 
-    count, pmids = tasks._persist_records(db, [], query.id)
+    count, pmids = tasks._persist_records(db, [], query.id, query.project_id)
 
     assert count == 0
     assert pmids == []
@@ -147,7 +172,7 @@ def test_persist_records_rolls_back_single_bad_record_others_still_persist(db, m
 
     monkeypatch.setattr(tasks, "extract_country", flaky_extract_country)
 
-    count, pmids = tasks._persist_records(db, records, query.id)
+    count, pmids = tasks._persist_records(db, records, query.id, query.project_id)
 
     assert count == 2
     assert sorted(pmids) == ["2001", "2003"]
@@ -407,3 +432,50 @@ def test_run_search_no_pmids_skips_enrichment_entirely(db, monkeypatch, task_ses
         .all()
     )
     assert enrichment_steps == []
+
+
+# ---------------------------------------------------------------------------
+# (d) Per-project publication scoping — a PMID claimed by one project must not
+#     starve a second, unrelated project that legitimately retrieves it.
+# ---------------------------------------------------------------------------
+
+def test_persist_records_same_pmid_persists_independently_per_project(db):
+    """Project A persists PMID X; Project B fetching the same record must get its
+    OWN Publication row, not have it silently rolled back by a global-unique clash."""
+    query_a = _make_query(db, project_name="Project A")
+    query_b = _make_query(db, project_name="Project B")
+
+    record = _make_record("12345", doi="10.1/shared")
+
+    count_a, pmids_a = tasks._persist_records(db, [record], query_a.id, query_a.project_id)
+    count_b, pmids_b = tasks._persist_records(db, [record], query_b.id, query_b.project_id)
+
+    assert count_a == 1
+    assert count_b == 1  # not starved by Project A's prior claim
+
+    pubs_a = db.query(Publication).filter(Publication.query_id == query_a.id).all()
+    pubs_b = db.query(Publication).filter(Publication.query_id == query_b.id).all()
+    assert [p.pmid for p in pubs_a] == ["12345"]
+    assert [p.pmid for p in pubs_b] == ["12345"]
+    assert pubs_a[0].project_id == query_a.project_id
+    assert pubs_b[0].project_id == query_b.project_id
+
+
+def test_persist_records_intra_project_dedup_uses_external_ids_pmid(db):
+    """A PubMed-first paper (Publication.pmid = its PMID, no DOI) re-arriving via an
+    OpenAlex record whose source_id is a W-id but whose external_ids carries the same
+    PMID must be recognised as a duplicate within the same project."""
+    query = _make_query(db)
+
+    pubmed_record = _make_record("777", doi=None)  # source_id == pmid, no DOI
+    openalex_record = _make_openalex_record("W777", pmid="777", doi=None)
+
+    count_first, _ = tasks._persist_records(db, [pubmed_record], query.id, query.project_id)
+    count_second, _ = tasks._persist_records(db, [openalex_record], query.id, query.project_id)
+
+    assert count_first == 1
+    assert count_second == 0  # same paper, matched via external_ids['pmid']
+
+    pubs = db.query(Publication).filter(Publication.query_id == query.id).all()
+    assert len(pubs) == 1
+    assert pubs[0].pmid == "777"

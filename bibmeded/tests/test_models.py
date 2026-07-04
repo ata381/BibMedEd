@@ -11,10 +11,13 @@ def test_create_project(db):
 
 
 def test_create_publication_with_author(db):
+    project = SearchProject(name="Author Test")
+    db.add(project)
+    db.flush()
     journal = Journal(name="JMIR Medical Education", issn="2369-3762")
     db.add(journal)
     db.flush()
-    pub = Publication(pmid="12345678", title="Test Article", year=2024, journal=journal)
+    pub = Publication(pmid="12345678", title="Test Article", year=2024, journal=journal, project_id=project.id)
     author = Author(name="Smith, John", name_normalized="smith john")
     pub.authors.append(author)
     db.add(pub)

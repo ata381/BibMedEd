@@ -9,8 +9,8 @@ def test_citation_analysis(db):
     query = SearchQuery(project_id=project.id, query_string="test")
     db.add(query)
     db.flush()
-    pub1 = Publication(pmid="cite1", title="Highly Cited", year=2023, citation_count=50, query_id=query.id)
-    pub2 = Publication(pmid="cite2", title="Less Cited", year=2024, citation_count=5, query_id=query.id)
+    pub1 = Publication(pmid="cite1", title="Highly Cited", year=2023, citation_count=50, query_id=query.id, project_id=project.id)
+    pub2 = Publication(pmid="cite2", title="Less Cited", year=2024, citation_count=5, query_id=query.id, project_id=project.id)
     db.add_all([pub1, pub2])
     db.commit()
     result = analyze_citations(db, project.id)
@@ -30,10 +30,10 @@ def test_bibliographic_coupling_pairs_shared_refs(db):
     query = SearchQuery(project_id=project.id, query_string="t")
     db.add(query)
     db.flush()
-    seminal = Publication(pmid="seminal_pmid", doi="10.1/seminal", title="Seminal", year=2010, citation_count=500, query_id=query.id)
-    citer_a = Publication(pmid="a", doi="10.1/a", title="A", year=2022, citation_count=5, query_id=query.id,
+    seminal = Publication(pmid="seminal_pmid", doi="10.1/seminal", title="Seminal", year=2010, citation_count=500, query_id=query.id, project_id=project.id)
+    citer_a = Publication(pmid="a", doi="10.1/a", title="A", year=2022, citation_count=5, query_id=query.id, project_id=project.id,
                           external_references=["10.1/seminal", "10.1/other_external"])
-    citer_b = Publication(pmid="b", doi="10.1/b", title="B", year=2023, citation_count=3, query_id=query.id,
+    citer_b = Publication(pmid="b", doi="10.1/b", title="B", year=2023, citation_count=3, query_id=query.id, project_id=project.id,
                           external_references=["10.1/SEMINAL", "10.1/different_external"])
     db.add_all([seminal, citer_a, citer_b])
     db.commit()
@@ -53,9 +53,9 @@ def test_cocitation_pairs_when_citer_lists_multiple_in_corpus_refs(db):
     query = SearchQuery(project_id=project.id, query_string="t")
     db.add(query)
     db.flush()
-    a = Publication(pmid="A", doi="10.1/a", title="A", year=2010, citation_count=100, query_id=query.id)
-    b = Publication(pmid="B", doi="10.1/b", title="B", year=2010, citation_count=100, query_id=query.id)
-    c = Publication(pmid="C", title="C", year=2022, citation_count=1, query_id=query.id,
+    a = Publication(pmid="A", doi="10.1/a", title="A", year=2010, citation_count=100, query_id=query.id, project_id=project.id)
+    b = Publication(pmid="B", doi="10.1/b", title="B", year=2010, citation_count=100, query_id=query.id, project_id=project.id)
+    c = Publication(pmid="C", title="C", year=2022, citation_count=1, query_id=query.id, project_id=project.id,
                     external_references=["10.1/a", "10.1/b"])
     db.add_all([a, b, c])
     db.commit()

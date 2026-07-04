@@ -8,7 +8,7 @@ def test_run_publication_analysis(client, db):
     db.add(query)
     db.flush()
     for i in range(3):
-        db.add(Publication(pmid=f"anal{i}", title=f"P{i}", year=2024, query_id=query.id))
+        db.add(Publication(pmid=f"anal{i}", title=f"P{i}", year=2024, query_id=query.id, project_id=project.id))
     db.commit()
     response = client.post(f"/api/projects/{project.id}/analysis/publications")
     assert response.status_code == 200
@@ -23,7 +23,7 @@ def test_get_cached_analysis(client, db):
     query = SearchQuery(project_id=project.id, query_string="test")
     db.add(query)
     db.flush()
-    db.add(Publication(pmid="cache1", title="P1", year=2024, query_id=query.id))
+    db.add(Publication(pmid="cache1", title="P1", year=2024, query_id=query.id, project_id=project.id))
     db.commit()
     # Run analysis first
     client.post(f"/api/projects/{project.id}/analysis/publications")

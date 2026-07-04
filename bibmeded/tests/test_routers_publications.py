@@ -10,7 +10,7 @@ def test_list_publications(client, db):
     journal = Journal(name="Test Journal")
     db.add(journal)
     db.flush()
-    pub = Publication(pmid="11111111", title="Test Paper", year=2024, journal_id=journal.id, query_id=query.id)
+    pub = Publication(pmid="11111111", title="Test Paper", year=2024, journal_id=journal.id, query_id=query.id, project_id=project.id)
     author = Author(name="Smith, John")
     pub.authors.append(author)
     db.add(pub)
@@ -29,7 +29,7 @@ def test_list_publications_with_sort(client, db):
     db.add(query)
     db.flush()
     for i, year in enumerate([2023, 2024, 2022]):
-        pub = Publication(pmid=f"sort{i}", title=f"Paper {i}", year=year, query_id=query.id)
+        pub = Publication(pmid=f"sort{i}", title=f"Paper {i}", year=year, query_id=query.id, project_id=project.id)
         db.add(pub)
     db.commit()
     response = client.get(f"/api/projects/{project.id}/publications?sort_by=year&order=asc")
@@ -44,7 +44,7 @@ def test_toggle_exclude_with_reason(client, db):
     query = SearchQuery(project_id=project.id, query_string="t")
     db.add(query)
     db.flush()
-    pub = Publication(pmid="ex1", title="P", year=2024, query_id=query.id)
+    pub = Publication(pmid="ex1", title="P", year=2024, query_id=query.id, project_id=project.id)
     db.add(pub)
     db.commit()
 
@@ -68,7 +68,7 @@ def test_toggle_exclude_rejects_unknown_reason(client, db):
     query = SearchQuery(project_id=project.id, query_string="t")
     db.add(query)
     db.flush()
-    pub = Publication(pmid="badr", title="P", year=2024, query_id=query.id)
+    pub = Publication(pmid="badr", title="P", year=2024, query_id=query.id, project_id=project.id)
     db.add(pub)
     db.commit()
     r = client.patch(
@@ -86,7 +86,7 @@ def test_bulk_exclude_stamps_reason(client, db):
     db.add(query)
     db.flush()
     db.add_all([
-        Publication(pmid=f"b{i}", title=f"P{i}", year=2024, citation_count=0, query_id=query.id)
+        Publication(pmid=f"b{i}", title=f"P{i}", year=2024, citation_count=0, query_id=query.id, project_id=project.id)
         for i in range(3)
     ])
     db.commit()

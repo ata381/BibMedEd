@@ -21,9 +21,9 @@ def test_country_analysis(db):
     a3 = Author(name="Mueller, Hans", name_normalized="mueller hans c")
     a3.affiliations.append(aff_de)
 
-    pub1 = Publication(pmid="country1", title="Paper 1", year=2024, query_id=query.id)
+    pub1 = Publication(pmid="country1", title="Paper 1", year=2024, query_id=query.id, project_id=project.id)
     pub1.authors.extend([a1, a2])
-    pub2 = Publication(pmid="country2", title="Paper 2", year=2024, query_id=query.id)
+    pub2 = Publication(pmid="country2", title="Paper 2", year=2024, query_id=query.id, project_id=project.id)
     pub2.authors.extend([a1, a3])
     db.add_all([pub1, pub2])
     db.commit()
@@ -60,7 +60,7 @@ def test_country_counts_use_full_counting_not_per_coauthor(db):
         author.affiliations.append(aff_us)
     db.add_all(authors)
 
-    pub = Publication(pmid="fullcount1", title="Paper with 5 US authors", year=2024, query_id=query.id)
+    pub = Publication(pmid="fullcount1", title="Paper with 5 US authors", year=2024, query_id=query.id, project_id=project.id)
     pub.authors.extend(authors)
     db.add(pub)
     db.commit()
