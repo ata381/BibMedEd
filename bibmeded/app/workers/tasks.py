@@ -13,6 +13,7 @@ _FATAL_DB_EXCEPTIONS = (OperationalError, DisconnectionError)
 
 from app.adapters.base import RawRecord
 from app.adapters.registry import get_adapter
+from app.config import settings
 from app.database import SessionLocal
 from app.models import (
     Affiliation, Author, Journal, Keyword, KeywordType,
@@ -273,6 +274,26 @@ def _log_step(db, query_id: int, step_order: int | None, phase: str, source: str
 DEFAULT_MAX_RESULTS = 2000
 FETCH_BATCH_SIZE = 200
 
+# Per-source kwargs builders for get_adapter() — only pass the kwargs each
+# adapter's constructor actually accepts (see app/adapters/*.py __init__).
+# Read settings lazily (inside the lambda) rather than at import time so
+# tests can monkeypatch app.workers.tasks.settings.* per-test.
+_ADAPTER_KWARGS_BUILDERS = {
+    "pubmed": lambda: {"api_key": settings.pubmed_api_key, "rate_limit": settings.pubmed_rate_limit},
+    "openalex": lambda: {"email": settings.openalex_email},
+    "crossref": lambda: {"email": settings.crossref_email},
+    "semanticscholar": lambda: {"api_key": settings.semantic_scholar_api_key},
+}
+
+
+def _adapter_kwargs(source: str) -> dict:
+    """Build constructor kwargs for `source` from configured Settings (BIBMEDED_* env vars).
+
+    Unknown sources get no extra kwargs — adapters fall back to their own defaults.
+    """
+    builder = _ADAPTER_KWARGS_BUILDERS.get(source)
+    return builder() if builder else {}
+
 
 @celery_app.task(bind=True, name="app.workers.tasks.run_search", soft_time_limit=600, time_limit=660)
 def run_search(self, query_id: int, source: str = "pubmed", year_start: str | None = None,
@@ -288,7 +309,7 @@ def run_pubmed_search(self, query_id: int):
 
 async def _run_search(task, query_id: int, source: str, year_start: str | None = None,
                       year_end: str | None = None, max_results: int = DEFAULT_MAX_RESULTS):
-    adapter = get_adapter(source)
+    adapter = get_adapter(source, **_adapter_kwargs(source))
     db = SessionLocal()
     icite = ICiteClient()
     try:
@@ -367,24 +388,42 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
                       parameters={"method": "exact-match", "fields": "doi,pmid",
                                   "removed_by": dedup_breakdown})
 
-        # Phase 4: iCite enrichment (PubMed-sourced records only)
+        # Phase 4: iCite enrichment (PubMed-sourced records only). Enrichment is
+        # best-effort supplementary metadata, not a precondition for search
+        # success — a transient NIH iCite outage must not fail an otherwise
+        # fully-persisted search, so it gets its own try/except and a degraded
+        # methodology step rather than propagating to the outer handler.
         if track_pmids and all_persisted_pmids:
-            citation_counts = await icite.get_citations(all_persisted_pmids)
-            if citation_counts:
-                pubs_to_update = (
-                    db.query(Publication)
-                    .filter(Publication.pmid.in_(citation_counts.keys()))
-                    .all()
-                )
-                for pub in pubs_to_update:
-                    pub.citation_count = citation_counts.get(pub.pmid)
-            db.commit()
-            enriched_count = len(citation_counts)
-            _log_step(db, query_id, step_order=None, phase="enrichment", source="icite",
-                      action="iCite citation count enrichment",
-                      records_in=persisted, records_out=persisted,
-                      parameters={"source": "NIH iCite", "enriched": enriched_count,
-                                  "missing": persisted - enriched_count})
+            try:
+                citation_counts = await icite.get_citations(all_persisted_pmids)
+                if citation_counts:
+                    pubs_to_update = (
+                        db.query(Publication)
+                        .filter(Publication.pmid.in_(citation_counts.keys()))
+                        .all()
+                    )
+                    for pub in pubs_to_update:
+                        pub.citation_count = citation_counts.get(pub.pmid)
+                db.commit()
+                enriched_count = len(citation_counts)
+                _log_step(db, query_id, step_order=None, phase="enrichment", source="icite",
+                          action="iCite citation count enrichment",
+                          records_in=persisted, records_out=persisted,
+                          parameters={"source": "NIH iCite", "status": "completed",
+                                      "enriched": enriched_count,
+                                      "missing": persisted - enriched_count})
+            except SoftTimeLimitExceeded:
+                raise
+            except _FATAL_DB_EXCEPTIONS:
+                raise
+            except Exception as exc:
+                db.rollback()
+                logger.warning("iCite enrichment failed query_id=%d: %s", query_id, exc)
+                _log_step(db, query_id, step_order=None, phase="enrichment", source="icite",
+                          action="iCite citation count enrichment (failed)",
+                          records_in=persisted, records_out=0,
+                          parameters={"source": "NIH iCite", "status": "failed",
+                                      "error": str(exc)})
 
         query.status = QueryStatus.completed
         query.result_count = persisted

@@ -1,0 +1,409 @@
+import asyncio
+
+import pytest
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import sessionmaker
+
+from app.adapters.base import RawAuthor, RawRecord
+from app.adapters.registry import discover_adapters, get_adapter
+from app.config import settings
+from app.models import (
+    MethodologyStep,
+    Publication,
+    QueryStatus,
+    SearchProject,
+    SearchQuery,
+)
+from app.workers import tasks
+
+
+def _make_record(
+    pmid: str,
+    *,
+    doi: str | None = None,
+    affiliation: str | None = "Some Hospital, USA",
+    title: str = "A Study",
+) -> RawRecord:
+    external_ids = {"pmid": pmid}
+    if doi:
+        external_ids["doi"] = doi
+    return RawRecord(
+        source_id=pmid,
+        source_database="pubmed",
+        title=title,
+        abstract="Abstract text",
+        doi=doi,
+        year=2024,
+        journal_name="Journal of Testing",
+        authors=[RawAuthor(name=f"Author {pmid}", affiliation=affiliation)],
+        mesh_terms=["Education"],
+        keywords=["medical education"],
+        external_ids=external_ids,
+    )
+
+
+def _make_query(db) -> SearchQuery:
+    project = SearchProject(name="Test project")
+    db.add(project)
+    db.commit()
+    db.refresh(project)
+    query = SearchQuery(
+        project_id=project.id,
+        query_string="test query",
+        database="pubmed",
+        status=QueryStatus.pending,
+    )
+    db.add(query)
+    db.commit()
+    db.refresh(query)
+    return query
+
+
+class _StubTask:
+    """Minimal stand-in for the Celery bound task object (`self`) — only
+    `update_state` is ever called on it by `_run_search`."""
+
+    def update_state(self, *args, **kwargs):
+        pass
+
+
+class _StubAdapter:
+    """Minimal adapter double: yields a fixed id batch, then fetches the
+    matching RawRecords for those ids. No network I/O."""
+
+    def __init__(self, ids: list[str], records: list[RawRecord]):
+        self._ids = ids
+        self._records = records
+        self.closed = False
+
+    async def search_paginated(self, query, **kwargs):
+        yield self._ids
+
+    async def fetch_stream(self, ids, batch_size=200):
+        yield [r for r in self._records if r.source_id in ids]
+
+    def methodology_label(self) -> str:
+        return "Stub API"
+
+    async def close(self) -> None:
+        self.closed = True
+
+
+class _FailingICiteClient:
+    def __init__(self, exc: Exception):
+        self._exc = exc
+        self.closed = False
+
+    async def get_citations(self, pmids):
+        raise self._exc
+
+    async def close(self):
+        self.closed = True
+
+
+# ---------------------------------------------------------------------------
+# (c) _persist_records — persist basics + per-record savepoint isolation
+# ---------------------------------------------------------------------------
+
+def test_persist_records_persists_valid_records_with_relations(db):
+    query = _make_query(db)
+    records = [_make_record("1001"), _make_record("1002")]
+
+    count, pmids = tasks._persist_records(db, records, query.id)
+
+    assert count == 2
+    assert sorted(pmids) == ["1001", "1002"]
+    pubs = db.query(Publication).filter(Publication.query_id == query.id).all()
+    assert len(pubs) == 2
+    for pub in pubs:
+        assert pub.journal_id is not None
+        assert len(pub.authors) == 1
+        assert len(pub.keywords) == 2  # one mesh term + one author keyword
+
+
+def test_persist_records_returns_zero_for_empty_batch(db):
+    query = _make_query(db)
+
+    count, pmids = tasks._persist_records(db, [], query.id)
+
+    assert count == 0
+    assert pmids == []
+
+
+def test_persist_records_rolls_back_single_bad_record_others_still_persist(db, monkeypatch):
+    query = _make_query(db)
+    records = [
+        _make_record("2001", affiliation="Good Hospital, USA"),
+        _make_record("2002", affiliation="TRIGGER_FAIL"),
+        _make_record("2003", affiliation="Another Hospital, USA"),
+    ]
+
+    real_extract_country = tasks.extract_country
+
+    def flaky_extract_country(affiliation):
+        if affiliation == "TRIGGER_FAIL":
+            raise ValueError("simulated per-record failure")
+        return real_extract_country(affiliation)
+
+    monkeypatch.setattr(tasks, "extract_country", flaky_extract_country)
+
+    count, pmids = tasks._persist_records(db, records, query.id)
+
+    assert count == 2
+    assert sorted(pmids) == ["2001", "2003"]
+    pubs = db.query(Publication).filter(Publication.query_id == query.id).all()
+    assert sorted(p.pmid for p in pubs) == ["2001", "2003"]
+    assert db.query(Publication).filter(Publication.pmid == "2002").first() is None
+
+
+# ---------------------------------------------------------------------------
+# (b) Adapter courtesy/rate-limit settings wiring
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(autouse=True)
+def _ensure_adapters_discovered():
+    discover_adapters()
+
+
+def test_adapter_kwargs_unknown_source_returns_empty_dict():
+    assert tasks._adapter_kwargs("not-a-real-source") == {}
+
+
+def test_adapter_kwargs_pubmed_reflects_configured_api_key_and_rate_limit(monkeypatch):
+    monkeypatch.setattr(settings, "pubmed_api_key", "pm-key-123")
+    monkeypatch.setattr(settings, "pubmed_rate_limit", 9.5)
+
+    kwargs = tasks._adapter_kwargs("pubmed")
+
+    assert kwargs == {"api_key": "pm-key-123", "rate_limit": 9.5}
+
+
+def test_adapter_kwargs_openalex_reflects_configured_email(monkeypatch):
+    monkeypatch.setattr(settings, "openalex_email", "team@example.org")
+
+    assert tasks._adapter_kwargs("openalex") == {"email": "team@example.org"}
+
+
+def test_adapter_kwargs_crossref_reflects_configured_email(monkeypatch):
+    monkeypatch.setattr(settings, "crossref_email", "team@example.org")
+
+    assert tasks._adapter_kwargs("crossref") == {"email": "team@example.org"}
+
+
+def test_adapter_kwargs_semantic_scholar_reflects_configured_api_key(monkeypatch):
+    monkeypatch.setattr(settings, "semantic_scholar_api_key", "s2-secret")
+
+    assert tasks._adapter_kwargs("semanticscholar") == {"api_key": "s2-secret"}
+
+
+def test_get_adapter_with_settings_wires_pubmed_api_key_and_rate_limit(monkeypatch):
+    monkeypatch.setattr(settings, "pubmed_api_key", "pm-key-abc")
+    monkeypatch.setattr(settings, "pubmed_rate_limit", 7.0)
+
+    adapter = get_adapter("pubmed", **tasks._adapter_kwargs("pubmed"))
+
+    assert adapter._client.api_key == "pm-key-abc"
+    assert adapter._client.rate_limit == 7.0
+
+
+def test_get_adapter_with_settings_wires_openalex_email(monkeypatch):
+    monkeypatch.setattr(settings, "openalex_email", "researcher@example.org")
+
+    adapter = get_adapter("openalex", **tasks._adapter_kwargs("openalex"))
+
+    assert adapter._email == "researcher@example.org"
+
+
+def test_get_adapter_with_settings_wires_crossref_email(monkeypatch):
+    monkeypatch.setattr(settings, "crossref_email", "researcher@example.org")
+
+    adapter = get_adapter("crossref", **tasks._adapter_kwargs("crossref"))
+
+    assert adapter._email == "researcher@example.org"
+
+
+def test_get_adapter_with_settings_wires_semantic_scholar_api_key(monkeypatch):
+    monkeypatch.setattr(settings, "semantic_scholar_api_key", "s2-secret")
+
+    adapter = get_adapter("semanticscholar", **tasks._adapter_kwargs("semanticscholar"))
+
+    assert adapter._api_key == "s2-secret"
+
+
+def test_get_adapter_without_settings_configured_keeps_adapter_defaults(monkeypatch):
+    monkeypatch.setattr(settings, "pubmed_api_key", "")
+    monkeypatch.setattr(settings, "pubmed_rate_limit", 3.0)
+
+    adapter = get_adapter("pubmed", **tasks._adapter_kwargs("pubmed"))
+
+    assert adapter._client.api_key == ""
+    assert adapter._client.rate_limit == 3.0
+
+
+# ---------------------------------------------------------------------------
+# (a) iCite enrichment failure must not fail an otherwise-successful search
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def task_session_factory(db):
+    """A second sessionmaker bound to the SAME connection as the `db` fixture,
+    so `_run_search`'s internally-created `SessionLocal()` session commits into
+    the same test-scoped (auto-rolled-back) transaction and its writes are
+    immediately visible to the test's own `db` session."""
+    return sessionmaker(bind=db.connection())
+
+
+def test_run_search_enrichment_failure_still_completes_with_result_count(
+    db, monkeypatch, task_session_factory
+):
+    query = _make_query(db)
+    records = [_make_record("3001"), _make_record("3002")]
+    stub_adapter = _StubAdapter(ids=["3001", "3002"], records=records)
+
+    monkeypatch.setattr(tasks, "get_adapter", lambda source, **kwargs: stub_adapter)
+    monkeypatch.setattr(tasks, "SessionLocal", task_session_factory)
+    monkeypatch.setattr(
+        tasks, "ICiteClient", lambda: _FailingICiteClient(RuntimeError("iCite 503"))
+    )
+
+    asyncio.run(
+        tasks._run_search(_StubTask(), query.id, "pubmed", None, None, tasks.DEFAULT_MAX_RESULTS)
+    )
+
+    db.expire_all()
+    refreshed = db.get(SearchQuery, query.id)
+    assert refreshed.status == QueryStatus.completed
+    assert refreshed.result_count == 2
+
+    pubs = db.query(Publication).filter(Publication.query_id == query.id).all()
+    assert len(pubs) == 2
+
+    enrichment_steps = (
+        db.query(MethodologyStep)
+        .filter(MethodologyStep.query_id == query.id, MethodologyStep.phase == "enrichment")
+        .all()
+    )
+    assert len(enrichment_steps) == 1
+    step = enrichment_steps[0]
+    assert step.parameters["status"] == "failed"
+    assert "iCite 503" in step.parameters["error"]
+    assert step.records_in == 2
+
+
+def test_run_search_enrichment_success_updates_citation_counts(
+    db, monkeypatch, task_session_factory
+):
+    """Regression guard: wrapping enrichment in try/except must not break the
+    normal, successful enrichment path."""
+    query = _make_query(db)
+    records = [_make_record("6001"), _make_record("6002")]
+    stub_adapter = _StubAdapter(ids=["6001", "6002"], records=records)
+
+    class _WorkingICiteClient:
+        async def get_citations(self, pmids):
+            return {"6001": 42, "6002": 7}
+
+        async def close(self):
+            pass
+
+    monkeypatch.setattr(tasks, "get_adapter", lambda source, **kwargs: stub_adapter)
+    monkeypatch.setattr(tasks, "SessionLocal", task_session_factory)
+    monkeypatch.setattr(tasks, "ICiteClient", lambda: _WorkingICiteClient())
+
+    asyncio.run(
+        tasks._run_search(
+            _StubTask(), query.id, "pubmed", None, None, tasks.DEFAULT_MAX_RESULTS
+        )
+    )
+
+    db.expire_all()
+    refreshed = db.get(SearchQuery, query.id)
+    assert refreshed.status == QueryStatus.completed
+    assert refreshed.result_count == 2
+
+    pubs = {p.pmid: p for p in db.query(Publication).filter(Publication.query_id == query.id).all()}
+    assert pubs["6001"].citation_count == 42
+    assert pubs["6002"].citation_count == 7
+
+    enrichment_steps = (
+        db.query(MethodologyStep)
+        .filter(MethodologyStep.query_id == query.id, MethodologyStep.phase == "enrichment")
+        .all()
+    )
+    assert len(enrichment_steps) == 1
+    assert enrichment_steps[0].parameters["status"] == "completed"
+    assert enrichment_steps[0].parameters["enriched"] == 2
+
+
+def test_run_search_enrichment_db_fatal_exception_still_propagates(
+    db, monkeypatch, task_session_factory
+):
+    """A dropped DB connection during enrichment is a batch-level failure, not
+    a best-effort-metadata failure — it must still fail the whole task."""
+    query = _make_query(db)
+    records = [_make_record("4001")]
+    stub_adapter = _StubAdapter(ids=["4001"], records=records)
+
+    class _BrokenICiteClient:
+        async def get_citations(self, pmids):
+            raise OperationalError("SELECT 1", {}, Exception("connection lost"))
+
+        async def close(self):
+            pass
+
+    monkeypatch.setattr(tasks, "get_adapter", lambda source, **kwargs: stub_adapter)
+    monkeypatch.setattr(tasks, "SessionLocal", task_session_factory)
+    monkeypatch.setattr(tasks, "ICiteClient", lambda: _BrokenICiteClient())
+
+    with pytest.raises(OperationalError):
+        asyncio.run(
+            tasks._run_search(
+                _StubTask(), query.id, "pubmed", None, None, tasks.DEFAULT_MAX_RESULTS
+            )
+        )
+
+    db.expire_all()
+    refreshed = db.get(SearchQuery, query.id)
+    assert refreshed.status == QueryStatus.failed
+
+
+def test_run_search_no_pmids_skips_enrichment_entirely(db, monkeypatch, task_session_factory):
+    """Non-PubMed sources never call iCite at all — no enrichment step should
+    be logged, and the search should complete normally."""
+    query = _make_query(db)
+    query.database = "openalex"
+    db.commit()
+    records = [_make_record("W5001")]
+    stub_adapter = _StubAdapter(ids=["W5001"], records=records)
+
+    called = {"get_citations": False}
+
+    class _AssertNotCalledICiteClient:
+        async def get_citations(self, pmids):
+            called["get_citations"] = True
+            return {}
+
+        async def close(self):
+            pass
+
+    monkeypatch.setattr(tasks, "get_adapter", lambda source, **kwargs: stub_adapter)
+    monkeypatch.setattr(tasks, "SessionLocal", task_session_factory)
+    monkeypatch.setattr(tasks, "ICiteClient", lambda: _AssertNotCalledICiteClient())
+
+    asyncio.run(
+        tasks._run_search(
+            _StubTask(), query.id, "openalex", None, None, tasks.DEFAULT_MAX_RESULTS
+        )
+    )
+
+    assert called["get_citations"] is False
+    db.expire_all()
+    refreshed = db.get(SearchQuery, query.id)
+    assert refreshed.status == QueryStatus.completed
+    assert refreshed.result_count == 1
+    enrichment_steps = (
+        db.query(MethodologyStep)
+        .filter(MethodologyStep.query_id == query.id, MethodologyStep.phase == "enrichment")
+        .all()
+    )
+    assert enrichment_steps == []
