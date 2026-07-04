@@ -34,6 +34,83 @@ def test_pubmed_search(adapter):
     assert result.ids == ["38000001", "38000002"]
 
 
+def _esearch_xml(count: int, ids: list[str]) -> str:
+    id_list = "".join(f"<Id>{i}</Id>" for i in ids)
+    return f'<?xml version="1.0"?><eSearchResult><Count>{count}</Count><IdList>{id_list}</IdList></eSearchResult>'
+
+
+def test_pubmed_search_paginated_walks_retstart(adapter):
+    """PubMed's eutils retmax caps a single esearch response; every other
+    adapter walks pagination to avoid silently truncating results above the
+    cap. This must hold for PubMed too."""
+    captured_retstarts: list[int] = []
+
+    async def mock_get(url, params=None):
+        captured_retstarts.append(params["retstart"])
+        resp = AsyncMock()
+        if params["retstart"] == 0:
+            resp.text = _esearch_xml(3, ["1", "2"])
+        else:
+            resp.text = _esearch_xml(3, ["3"])
+        resp.raise_for_status = lambda: None
+        return resp
+
+    with patch.object(adapter._client._client, "get", side_effect=mock_get):
+        batches: list[list[str]] = []
+
+        async def run():
+            async for batch in adapter.search_paginated("test query"):
+                batches.append(batch)
+
+        asyncio.run(run())
+
+    assert batches == [["1", "2"], ["3"]]
+    assert captured_retstarts == [0, 2]
+
+
+def test_pubmed_search_paginated_single_page_stops_after_one_call(adapter):
+    call_count = 0
+
+    async def mock_get(url, params=None):
+        nonlocal call_count
+        call_count += 1
+        resp = AsyncMock()
+        resp.text = _esearch_xml(2, ["10", "20"])
+        resp.raise_for_status = lambda: None
+        return resp
+
+    with patch.object(adapter._client._client, "get", side_effect=mock_get):
+        batches: list[list[str]] = []
+
+        async def run():
+            async for batch in adapter.search_paginated("test query"):
+                batches.append(batch)
+
+        asyncio.run(run())
+
+    assert batches == [["10", "20"]]
+    assert call_count == 1
+
+
+def test_pubmed_search_paginated_no_results_yields_nothing(adapter):
+    async def mock_get(url, params=None):
+        resp = AsyncMock()
+        resp.text = _esearch_xml(0, [])
+        resp.raise_for_status = lambda: None
+        return resp
+
+    with patch.object(adapter._client._client, "get", side_effect=mock_get):
+        batches: list[list[str]] = []
+
+        async def run():
+            async for batch in adapter.search_paginated("no matches"):
+                batches.append(batch)
+
+        asyncio.run(run())
+
+    assert batches == []
+
+
 def test_pubmed_fetch_returns_raw_records(adapter, sample_xml):
     mock_response = AsyncMock()
     mock_response.text = sample_xml

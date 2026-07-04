@@ -170,6 +170,94 @@ def test_included_override_clamps_at_zero():
     assert counts.included == 0
 
 
+# ---------- fetch-phase losses (records lost between search and persist) ----------
+
+def test_compute_counts_folds_pure_fetch_loss_into_other_removed_before_screening():
+    """Records dropped during fetch (parse failures, per-record persist errors) with
+    no accompanying cross-source dedup step must still be visible pre-screening."""
+    steps = [
+        _step(phase="search", source="pubmed", records_out=100),
+        _step(phase="fetch", source="pubmed", records_in=100, records_out=90, step_order=2),
+    ]
+    counts = compute_counts(steps)
+    assert counts.other_removed_before_screening == 10
+    # 100 identified - 0 dedup - 10 fetch loss == 90 screened.
+    assert counts.screened == 90
+
+
+def test_compute_counts_fetch_loss_does_not_double_count_dedup_removed_records():
+    """The fetch step's records_out already excludes cross-source-dedup-removed
+    records (dedup happens inside the fetch loop, before persist). The fetch loss
+    therefore contains both the cross-source-dedup count AND any other invisible
+    loss. Only the residual (not already reflected in duplicates_removed) may be
+    folded into other_removed_before_screening."""
+    steps = [
+        _step(phase="search", source="pubmed", records_out=100),
+        # fetched 100 ids, persisted 70: lost 30 total (20 cross-source dupes + 10 other).
+        _step(phase="fetch", source="pubmed", records_in=100, records_out=70, step_order=2),
+        _step(
+            phase="dedup", source="pubmed",
+            records_in=90, records_out=70, records_affected=20, step_order=3,
+        ),
+    ]
+    counts = compute_counts(steps)
+    assert counts.duplicates_removed == 20
+    assert counts.other_removed_before_screening == 10  # residual only, not 30
+    assert counts.screened == 70  # matches the actual persisted count
+
+
+def test_compute_counts_fetch_loss_fully_explained_by_dedup_adds_nothing_extra():
+    """When the entire fetch-phase delta is accounted for by the dedup step's
+    records_affected, no residual should be folded into other_removed_before_screening."""
+    steps = [
+        _step(phase="search", source="pubmed", records_out=100),
+        _step(phase="fetch", source="pubmed", records_in=100, records_out=80, step_order=2),
+        _step(
+            phase="dedup", source="pubmed",
+            records_in=100, records_out=80, records_affected=20, step_order=3,
+        ),
+    ]
+    counts = compute_counts(steps)
+    assert counts.duplicates_removed == 20
+    assert counts.other_removed_before_screening == 0
+    assert counts.screened == 80
+
+
+def test_compute_counts_fetch_loss_correlates_per_query_not_globally():
+    """A dedup step's records_affected for query B must not offset an unrelated
+    fetch-phase loss for query A (and vice versa)."""
+    steps = [
+        # Query 1: pure fetch loss, no dedup step for this query.
+        _step(query_id=1, phase="search", source="pubmed", records_out=50, step_order=1),
+        _step(query_id=1, phase="fetch", source="pubmed", records_in=50, records_out=45, step_order=2),
+        # Query 2: search + fetch (no loss) + dedup affecting query 2 only.
+        _step(query_id=2, phase="search", source="openalex", records_out=100, step_order=1),
+        _step(query_id=2, phase="fetch", source="openalex", records_in=100, records_out=80, step_order=2),
+        _step(
+            query_id=2, phase="dedup", source="openalex",
+            records_in=100, records_out=80, records_affected=20, step_order=3,
+        ),
+    ]
+    counts = compute_counts(steps)
+    assert counts.duplicates_removed == 20
+    # Query 1's 5-record fetch loss must surface fully (not absorbed by query 2's dedup).
+    assert counts.other_removed_before_screening == 5
+    assert counts.total_identified == 150
+    assert counts.screened == 125  # 150 - 20 dedup - 5 fetch loss
+
+
+def test_compute_counts_fetch_loss_ignores_non_positive_deltas():
+    """records_out >= records_in (no loss, or a defensive/odd zero-delta step) must
+    not produce a negative contribution."""
+    steps = [
+        _step(phase="search", source="pubmed", records_out=100),
+        _step(phase="fetch", source="pubmed", records_in=100, records_out=100, step_order=2),
+    ]
+    counts = compute_counts(steps)
+    assert counts.other_removed_before_screening == 0
+    assert counts.screened == 100
+
+
 def test_render_svg_omits_side_box_when_no_exclusions():
     counts = PrismaCounts(
         identified_by_source={"pubmed": 100},

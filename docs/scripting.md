@@ -110,7 +110,7 @@ rate limits. BibMedEd respects each adapter's documented courtesy patterns
 in `bibmeded/.env` before starting the worker:
 
 ```dotenv
-BIBMEDED_NCBI_API_KEY=...
+BIBMEDED_PUBMED_API_KEY=...
 BIBMEDED_NCBI_EMAIL=you@example.com
 BIBMEDED_OPENALEX_EMAIL=you@example.com
 BIBMEDED_CROSSREF_EMAIL=you@example.com

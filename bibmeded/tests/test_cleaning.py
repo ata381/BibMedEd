@@ -99,3 +99,15 @@ def test_cross_source_dedup_normalizes_pmid_whitespace():
 
 def test_extract_country_is_case_insensitive_for_canonical_country_names():
     assert extract_country("Department of Surgery, toronto, canada") == "Canada"
+
+
+def test_cross_source_dedup_chains_through_dropped_records_other_identifier():
+    records = [
+        RawRecord(source_id="PM1", source_database="pubmed", title="A", external_ids={"pmid": "100"}),
+        RawRecord(source_id="PM2", source_database="pubmed", title="A", external_ids={"pmid": "100", "doi": "10.1/x"}),
+        RawRecord(source_id="OA1", source_database="openalex", title="A", external_ids={"openalex": "OA1", "doi": "10.1/x"}),
+    ]
+    unique, removed, breakdown = deduplicate_cross_source(records)
+    assert len(unique) == 1
+    assert removed == 2
+    assert breakdown["pmid"] + breakdown["doi"] == 2

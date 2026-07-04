@@ -65,6 +65,15 @@ def compute_counts(
         screen a record we couldn't enrich, so we treat the loss as
         pre-screening removal. Methodology log preserves the original phase
         label, so the exact cause is auditable.
+      - ``fetch`` (``records_in - records_out``) → residual folded into "Other
+        reasons removed before screening". The worker's fetch step covers ids
+        that never became a persisted record (parse failures, per-record
+        persist errors, etc.), but its ``records_out`` already excludes any
+        records removed by that same run's cross-source ``dedup`` step (dedup
+        happens inside the fetch loop, before persisting). To avoid
+        double-subtracting those, we only fold in the residual —
+        ``fetch loss - dedup records_affected`` for the same ``query_id`` —
+        clamped at zero.
       - ``exclusion`` → "Records excluded in screening".
       - ``included_override``, when provided by the caller, overrides the
         post-screening count (it's the live ``excluded == False`` count and
@@ -74,6 +83,11 @@ def compute_counts(
     counts = PrismaCounts()
     steps = list(steps)
 
+    # Per-query_id bookkeeping so a fetch-phase loss is only reconciled against
+    # the dedup step that actually explains it (not an unrelated query's dedup).
+    fetch_loss_by_query: dict[int, int] = {}
+    dedup_affected_by_query: dict[int, int] = {}
+
     for step in steps:
         if step.phase == "search":
             counts.identified_by_source[step.source] = (
@@ -81,10 +95,25 @@ def compute_counts(
             )
         elif step.phase == "dedup":
             counts.duplicates_removed += step.records_affected
+            dedup_affected_by_query[step.query_id] = (
+                dedup_affected_by_query.get(step.query_id, 0) + step.records_affected
+            )
         elif step.phase == "enrichment":
             counts.other_removed_before_screening += step.records_affected
         elif step.phase == "exclusion":
             counts.excluded_in_screening += step.records_affected
+        elif step.phase == "fetch":
+            loss = step.records_in - step.records_out
+            if loss > 0:
+                fetch_loss_by_query[step.query_id] = (
+                    fetch_loss_by_query.get(step.query_id, 0) + loss
+                )
+
+    for query_id, loss in fetch_loss_by_query.items():
+        already_explained_by_dedup = dedup_affected_by_query.get(query_id, 0)
+        residual = loss - already_explained_by_dedup
+        if residual > 0:
+            counts.other_removed_before_screening += residual
 
     if exclusion_summary:
         # Surface PRISMA 2020 item 17 — per-reason breakdown of manual exclusions.
