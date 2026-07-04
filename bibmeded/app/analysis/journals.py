@@ -30,11 +30,13 @@ def analyze_journals(db: Session, project_id: int) -> dict:
         cumulative += count
         zone_journals.append({"name": journal, "count": count})
         if cumulative >= third * zone_num and zone_num < 3:
-            zones.append({"zone": zone_num, "journals": zone_journals, "article_count": cumulative})
+            zone_article_count = sum(j["count"] for j in zone_journals)
+            zones.append({"zone": zone_num, "journals": zone_journals, "article_count": zone_article_count})
             zone_journals = []
             zone_num += 1
     if zone_journals:
-        zones.append({"zone": zone_num, "journals": zone_journals, "article_count": total_pubs})
+        zone_article_count = sum(j["count"] for j in zone_journals)
+        zones.append({"zone": zone_num, "journals": zone_journals, "article_count": zone_article_count})
     return {
         "top_journals": top_journals,
         "bradford_zones": [{"zone": z["zone"], "journal_count": len(z["journals"]), "article_count": z["article_count"]} for z in zones],

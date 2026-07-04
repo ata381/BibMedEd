@@ -43,6 +43,37 @@ def test_country_analysis(db):
     assert len(result["collaboration_network"]["links"]) >= 2
 
 
+def test_country_counts_use_full_counting_not_per_coauthor(db):
+    project = SearchProject(name="FullCounting")
+    db.add(project)
+    db.flush()
+    query = SearchQuery(project_id=project.id, query_string="test")
+    db.add(query)
+    db.flush()
+
+    aff_us = Affiliation(name="Harvard University", country="United States", name_normalized="harvard university")
+    db.add(aff_us)
+    db.flush()
+
+    authors = [Author(name=f"Author {i}", name_normalized=f"author {i}") for i in range(5)]
+    for author in authors:
+        author.affiliations.append(aff_us)
+    db.add_all(authors)
+
+    pub = Publication(pmid="fullcount1", title="Paper with 5 US authors", year=2024, query_id=query.id)
+    pub.authors.extend(authors)
+    db.add(pub)
+    db.commit()
+
+    result = analyze_countries(db, project.id)
+
+    us_entry = next(c for c in result["country_counts"] if c["country"] == "United States")
+    assert us_entry["count"] == 1
+
+    harvard_entry = next(i for i in result["institution_counts"] if i["institution"] == "Harvard University")
+    assert harvard_entry["count"] == 1
+
+
 def test_country_analysis_empty(db):
     project = SearchProject(name="Empty")
     db.add(project)

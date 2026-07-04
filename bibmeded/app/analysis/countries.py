@@ -18,12 +18,16 @@ def analyze_countries(db: Session, project_id: int) -> dict:
     collab_pairs = []
     for pub in pubs:
         pub_countries = set()
+        pub_institutions = set()
         for author in pub.authors:
             for aff in author.affiliations:
                 if aff.country:
-                    country_counter[aff.country] += 1
                     pub_countries.add(aff.country)
-                institution_counter[aff.name] += 1
+                pub_institutions.add(aff.name)
+        for country in pub_countries:
+            country_counter[country] += 1
+        for institution in pub_institutions:
+            institution_counter[institution] += 1
         for c1, c2 in combinations(sorted(pub_countries), 2):
             collab_pairs.append((c1, c2))
     country_counts = [{"country": c, "count": n} for c, n in country_counter.most_common(30)]

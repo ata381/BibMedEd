@@ -30,21 +30,40 @@ def slugify(name: str) -> str:
     return re.sub(r"[\s_]+", "-", slug)[:50]
 
 
+# Leading characters that Excel/Sheets/LibreOffice interpret as the start of a
+# formula. Bibliographic fields (titles, author names, journal names, keywords)
+# come from external APIs and are attacker-influenced, so any value starting
+# with one of these must be neutralized before it's written to a CSV cell —
+# otherwise opening the export in a spreadsheet app can execute the "formula"
+# (OWASP CSV Injection / Formula Injection).
+_CSV_FORMULA_TRIGGER_CHARS = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _csv_safe(value: str) -> str:
+    """Prefix a leading apostrophe onto values that would otherwise be
+    interpreted as spreadsheet formulas, per the standard OWASP CSV escaping
+    mitigation. The apostrophe forces the cell to be treated as text.
+    """
+    if value and value[0] in _CSV_FORMULA_TRIGGER_CHARS:
+        return "'" + value
+    return value
+
+
 def generate_csv(pubs: list[Publication]) -> str:
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["PMID", "DOI", "Title", "Authors", "Journal", "Year", "Citations", "Keywords", "Abstract"])
     for pub in pubs:
         writer.writerow([
-            pub.pmid,
-            pub.doi or "",
-            pub.title,
-            "; ".join(a.name for a in pub.authors),
-            pub.journal.name if pub.journal else "",
+            _csv_safe(pub.pmid or ""),
+            _csv_safe(pub.doi or ""),
+            _csv_safe(pub.title or ""),
+            _csv_safe("; ".join(a.name for a in pub.authors)),
+            _csv_safe(pub.journal.name if pub.journal else ""),
             pub.year or "",
             pub.citation_count or 0,
-            "; ".join(k.term for k in pub.keywords),
-            (pub.abstract or "").replace("\n", " "),
+            _csv_safe("; ".join(k.term for k in pub.keywords)),
+            _csv_safe((pub.abstract or "").replace("\n", " ")),
         ])
     return output.getvalue()
 
@@ -92,24 +111,34 @@ def generate_json(project_name: str, pubs: list[Publication]) -> str:
     return json.dumps(payload, indent=2, ensure_ascii=False)
 
 
+def _ris_safe(value: str) -> str:
+    """Strip embedded CR/LF from a field value before writing it into an RIS
+    tag line. RIS records are newline-delimited, so an unescaped newline in an
+    attacker-influenced field (title/author/journal/keyword) lets a malicious
+    record inject arbitrary tag lines — including a fake ``ER  - `` that
+    terminates the record early or a fake ``TY  - JOUR`` that starts a new one.
+    """
+    return re.sub(r"[\r\n]+", " ", value).strip()
+
+
 def generate_ris(pubs: list[Publication]) -> str:
     lines: list[str] = []
     for pub in pubs:
         lines.append("TY  - JOUR")
-        lines.append(f"TI  - {pub.title}")
+        lines.append(f"TI  - {_ris_safe(pub.title)}")
         for author in pub.authors:
-            lines.append(f"AU  - {author.name}")
+            lines.append(f"AU  - {_ris_safe(author.name)}")
         if pub.journal:
-            lines.append(f"JO  - {pub.journal.name}")
+            lines.append(f"JO  - {_ris_safe(pub.journal.name)}")
         if pub.year:
             lines.append(f"PY  - {pub.year}")
         if pub.doi:
-            lines.append(f"DO  - {pub.doi}")
+            lines.append(f"DO  - {_ris_safe(pub.doi)}")
         lines.append(f"AN  - {pub.pmid}")
         if pub.abstract:
-            lines.append(f"AB  - {pub.abstract.replace(chr(10), ' ')}")
+            lines.append(f"AB  - {_ris_safe(pub.abstract)}")
         for kw in pub.keywords:
-            lines.append(f"KW  - {kw.term}")
+            lines.append(f"KW  - {_ris_safe(kw.term)}")
         lines.append("ER  - ")
         lines.append("")
     return "\n".join(lines)
@@ -213,9 +242,18 @@ def generate_methodology(
                 lines.append(f"  {label}: {n}")
             lines.append("")
 
-    last_step = steps[-1]
+    # For a multi-query project, `steps` interleaves the per-query pipelines
+    # (ordered query_id, step_order), so steps[-1] is only the *last query's*
+    # terminal step — not the project-wide total. Take each query's own
+    # terminal step (the last one seen for that query_id) and sum their
+    # records_out to get the true project-wide included-studies figure.
+    terminal_step_by_query: dict[int, MethodologyStep] = {}
+    for step in steps:
+        terminal_step_by_query[step.query_id] = step
+    studies_included = sum(step.records_out for step in terminal_step_by_query.values())
+
     lines.append("FINAL DATASET")
-    lines.append(f"  Studies included: {last_step.records_out}")
+    lines.append(f"  Studies included: {studies_included}")
     lines.append("")
     return "\n".join(lines)
 

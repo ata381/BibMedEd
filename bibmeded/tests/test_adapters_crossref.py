@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from unittest.mock import AsyncMock, patch
 
 import httpx
@@ -202,6 +203,78 @@ def test_crossref_fetch_skips_records_on_http_error(adapter):
 
     with patch.object(adapter._client, "get", side_effect=mock_get):
         records = asyncio.run(adapter.fetch(["10.0/never-found"]))
+    assert records == []
+
+
+def test_crossref_fetch_logs_warning_on_swallowed_http_error(adapter, caplog):
+    async def mock_get(url, params=None):
+        raise httpx.HTTPError("network error")
+
+    with caplog.at_level(logging.WARNING):
+        with patch.object(adapter._client, "get", side_effect=mock_get):
+            records = asyncio.run(adapter.fetch(["10.0/never-found"]))
+
+    assert records == []
+    assert len(caplog.records) == 1
+    assert caplog.records[0].levelno == logging.WARNING
+    assert "10.0/never-found" in caplog.text
+
+
+def test_crossref_fetch_logs_status_code_on_http_status_error(adapter, caplog):
+    request = httpx.Request("GET", f"https://api.crossref.org/works/10.0/broken")
+    response = httpx.Response(status_code=503, request=request)
+    error = httpx.HTTPStatusError("server error", request=request, response=response)
+
+    async def mock_get(url, params=None):
+        raise error
+
+    with caplog.at_level(logging.WARNING):
+        with patch.object(adapter._client, "get", side_effect=mock_get):
+            records = asyncio.run(adapter.fetch(["10.0/broken"]))
+
+    assert records == []
+    assert "503" in caplog.text
+    assert "10.0/broken" in caplog.text
+
+
+def test_crossref_fetch_raises_after_consecutive_failure_threshold(adapter):
+    """A systemic CrossRef outage (every DOI failing) must surface as an
+    exception rather than silently returning an empty result set."""
+
+    async def mock_get(url, params=None):
+        raise httpx.HTTPError("network error")
+
+    dois = [f"10.0/outage-{i}" for i in range(10)]
+    with patch.object(adapter._client, "get", side_effect=mock_get):
+        with pytest.raises(RuntimeError, match="consecutive"):
+            asyncio.run(adapter.fetch(dois))
+
+
+def test_crossref_fetch_does_not_raise_when_failures_are_not_consecutive(adapter):
+    """9 failures, one success, then 9 more failures — never hits the
+    10-in-a-row threshold, so this must NOT raise."""
+    call_count = 0
+
+    async def mock_get(url, params=None):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 10:
+            return _mock_resp(WORK_DETAIL)
+        raise httpx.HTTPError("network error")
+
+    dois = [f"10.0/mixed-{i}" for i in range(19)]
+    with patch.object(adapter._client, "get", side_effect=mock_get):
+        records = asyncio.run(adapter.fetch(dois))
+    assert len(records) == 1
+
+
+def test_crossref_fetch_below_threshold_does_not_raise(adapter):
+    async def mock_get(url, params=None):
+        raise httpx.HTTPError("network error")
+
+    dois = [f"10.0/partial-{i}" for i in range(9)]
+    with patch.object(adapter._client, "get", side_effect=mock_get):
+        records = asyncio.run(adapter.fetch(dois))
     assert records == []
 
 

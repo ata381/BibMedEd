@@ -119,6 +119,22 @@ Patterns worth noting:
 
 Read the full source: [`app/adapters/crossref.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/app/adapters/crossref.py) — and the tests at [`tests/test_adapters_crossref.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/tests/test_adapters_crossref.py) demonstrate the fixture-driven testing convention every new adapter PR should follow.
 
+## Walkthrough: Semantic Scholar Adapter
+
+The Semantic Scholar adapter (`app/adapters/semantic_scholar.py`) shows the Graph API v1 pattern, including its citation graph and an optional-but-not-required API key.
+
+Patterns worth noting:
+
+1. **No key required, key raises the ceiling** — `requires_api_key = False`. The free anonymous tier allows roughly 100 requests per 5 minutes per IP; passing an `api_key` constructor arg sets the `x-api-key` header and moves the adapter to the keyed tier (1 request/sec sustained), which is more predictable for large batch fetches even though its instantaneous ceiling is lower than an anonymous burst.
+2. **Offset pagination with an inclusive hard cap** — `search_paginated()` walks the `offset`/`next` fields returned by `/paper/search`. The upstream API caps `offset` at 9999 inclusive; the adapter stops once the next offset would exceed that cap rather than erroring, and `search()` still reports the upstream `total` count so callers can see when a query was capped short of the true result size.
+3. **Batched detail fetches** — `fetch()` calls `/paper/batch`, which accepts at most 500 IDs per request; the adapter chunks arbitrary-length ID lists into `_BATCH_LIMIT`-sized calls and skips any batch entry that comes back `None` (an ID the API couldn't resolve) instead of failing the whole request.
+4. **DOI normalisation, same convention as CrossRef** — `_to_raw()` lower-cases `externalIds.DOI` before storing it as `doi` and in `external_ids["doi"]`, so dedup matches records from PubMed, OpenAlex, or CrossRef regardless of case. `references[].externalIds.DOI` gets the same lowercase treatment.
+5. **`external_ids` populated with `doi`, `pmid`, and `semantic_scholar`** — the `paperId` is stored under `external_ids["semantic_scholar"]` and `externalIds.PubMed` (when present) is mapped to `external_ids["pmid"]`, giving this adapter three cross-reference keys instead of one.
+6. **Journal metadata has two possible shapes** — S2 records carry journal info in either a free-text `journal` object or a canonical `publicationVenue` object depending on the paper; `_to_raw()` falls back from one to the other for both name and ISSN.
+7. **`fieldsOfStudy` doubles as keywords** — Semantic Scholar doesn't expose author keywords, so the adapter maps its `fieldsOfStudy` list into `RawRecord.keywords` as the closest available signal. `mesh_terms=[]` is passed explicitly, same as every non-PubMed adapter.
+
+Read the full source: [`app/adapters/semantic_scholar.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/app/adapters/semantic_scholar.py) — and the tests at [`tests/test_adapters_semantic_scholar.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/tests/test_adapters_semantic_scholar.py).
+
 ## Step-by-Step: Adding a New Source
 
 1. Create `app/adapters/mysource.py`

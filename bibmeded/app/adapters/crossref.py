@@ -1,11 +1,19 @@
 import inspect
+import logging
 
 import httpx
 
 from app.adapters.base import BaseSourceAdapter, RawAuthor, RawRecord, SearchResponse
 from collections.abc import AsyncGenerator
 
+logger = logging.getLogger(__name__)
+
 CROSSREF_API = "https://api.crossref.org"
+
+# If this many DOI fetches in a row fail, treat it as a systemic CrossRef
+# outage rather than a scattering of missing/broken records and abort the
+# batch loudly instead of silently returning a partial (or empty) result.
+_MAX_CONSECUTIVE_FETCH_FAILURES = 10
 
 
 class CrossrefAdapter(BaseSourceAdapter):
@@ -69,6 +77,7 @@ class CrossrefAdapter(BaseSourceAdapter):
 
     async def fetch(self, ids: list[str]) -> list[RawRecord]:
         records: list[RawRecord] = []
+        consecutive_failures = 0
         for doi in ids:
             try:
                 resp = await self._client.get(
@@ -77,8 +86,19 @@ class CrossrefAdapter(BaseSourceAdapter):
                 )
                 resp.raise_for_status()
                 data = await self._parse_json(resp)
-            except httpx.HTTPError:
+            except httpx.HTTPError as exc:
+                status_code = getattr(getattr(exc, "response", None), "status_code", None)
+                logger.warning(
+                    "CrossRef fetch failed for DOI %s (status=%s): %s", doi, status_code, exc
+                )
+                consecutive_failures += 1
+                if consecutive_failures >= _MAX_CONSECUTIVE_FETCH_FAILURES:
+                    raise RuntimeError(
+                        f"CrossRef fetch aborted after {consecutive_failures} consecutive "
+                        "failures — likely a systemic CrossRef outage"
+                    ) from exc
                 continue
+            consecutive_failures = 0
             item = data.get("message")
             if item:
                 records.append(self._to_raw(item))

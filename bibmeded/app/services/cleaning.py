@@ -84,11 +84,17 @@ def deduplicate_cross_source(records: list[_RawRecord]) -> tuple[list[_RawRecord
             r.external_ids.get("pmid") or (r.source_id if r.source_database == "pubmed" else None)
         )
 
-        if doi and doi in seen_doi:
-            removed_by["doi"] += 1
-            continue
-        if pmid and pmid in seen_pmid:
-            removed_by["pmid"] += 1
+        is_duplicate = (doi and doi in seen_doi) or (pmid and pmid in seen_pmid)
+
+        if is_duplicate:
+            if doi and doi in seen_doi:
+                removed_by["doi"] += 1
+            else:
+                removed_by["pmid"] += 1
+            if doi:
+                seen_doi.add(doi)
+            if pmid:
+                seen_pmid.add(pmid)
             continue
 
         if doi:
