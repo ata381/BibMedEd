@@ -28,6 +28,16 @@ depends_on: str | None = None
 
 
 def upgrade() -> None:
+    # Fresh databases (new Docker volume): the entrypoint runs `alembic upgrade
+    # head` BEFORE the compose command's `Base.metadata.create_all`, so no tables
+    # exist yet at this point. create_all will build the current model — which
+    # already includes project_id and the composite constraints — so this
+    # migration must no-op; it only has work to do on databases that hold the
+    # pre-0002 schema (per the 0001_baseline contract).
+    bind = op.get_bind()
+    if not sa.inspect(bind).has_table("publications"):
+        return
+
     # 1. Add project_id nullable so existing rows can be backfilled first.
     op.add_column("publications", sa.Column("project_id", sa.Integer(), nullable=True))
 
@@ -66,6 +76,10 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    bind = op.get_bind()
+    if not sa.inspect(bind).has_table("publications"):
+        return
+
     op.drop_constraint("uq_publications_project_doi", "publications", type_="unique")
     op.drop_constraint("uq_publications_project_pmid", "publications", type_="unique")
     op.drop_index("ix_publications_pmid", table_name="publications")
