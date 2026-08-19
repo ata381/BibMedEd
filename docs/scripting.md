@@ -10,6 +10,7 @@ Before fetching a large result set, use `--dry-run` to estimate how many records
 
 ```bash
 bibmeded search "machine learning" --dry-run
+```
 
 ## OpenAPI surface
 
