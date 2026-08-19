@@ -1,9 +1,11 @@
 import argparse
 import asyncio
+import json
 import sys
 from collections.abc import Sequence
 
 import httpx
+from lxml import etree
 
 from app.adapters.registry import get_adapter
 
@@ -18,7 +20,7 @@ async def _dry_run_search(query: str, source: str) -> int:
     try:
         result = await adapter.search(query)
         print(f"Estimated results: {result.total_count}")
-    except httpx.HTTPError as exc:
+    except (httpx.HTTPError, json.JSONDecodeError, etree.XMLSyntaxError) as exc:
         print(f"Search failed: {exc}", file=sys.stderr)
         return 1
     finally:

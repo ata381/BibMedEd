@@ -1,6 +1,9 @@
+import json
 from unittest.mock import AsyncMock, Mock
 
 import httpx
+import pytest
+from lxml import etree
 
 from app.adapters.base import SearchResponse
 
@@ -110,5 +113,40 @@ def test_search_dry_run_reports_network_failure_without_traceback(monkeypatch, c
     assert exit_code == 1
     assert captured.out == ""
     assert captured.err == "Search failed: connection failed\n"
+    assert "Traceback" not in captured.err
+    adapter.close.assert_awaited_once()
+
+
+@pytest.mark.parametrize(
+    "parse_error",
+    [
+        json.JSONDecodeError("malformed JSON", "{", 0),
+        etree.XMLSyntaxError("malformed XML", 1, 1, 1),
+    ],
+)
+def test_search_dry_run_reports_response_parse_failure_without_traceback(
+    monkeypatch,
+    capsys,
+    parse_error,
+):
+    from app import cli
+
+    adapter = AsyncMock()
+    adapter.search.side_effect = parse_error
+    monkeypatch.setattr(cli, "get_adapter", Mock(return_value=adapter))
+
+    exit_code = cli.main(
+        [
+            "search",
+            "machine learning",
+            "--dry-run",
+        ]
+    )
+
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert captured.out == ""
+    assert captured.err == f"Search failed: {parse_error}\n"
     assert "Traceback" not in captured.err
     adapter.close.assert_awaited_once()
