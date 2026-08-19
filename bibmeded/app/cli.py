@@ -1,16 +1,26 @@
 import argparse
 import asyncio
+import sys
 from collections.abc import Sequence
+
+import httpx
 
 from app.adapters.registry import get_adapter
 
 
 async def _dry_run_search(query: str, source: str) -> int:
-    adapter = get_adapter(source)
+    try:
+        adapter = get_adapter(source)
+    except ValueError as exc:
+        print(exc, file=sys.stderr)
+        return 1
 
     try:
         result = await adapter.search(query)
         print(f"Estimated results: {result.total_count}")
+    except httpx.HTTPError as exc:
+        print(f"Search failed: {exc}", file=sys.stderr)
+        return 1
     finally:
         await adapter.close()
 

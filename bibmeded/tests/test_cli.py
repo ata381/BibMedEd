@@ -1,5 +1,7 @@
 from unittest.mock import AsyncMock, Mock
 
+import httpx
+
 from app.adapters.base import SearchResponse
 
 
@@ -61,4 +63,52 @@ def test_search_dry_run_uses_pubmed_by_default(monkeypatch, capsys):
     assert exit_code == 0
     get_adapter_mock.assert_called_once_with("pubmed")
     adapter.search.assert_awaited_once_with("machine learning")
+    adapter.close.assert_awaited_once()
+
+
+def test_search_dry_run_reports_unknown_source_without_traceback(monkeypatch, capsys):
+    from app import cli
+
+    error = "Unknown adapter: unknown. Available: ['pubmed']"
+    monkeypatch.setattr(cli, "get_adapter", Mock(side_effect=ValueError(error)))
+
+    exit_code = cli.main(
+        [
+            "search",
+            "machine learning",
+            "--source",
+            "unknown",
+            "--dry-run",
+        ]
+    )
+
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert captured.out == ""
+    assert captured.err == f"{error}\n"
+    assert "Traceback" not in captured.err
+
+
+def test_search_dry_run_reports_network_failure_without_traceback(monkeypatch, capsys):
+    from app import cli
+
+    adapter = AsyncMock()
+    adapter.search.side_effect = httpx.ConnectError("connection failed")
+    monkeypatch.setattr(cli, "get_adapter", Mock(return_value=adapter))
+
+    exit_code = cli.main(
+        [
+            "search",
+            "machine learning",
+            "--dry-run",
+        ]
+    )
+
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert captured.out == ""
+    assert captured.err == "Search failed: connection failed\n"
+    assert "Traceback" not in captured.err
     adapter.close.assert_awaited_once()
