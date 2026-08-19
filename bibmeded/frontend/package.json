@@ -10,13 +10,13 @@
   },
   "dependencies": {
     "@types/d3": "^7.4.3",
-    "axios": "^1.18.1",
+    "axios": "^1.19.0",
     "d3": "^7.9.0",
-    "next": "16.2.9",
-    "react": "19.2.7",
-    "react-dom": "19.2.7",
+    "next": "16.2.12",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "react-hot-toast": "^2.6.0",
-    "recharts": "^3.9.0"
+    "recharts": "^3.10.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -24,7 +24,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.9",
+    "eslint-config-next": "16.2.12",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
