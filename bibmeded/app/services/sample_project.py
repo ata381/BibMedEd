@@ -1,6 +1,7 @@
 from datetime import date, datetime, timezone
 from threading import Lock
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.adapters.base import RawAuthor, RawRecord
@@ -10,6 +11,7 @@ from app.workers.tasks import _persist_records
 
 
 SAMPLE_PROJECT_NAME = "AI in Medical Education — Sample Project"
+SAMPLE_PROJECT_ID = -381_000_001
 SAMPLE_QUERY_STRING = "Bundled synthetic demonstration corpus"
 SAMPLE_PROJECT_DESCRIPTION = (
     "A synthetic demonstration corpus bundled with BibMedEd. Explore every analysis, "
@@ -76,6 +78,7 @@ def _create_sample_project(db: Session) -> SearchProject:
     citation_counts = (64, 51, 39, 47, 34, 43, 29, 28, 25, 19, 16, 8)
     now = datetime.now(timezone.utc)
     project = SearchProject(
+        id=SAMPLE_PROJECT_ID,
         name=SAMPLE_PROJECT_NAME,
         description=SAMPLE_PROJECT_DESCRIPTION,
         date_range_start=date(2018, 1, 1),
@@ -174,15 +177,17 @@ def _create_sample_project(db: Session) -> SearchProject:
 
 def get_or_create_sample_project(db: Session) -> tuple[SearchProject, bool]:
     with _sample_creation_lock:
-        existing = (
-            db.query(SearchProject)
-            .join(SearchQuery)
-            .filter(
-                SearchQuery.database == "sample",
-                SearchQuery.query_string == SAMPLE_QUERY_STRING,
-            )
-            .first()
-        )
+        existing = db.get(SearchProject, SAMPLE_PROJECT_ID)
         if existing is not None:
             return existing, False
-        return _create_sample_project(db), True
+        try:
+            return _create_sample_project(db), True
+        except IntegrityError:
+            # A different process may have inserted the deterministic sample ID
+            # after our lookup. Its transaction is complete once the uniqueness
+            # failure is raised, so reload and reuse that project.
+            db.rollback()
+            existing = db.get(SearchProject, SAMPLE_PROJECT_ID)
+            if existing is None:
+                raise
+            return existing, False

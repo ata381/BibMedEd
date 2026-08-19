@@ -1,3 +1,8 @@
+from unittest.mock import Mock
+
+from sqlalchemy.exc import IntegrityError
+
+
 def test_create_project(client):
     response = client.post("/api/projects", json={"name": "AI in Medical Education", "description": "Bibliometric analysis", "date_range_start": "2022-01-01", "date_range_end": "2025-06-30"})
     assert response.status_code == 201
@@ -91,6 +96,45 @@ def test_create_sample_project_reuses_the_bundled_corpus(client):
     second = second_response.json()
 
     assert first["id"] == second["id"]
+    assert first["id"] < 0
     projects = client.get("/api/projects").json()
     sample_projects = [project for project in projects if project["name"] == first["name"]]
     assert len(sample_projects) == 1
+
+
+def test_create_sample_project_can_be_deleted_and_reset(client):
+    first = client.post("/api/projects/sample").json()
+
+    assert client.delete(f"/api/projects/{first['id']}").status_code == 204
+
+    recreated = client.post("/api/projects/sample")
+    assert recreated.status_code == 201
+    assert recreated.json()["id"] == first["id"]
+    assert client.get(f"/api/projects/{first['id']}/publications").json()["total"] == 12
+
+
+def test_sample_project_recovers_when_another_process_creates_it(monkeypatch):
+    from app.services import sample_project
+
+    concurrent_project = Mock()
+    db = Mock()
+    db.get.side_effect = [None, concurrent_project]
+    db.query.return_value.join.return_value.filter.return_value.first.return_value = None
+    duplicate = IntegrityError("insert sample", {}, Exception("duplicate primary key"))
+    monkeypatch.setattr(
+        sample_project,
+        "_create_sample_project",
+        Mock(side_effect=duplicate),
+    )
+
+    project, created = sample_project.get_or_create_sample_project(db)
+
+    assert project is concurrent_project
+    assert created is False
+    db.rollback.assert_called()
+
+
+def test_sample_project_openapi_documents_create_and_reuse_responses(client):
+    responses = client.get("/openapi.json").json()["paths"]["/api/projects/sample"]["post"]["responses"]
+
+    assert {"200", "201"}.issubset(responses)

@@ -20,7 +20,17 @@ def create_project(body: ProjectCreate, db: Session = Depends(get_db)):
     return project
 
 
-@router.post("/sample", status_code=201, response_model=ProjectResponse)
+@router.post(
+    "/sample",
+    status_code=201,
+    response_model=ProjectResponse,
+    responses={
+        200: {
+            "model": ProjectResponse,
+            "description": "Existing bundled sample project",
+        }
+    },
+)
 def create_bundled_sample_project(response: Response, db: Session = Depends(get_db)):
     project, created = get_or_create_sample_project(db)
     if not created:

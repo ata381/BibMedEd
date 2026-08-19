@@ -78,6 +78,8 @@ Open [http://localhost:3000](http://localhost:3000). That's it.
 
 Choose **Explore sample project** on the empty workspace to open a fully populated,
 clearly labeled synthetic corpus without making any external API calls.
+The sample behaves like a normal editable project: your changes persist, and deleting
+it before choosing **Explore sample project** again restores the bundled dataset.
 
 > **Optional:** Create a free [NCBI API key](https://www.ncbi.nlm.nih.gov/account/) and add it to `.env` as `BIBMEDED_PUBMED_API_KEY=your_key` for 10 req/s instead of 3 req/s.
 
