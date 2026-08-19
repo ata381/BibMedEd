@@ -11,7 +11,7 @@ from app.workers.tasks import _persist_records
 
 
 SAMPLE_PROJECT_NAME = "AI in Medical Education — Sample Project"
-SAMPLE_PROJECT_ID = -381_000_001
+SAMPLE_PROJECT_KEY = "bundled-ai-medical-education-v1"
 SAMPLE_QUERY_STRING = "Bundled synthetic demonstration corpus"
 SAMPLE_PROJECT_DESCRIPTION = (
     "A synthetic demonstration corpus bundled with BibMedEd. Explore every analysis, "
@@ -78,7 +78,7 @@ def _create_sample_project(db: Session) -> SearchProject:
     citation_counts = (64, 51, 39, 47, 34, 43, 29, 28, 25, 19, 16, 8)
     now = datetime.now(timezone.utc)
     project = SearchProject(
-        id=SAMPLE_PROJECT_ID,
+        sample_key=SAMPLE_PROJECT_KEY,
         name=SAMPLE_PROJECT_NAME,
         description=SAMPLE_PROJECT_DESCRIPTION,
         date_range_start=date(2018, 1, 1),
@@ -175,19 +175,27 @@ def _create_sample_project(db: Session) -> SearchProject:
         raise
 
 
+def _find_sample_project(db: Session) -> SearchProject | None:
+    return (
+        db.query(SearchProject)
+        .filter(SearchProject.sample_key == SAMPLE_PROJECT_KEY)
+        .one_or_none()
+    )
+
+
 def get_or_create_sample_project(db: Session) -> tuple[SearchProject, bool]:
     with _sample_creation_lock:
-        existing = db.get(SearchProject, SAMPLE_PROJECT_ID)
+        existing = _find_sample_project(db)
         if existing is not None:
             return existing, False
         try:
             return _create_sample_project(db), True
         except IntegrityError:
-            # A different process may have inserted the deterministic sample ID
-            # after our lookup. Its transaction is complete once the uniqueness
-            # failure is raised, so reload and reuse that project.
+            # A different process may have inserted the unique sample key after
+            # our lookup. Its transaction is complete once the uniqueness failure
+            # is raised, so reload and reuse that project.
             db.rollback()
-            existing = db.get(SearchProject, SAMPLE_PROJECT_ID)
+            existing = _find_sample_project(db)
             if existing is None:
                 raise
             return existing, False

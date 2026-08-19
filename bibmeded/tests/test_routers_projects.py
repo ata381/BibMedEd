@@ -96,21 +96,26 @@ def test_create_sample_project_reuses_the_bundled_corpus(client):
     second = second_response.json()
 
     assert first["id"] == second["id"]
-    assert first["id"] < 0
     projects = client.get("/api/projects").json()
     sample_projects = [project for project in projects if project["name"] == first["name"]]
     assert len(sample_projects) == 1
+
+    normal_project = client.post("/api/projects", json={"name": "Created after sample"})
+    assert normal_project.status_code == 201
+    assert normal_project.json()["id"] > 0
 
 
 def test_create_sample_project_can_be_deleted_and_reset(client):
     first = client.post("/api/projects/sample").json()
 
-    assert client.delete(f"/api/projects/{first['id']}").status_code == 204
+    deleted = client.delete(f"/api/projects/{first['id']}")
+    assert deleted.status_code == 204
 
     recreated = client.post("/api/projects/sample")
     assert recreated.status_code == 201
     assert recreated.json()["id"] == first["id"]
-    assert client.get(f"/api/projects/{first['id']}/publications").json()["total"] == 12
+    publications = client.get(f"/api/projects/{first['id']}/publications")
+    assert publications.json()["total"] == 12
 
 
 def test_sample_project_recovers_when_another_process_creates_it(monkeypatch):
@@ -118,9 +123,12 @@ def test_sample_project_recovers_when_another_process_creates_it(monkeypatch):
 
     concurrent_project = Mock()
     db = Mock()
-    db.get.side_effect = [None, concurrent_project]
-    db.query.return_value.join.return_value.filter.return_value.first.return_value = None
-    duplicate = IntegrityError("insert sample", {}, Exception("duplicate primary key"))
+    duplicate = IntegrityError("insert sample", {}, Exception("duplicate sample key"))
+    monkeypatch.setattr(
+        sample_project,
+        "_find_sample_project",
+        Mock(side_effect=[None, concurrent_project]),
+    )
     monkeypatch.setattr(
         sample_project,
         "_create_sample_project",
