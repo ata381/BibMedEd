@@ -5,6 +5,7 @@ def test_create_project(client):
     assert data["name"] == "AI in Medical Education"
     assert data["id"] is not None
 
+
 def test_list_projects(client):
     client.post("/api/projects", json={"name": "Project 1"})
     client.post("/api/projects", json={"name": "Project 2"})
@@ -13,6 +14,7 @@ def test_list_projects(client):
     data = response.json()
     assert len(data) >= 2
 
+
 def test_get_project(client):
     create = client.post("/api/projects", json={"name": "Test"})
     project_id = create.json()["id"]
@@ -20,9 +22,11 @@ def test_get_project(client):
     assert response.status_code == 200
     assert response.json()["name"] == "Test"
 
+
 def test_get_project_not_found(client):
     response = client.get("/api/projects/99999")
     assert response.status_code == 404
+
 
 def test_delete_project(client):
     create = client.post("/api/projects", json={"name": "To Delete"})
@@ -31,3 +35,62 @@ def test_delete_project(client):
     assert response.status_code == 204
     response = client.get(f"/api/projects/{project_id}")
     assert response.status_code == 404
+
+
+def test_create_sample_project_populates_a_complete_offline_workflow(client):
+    response = client.post("/api/projects/sample")
+
+    assert response.status_code == 201
+    project = response.json()
+    assert project["name"] == "AI in Medical Education — Sample Project"
+    assert "synthetic" in project["description"].lower()
+
+    project_id = project["id"]
+    publications = client.get(f"/api/projects/{project_id}/publications")
+    assert publications.status_code == 200
+    publication_data = publications.json()
+    assert publication_data["total"] == 12
+    assert publication_data["excluded_count"] == 1
+
+    latest_search = client.get(f"/api/projects/{project_id}/search/latest")
+    assert latest_search.status_code == 200
+    latest_search_data = latest_search.json()
+    assert latest_search_data["status"] == "completed"
+    assert latest_search_data["result_count"] == 12
+    assert latest_search_data["raw_result_count"] == 13
+    assert latest_search_data["duplicate_count"] == 1
+    assert latest_search_data["progress"] == 100
+
+    expected_analysis_signals = {
+        "publications": lambda data: data["total"] == 11 and len(data["yearly_counts"]) >= 5,
+        "authors": lambda data: data["total_authors"] >= 6 and bool(data["coauthorship_network"]["links"]),
+        "countries": lambda data: len(data["country_counts"]) >= 3 and bool(data["collaboration_network"]["links"]),
+        "keywords": lambda data: len(data["top_keywords"]) >= 5 and bool(data["cooccurrence_network"]["links"]),
+        "citations": lambda data: data["total_citations"] > 0 and bool(data["coupling_network"]["links"]),
+        "journals": lambda data: data["total_journals"] >= 3 and bool(data["bradford_zones"]),
+    }
+    for analysis_type, has_signal in expected_analysis_signals.items():
+        analysis = client.post(f"/api/projects/{project_id}/analysis/{analysis_type}")
+        assert analysis.status_code == 200
+        results = analysis.json()["results"]
+        assert results["schema_version"] == "1.0"
+        assert has_signal(results), f"sample {analysis_type} analysis was not meaningful: {results}"
+
+    methodology = client.get(f"/api/projects/{project_id}/export/methodology")
+    assert methodology.status_code == 200
+    assert "synthetic demonstration dataset" in methodology.text.lower()
+
+
+def test_create_sample_project_reuses_the_bundled_corpus(client):
+    first_response = client.post("/api/projects/sample")
+    second_response = client.post("/api/projects/sample")
+
+    assert first_response.status_code == 201
+    assert second_response.status_code == 200
+    first = first_response.json()
+    second = second_response.json()
+
+    assert first["id"] == second["id"]
+    projects = client.get("/api/projects").json()
+    sample_projects = [project for project in projects if project["name"] == first["name"]]
+    assert len(sample_projects) == 1

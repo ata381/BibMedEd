@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { projectsApi, Project } from "@/lib/api";
 import toast from "react-hot-toast";
 import { Badge, Button, Card, EmptyState, Skeleton } from "@/components/ui";
 
 export default function Home() {
+  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [creatingSample, setCreatingSample] = useState(false);
 
   useEffect(() => {
     projectsApi.list()
@@ -24,6 +27,18 @@ export default function Home() {
       .catch(() => toast.error("Failed to delete project"));
   };
 
+  const handleCreateSample = async () => {
+    setCreatingSample(true);
+    try {
+      const res = await projectsApi.createSample();
+      toast.success("Sample project ready — no external search required.");
+      router.push(`/projects/${res.data.id}/dashboard`);
+    } catch {
+      toast.error("Failed to create sample project.");
+      setCreatingSample(false);
+    }
+  };
+
   return (
     <div className="py-10 space-y-10">
       <header className="space-y-3">
@@ -35,13 +50,13 @@ export default function Home() {
           Welcome to BibMedEd
         </h1>
         <p className="text-on-surface-muted text-base md:text-lg max-w-2xl leading-relaxed">
-          Search PubMed, OpenAlex, and CrossRef; deduplicate across sources; run six bibliometric analyses; export a PRISMA-ready methodology log.
+          Search PubMed, OpenAlex, CrossRef, and Semantic Scholar; deduplicate across sources; run six bibliometric analyses; export a PRISMA-ready methodology log.
         </p>
       </header>
 
       <section aria-label="Workspace summary" className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard label="Active projects" value={loading ? null : projects.length.toString().padStart(2, "0")} icon="folder_open" />
-        <StatCard label="Data sources" value="03" icon="hub" subtitle="PubMed · OpenAlex · CrossRef" />
+        <StatCard label="Data sources" value="04" icon="hub" subtitle="PubMed · OpenAlex · CrossRef · Semantic Scholar" />
         <StatCard label="Analysis modules" value="06" icon="auto_graph" subtitle="Publications · Authors · Keywords · …" />
       </section>
 
@@ -71,9 +86,20 @@ export default function Home() {
               title="No projects yet"
               description="Start a bibliometric analysis by creating your first project."
               action={
-                <Link href="/projects/new">
-                  <Button leadingIcon="add" size="lg">New project</Button>
-                </Link>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Link href="/projects/new">
+                    <Button leadingIcon="add" size="lg">New project</Button>
+                  </Link>
+                  <Button
+                    leadingIcon="science"
+                    size="lg"
+                    onClick={handleCreateSample}
+                    loading={creatingSample}
+                    disabled={creatingSample}
+                  >
+                    {creatingSample ? "Building sample project..." : "Explore sample project"}
+                  </Button>
+                </div>
               }
             />
           </Card>

@@ -40,6 +40,8 @@ docker compose up
 
 Open [http://localhost:3000](http://localhost:3000) and start analyzing.
 
+For first-run exploration, use **Explore sample project** on the empty workspace to populate a clearly labeled synthetic corpus and test the analysis workflow end-to-end right away.
+
 See the [Self-Hosting Guide](deploy.md) for configuration options.
 
 ## Extend It

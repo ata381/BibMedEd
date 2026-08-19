@@ -106,14 +106,22 @@ def _get_or_create_keyword(
     return kw
 
 
-def _persist_records(db, records: list[RawRecord], query_id: int, project_id: int) -> tuple[int, list[str]]:
+def _persist_records(
+    db,
+    records: list[RawRecord],
+    query_id: int,
+    project_id: int,
+    *,
+    commit: bool = True,
+) -> tuple[int, list[str]]:
     """Persist a batch of RawRecords. Returns (count_persisted, persisted_pmids).
 
     Each record is wrapped in a SAVEPOINT so a single bad row does not roll back its
     siblings. Authors, affiliations, and keywords are bulk-prefetched per batch to avoid
     N+1 SELECTs. Cache entries added during a record that ultimately rolls back are
     evicted so subsequent records do not reuse phantom ORM objects whose underlying rows
-    no longer exist.
+    no longer exist. Set ``commit=False`` when a caller needs to add related rows and
+    commit the complete operation atomically; the persisted records are flushed instead.
 
     The pre-existence check is scoped to ``project_id``: each project owns its own copy
     of a shared paper, so a PMID/DOI claimed by another project must not starve this one.
@@ -273,7 +281,10 @@ def _persist_records(db, records: list[RawRecord], query_id: int, project_id: in
                     pass
             continue
 
-    db.commit()
+    if commit:
+        db.commit()
+    else:
+        db.flush()
     return persisted, persisted_pmids
 
 
