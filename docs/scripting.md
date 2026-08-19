@@ -4,6 +4,14 @@ BibMedEd is primarily a self-hosted web app, but every UI action is also a REST 
 This page is for researchers who want to drive the tool from a Jupyter notebook, batch over
 many topic queries, or pull deduplicated data into a pandas / polars pipeline.
 
+## Estimate search results from the CLI
+
+Before fetching a large result set, use `--dry-run` to estimate how many records a query will return:
+
+```bash
+bibmeded search "machine learning" --dry-run
+```
+
 ## OpenAPI surface
 
 When the API is running locally:
