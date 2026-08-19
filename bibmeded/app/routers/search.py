@@ -13,6 +13,14 @@ from app.workers.tasks import run_search
 
 router = APIRouter(prefix="/api/projects/{project_id}/search", tags=["search"])
 
+
+def _infer_progress(query: SearchQuery) -> float | None:
+    if query.status == QueryStatus.completed:
+        return 100.0
+    if query.status == QueryStatus.failed:
+        return 0.0
+    return None
+
 STALE_THRESHOLD_MINUTES = 15
 
 
@@ -51,6 +59,7 @@ def get_latest_search(project_id: int, db: Session = Depends(get_db)):
         result_count=query.result_count,
         raw_result_count=query.raw_result_count,
         duplicate_count=query.duplicate_count,
+        progress=_infer_progress(query),
     )
 
 
@@ -71,4 +80,5 @@ def get_search_status(project_id: int, query_id: int, db: Session = Depends(get_
         result_count=query.result_count,
         raw_result_count=query.raw_result_count,
         duplicate_count=query.duplicate_count,
+        progress=_infer_progress(query),
     )

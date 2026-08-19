@@ -1,10 +1,11 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import SearchProject
 from app.schemas.project import ProjectCreate, ProjectResponse, ProjectUpdate
+from app.services.sample_project import get_or_create_sample_project
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,24 @@ def create_project(body: ProjectCreate, db: Session = Depends(get_db)):
     db.add(project)
     db.commit()
     db.refresh(project)
+    return project
+
+
+@router.post(
+    "/sample",
+    status_code=201,
+    response_model=ProjectResponse,
+    responses={
+        200: {
+            "model": ProjectResponse,
+            "description": "Existing bundled sample project",
+        }
+    },
+)
+def create_bundled_sample_project(response: Response, db: Session = Depends(get_db)):
+    project, created = get_or_create_sample_project(db)
+    if not created:
+        response.status_code = 200
     return project
 
 @router.get("", response_model=list[ProjectResponse])
