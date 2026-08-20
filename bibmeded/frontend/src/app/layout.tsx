@@ -12,7 +12,7 @@ const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", displa
 export const metadata: Metadata = {
   title: "BibMedEd — Bibliometric Analysis for Medical Education",
   description:
-    "Search PubMed, OpenAlex, and CrossRef. Analyze trends. Visualize co-authorship and keyword networks. Export PRISMA-ready methodology logs.",
+    "Search PubMed, OpenAlex, CrossRef, and Semantic Scholar. Analyze trends. Visualize co-authorship and keyword networks. Export PRISMA-ready methodology logs.",
 };
 
 // No-flash theme bootstrap: runs before React hydration so the first paint

@@ -28,7 +28,7 @@ A living document. Items move up and down as the community contributes adapters 
 
 - [ ] Additional adapters: [Europe PMC #7](https://github.com/ata381/BibMedEd/issues/7), [arXiv #9](https://github.com/ata381/BibMedEd/issues/9), [DOAJ #10](https://github.com/ata381/BibMedEd/issues/10), [OpenCitations #11](https://github.com/ata381/BibMedEd/issues/11), [CORE #12](https://github.com/ata381/BibMedEd/issues/12), [BASE #13](https://github.com/ata381/BibMedEd/issues/13), [Lens.org #14](https://github.com/ata381/BibMedEd/issues/14)
 - [ ] [Frontend i18n + Turkish locale #16](https://github.com/ata381/BibMedEd/issues/16)
-- [ ] [Search CLI `--dry-run` for cost estimation #17](https://github.com/ata381/BibMedEd/issues/17)
+- [x] [Search CLI `--dry-run` for cost estimation #17](https://github.com/ata381/BibMedEd/issues/17)
 - [ ] Title/abstract vs full-text screening-stage distinction (PRISMA 2020 splits these; currently one binary excluded flag)
 - [ ] Project sharing — read-only public project URLs
 - [ ] Saved query alerts (cron re-runs notify on new matching records)
@@ -37,7 +37,8 @@ A living document. Items move up and down as the community contributes adapters 
 - [ ] Prometheus metrics endpoint (`/api/metrics`) once a Grafana dashboard ships alongside
 - [ ] Strategic-diagram (thematic quadrants) plot in the dashboard
 - [ ] LLM-assisted PICO extraction and abstract screening (opt-in, bring-your-own key)
-- [ ] Polished public demo deployment with seeded sample project
+- [x] Bundled synthetic sample project for network-free first-run exploration
+- [ ] Polished public demo deployment with a read-only seeded project
 - [ ] JOSS submission (paper.md and paper.bib are ready as of v0.2.0)
 
 ## Later (1.x+)

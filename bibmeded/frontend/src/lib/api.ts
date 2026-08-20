@@ -91,6 +91,8 @@ export const projectsApi = {
   get: (id: number) => api.get<Project>(`/api/projects/${id}`),
   create: (data: { name: string; description?: string; date_range_start?: string; date_range_end?: string }) =>
     api.post<Project>('/api/projects', data),
+  createSample: () =>
+    api.post<Project>('/api/projects/sample'),
   update: (id: number, data: ProjectUpdateInput) =>
     api.patch<Project>(`/api/projects/${id}`, data),
   delete: (id: number) => api.delete(`/api/projects/${id}`),

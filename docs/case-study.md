@@ -26,16 +26,16 @@ AND education[Filter]
 
 ## 2. Create the project
 
-In BibMedEd's UI, **New project → name it "AI in UME 2014-2024"**. Pick the data sources for this run — for an OA-leaning sweep we'd choose **PubMed + OpenAlex** (PubMed, OpenAlex, CrossRef, and Semantic Scholar all ship by default; Europe PMC and others are [open contribution issues](https://github.com/ata381/BibMedEd/issues?q=is%3Aissue+is%3Aopen+label%3Aadapter) if you want broader coverage).
+In BibMedEd's UI, **New project → name it "AI in UME 2014-2024"**. Choose one source for the first run — here we start with **PubMed**. PubMed, OpenAlex, CrossRef, and Semantic Scholar all ship by default; Europe PMC and others are [open contribution issues](https://github.com/ata381/BibMedEd/issues?q=is%3Aissue+is%3Aopen+label%3Aadapter) if you want broader coverage.
 
-Pasted into the search box, the query runs concurrently against both sources via Celery workers. The progress bar on the search page shows live record counts as each source streams in.
+Paste the query into the search box and run it once per source you want to include. Each run is dispatched to a Celery worker, and records from later runs are deduplicated against the project's existing corpus. For scripted multi-source runs, see the [programmatic-access guide](scripting.md).
 
 What's happening under the hood:
 - Each adapter's `search()` returns total counts and IDs.
 - Each adapter's `fetch()` pages the records and maps them to a unified `RawRecord` dataclass.
 - Every step is recorded into the methodology log with a timestamp.
 
-For this query: PubMed returns ~3,200 hits, OpenAlex ~5,800. Cross-source dedup runs automatically.
+For this worked example, assume PubMed returns ~3,200 hits and a subsequent OpenAlex run returns ~5,800. Cross-source dedup runs automatically as the records enter the same project.
 
 ## 3. Dedup and inspect
 
@@ -43,7 +43,7 @@ Cross-source dedup keys on `external_ids.doi` and `external_ids.pmid` — both n
 
 Final dataset: ~6,600 unique publications. The results table is sortable by year, citation count, journal, and source. Click any row for the full abstract and identifiers.
 
-> **Tip:** the default result cap is 2,000; bump it via `BIBMEDED_MAX_RECORDS` in `.env` for larger sweeps. The progress bar respects the cap and tells you what's truncated.
+> **Tip:** the default result cap is 2,000. API and CLI users can pass `max_results` up to 10,000; the UI currently uses the default. The results page tells you when the upstream count exceeded what was fetched.
 
 ## 4. Screen by citation threshold (optional)
 
@@ -79,14 +79,15 @@ Generated: 2026-05-27T14:22:11Z
 DOI of software: 10.5281/zenodo.20404321
 
 Step  Time            Action                          Details
-1     2026-05-27 14:05  search.start                  query="(artificial intelligence...) AND (medical education...)", sources=[pubmed, openalex], date_from=2014-01-01, date_to=2024-12-31
+1     2026-05-27 14:05  search.start                  query="(artificial intelligence...) AND (medical education...)", source=pubmed, date_from=2014-01-01, date_to=2024-12-31
 2     2026-05-27 14:05  adapter.pubmed.search         total=3204, batch_size=200
 3     2026-05-27 14:07  adapter.pubmed.fetch.complete records=3204, errors=0
-4     2026-05-27 14:05  adapter.openalex.search       total=5821, batch_size=200
-5     2026-05-27 14:08  adapter.openalex.fetch.complete records=5821, errors=0
-6     2026-05-27 14:09  dedup.cross_source            input=9025, output=6612, removed_by_doi=1980, removed_by_pmid=433
-7     2026-05-27 14:09  analysis.publications.run     yearly_counts=[...], total=6612, growth_rate_2022_2023=187.4
-8     2026-05-27 14:10  analysis.authors.run          unique=18421, top_5=[...]
+4     2026-05-27 14:08  search.start                  query="(artificial intelligence...) AND (medical education...)", source=openalex, date_from=2014-01-01, date_to=2024-12-31
+5     2026-05-27 14:08  adapter.openalex.search       total=5821, batch_size=200
+6     2026-05-27 14:11  adapter.openalex.fetch.complete records=5821, errors=0
+7     2026-05-27 14:12  dedup.cross_source            input=9025, output=6612, removed_by_doi=1980, removed_by_pmid=433
+8     2026-05-27 14:12  analysis.publications.run     yearly_counts=[...], total=6612, growth_rate_2022_2023=187.4
+9     2026-05-27 14:13  analysis.authors.run          unique=18421, top_5=[...]
 ... (one line per step, no manual transcription required)
 ```
 
@@ -96,7 +97,7 @@ This file is the part most researchers find surprisingly useful. [PRISMA 2020](h
 
 Cite BibMedEd in your paper's Methods section:
 
-> Bibliometric data were retrieved via BibMedEd (v0.1.2; Akillioglu, 2026; doi:10.5281/zenodo.20404322), an open-source platform that performs multi-source bibliographic search, automated cross-source deduplication via DOI and PMID, and bibliometric analysis. The full pipeline — search query, source order, retrieval timestamps, deduplication counts, and exclusion filters — is recorded in the BibMedEd methodology log supplied as Supplementary File S1.
+> Bibliometric data were retrieved via BibMedEd (v0.2.0; Akillioglu, 2026; doi:10.5281/zenodo.20404321), an open-source platform that performs multi-source bibliographic search, automated cross-source deduplication via DOI and PMID, and bibliometric analysis. The full pipeline — search query, source order, retrieval timestamps, deduplication counts, and exclusion filters — is recorded in the BibMedEd methodology log supplied as Supplementary File S1.
 
 That's it. Search to write-up in under thirty minutes, every step reproducible because every step is logged.
 
@@ -105,7 +106,7 @@ That's it. Search to write-up in under thirty minutes, every step reproducible b
 Once you have the stack running ([deploy guide](deploy.md)):
 
 1. New project: *AI in UME 2014-2024*.
-2. Source: PubMed + OpenAlex.
+2. Source: PubMed; repeat the run with OpenAlex if you want the cross-source corpus described above.
 3. Query (paste in full):
    ```
    ("artificial intelligence" OR "machine learning" OR "large language models")

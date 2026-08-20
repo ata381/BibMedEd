@@ -1,13 +1,17 @@
 import enum
 from datetime import date, datetime
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 
 class SearchProject(Base):
     __tablename__ = "search_projects"
+    __table_args__ = (
+        UniqueConstraint("sample_key", name="uq_search_projects_sample_key"),
+    )
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    sample_key: Mapped[str | None] = mapped_column(String(100), nullable=True)
     name: Mapped[str] = mapped_column(String(255))
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     date_range_start: Mapped[date | None] = mapped_column(Date, nullable=True)

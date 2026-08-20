@@ -40,6 +40,7 @@
 - **Six analysis modules** — Publications, authors, countries, keywords, citations, journals
 - **Interactive visualizations** — D3.js co-authorship and keyword co-occurrence network graphs
 - **Reproducible methodology** — Every pipeline step logged, exportable as a citable `.txt` for your Methods section
+- **First-run onboarding** — One-click synthetic sample project for instant, network-free access to analyses and visualizations
 - **Standard exports** — .RIS (Zotero/EndNote), .CSV (Excel/Sheets), versioned .JSON, methodology log, PRISMA 2020 flow diagram (.svg), and a single-click `.zip` bundle of all five
 - **Programmatic access** — Auto-generated OpenAPI spec at `/openapi.json`, interactive Swagger UI at `/docs`, ReDoc at `/redoc`. Analysis responses carry a `schema_version` field for downstream pinning.
 - **Self-hostable** — Single `docker compose up` on any lab server, no cloud account needed
@@ -74,6 +75,11 @@ docker compose up
 ```
 
 Open [http://localhost:3000](http://localhost:3000). That's it.
+
+Choose **Explore sample project** on the empty workspace to open a fully populated,
+clearly labeled synthetic corpus without making any external API calls.
+The sample behaves like a normal editable project: your changes persist, and deleting
+it before choosing **Explore sample project** again restores the bundled dataset.
 
 > **Optional:** Create a free [NCBI API key](https://www.ncbi.nlm.nih.gov/account/) and add it to `.env` as `BIBMEDED_PUBMED_API_KEY=your_key` for 10 req/s instead of 3 req/s.
 

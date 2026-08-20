@@ -4,6 +4,20 @@ All notable changes to BibMedEd are recorded here. This project follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- Added a deterministic, network-free synthetic sample workflow (`POST /api/projects/sample`) with 12 records, meaningful author/country/keyword/citation networks, screening state, and a reproducible methodology trace. Repeated requests reopen the same sample instead of creating unbounded copies.
+- Added the `bibmeded search --dry-run` CLI for estimating an upstream result count without fetching or persisting records ([#17](https://github.com/ata381/BibMedEd/issues/17)).
+
+### Changed
+
+- Improved first-run usability with a homepage shortcut that creates the sample project and opens its analysis dashboard immediately.
+- Corrected the homepage and metadata to reflect all four built-in sources, including Semantic Scholar.
+
+### Security
+
+- Updated Next.js and its matching lint configuration from 16.2.9 to 16.3.1, then refreshed transitive dependencies so `npm audit` reports zero known vulnerabilities.
+
 ## [0.2.0] — 2026-05-28
 
 A research-grade hardening release. Ten thorough multi-agent review rounds (3-7
