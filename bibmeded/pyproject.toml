@@ -21,6 +21,8 @@ dependencies = [
     "numpy>=1.26.0",
     "scipy>=1.11.0",
 ]
+[project.scripts]
+bibmeded = "app.cli:main"
 
 [project.optional-dependencies]
 dev = [
