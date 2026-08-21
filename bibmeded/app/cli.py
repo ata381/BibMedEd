@@ -5,7 +5,7 @@ import sys
 from collections.abc import Sequence
 import httpx
 from lxml import etree
-import time 
+import time
 from app.adapters.registry import get_adapter
 from app.database import SessionLocal
 from app.models import QueryStatus, SearchProject, SearchQuery
@@ -30,7 +30,26 @@ async def _dry_run_search(query: str, source: str) -> int:
 
     return 0
 
-def _run_search(query: str, source: str, year_start: str | None, year_end: str | None, max_results: int) -> int:
+
+def _validate_source(source: str) -> bool:
+    try:
+        get_adapter(source)
+    except ValueError as exc:
+        print(exc, file=sys.stderr)
+        return False
+
+    return True
+
+
+def _run_search(
+            query: str,
+            source: str,
+            year_start: str | None,
+            year_end: str | None,
+            max_results: int
+        ) -> int:
+    if not _validate_source(source):
+        return 1
 
     db = SessionLocal()
 
@@ -58,17 +77,34 @@ def _run_search(query: str, source: str, year_start: str | None, year_end: str |
             file=sys.stderr,
         )
 
-        run_search.delay(
-            search_query.id,
-            source,
-            year_start,
-            year_end,
-            max_results,
-        )
+        try:
+            run_search.delay(
+                search_query.id,
+                source,
+                year_start,
+                year_end,
+                max_results,
+            )
+        except Exception as exc:
+            search_query.status = QueryStatus.failed
+            db.commit()
+
+            print(
+                f"Could not start search: {exc}",
+                file=sys.stderr
+            )
+            return 1
 
         print("Waiting for completion...", file=sys.stderr)
 
+        start_time = time.time()
+        timeout_seconds = 600
+
         while True:
+            if time.time() - start_time > timeout_seconds:
+                            print("Search timed out. Check worker logs", file=sys.stderr)
+                            return 1
+
             db.refresh(search_query)
 
             if search_query.status == QueryStatus.completed:
@@ -83,6 +119,8 @@ def _run_search(query: str, source: str, year_start: str | None, year_end: str |
                     file=sys.stderr,
                 )
                 return 1
+
+
 
             print(
                 f"Status: {search_query.status.value}",

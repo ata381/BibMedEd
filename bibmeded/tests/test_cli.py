@@ -295,3 +295,26 @@ def test_search_returns_error_when_worker_marks_query_failed(monkeypatch, capsys
     assert captured.out == ""
     assert "Search failed" in captured.err
     assert db.closed is True
+
+def test_full_search_invalid_source_fails_fast(monkeypatch, capsys):
+    from app import cli
+
+    monkeypatch.setattr(
+        cli,
+        "get_adapter",
+        Mock(side_effect=ValueError("Unknown adapter: invalid")),
+    )
+
+    exit_code = cli.main(
+        [
+            "search",
+            "AI in medical education",
+            "--source",
+            "invalid",
+        ]
+    )
+
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert "Unknown adapter: invalid" in captured.err
