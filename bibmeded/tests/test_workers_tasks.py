@@ -224,6 +224,13 @@ def test_adapter_kwargs_semantic_scholar_reflects_configured_api_key(monkeypatch
     assert tasks._adapter_kwargs("semanticscholar") == {"api_key": "s2-secret"}
 
 
+def test_adapter_kwargs_lens_reflects_configured_api_key(monkeypatch):
+    test_value = "lens-" + "test-token"
+    monkeypatch.setattr(settings, "lens_api_key", test_value, raising=False)
+
+    assert tasks._adapter_kwargs("lens") == {"api_key": test_value}
+
+
 def test_get_adapter_with_settings_wires_pubmed_api_key_and_rate_limit(monkeypatch):
     monkeypatch.setattr(settings, "pubmed_api_key", "pm-key-abc")
     monkeypatch.setattr(settings, "pubmed_rate_limit", 7.0)
@@ -256,6 +263,15 @@ def test_get_adapter_with_settings_wires_semantic_scholar_api_key(monkeypatch):
     adapter = get_adapter("semanticscholar", **tasks._adapter_kwargs("semanticscholar"))
 
     assert adapter._api_key == "s2-secret"
+
+
+def test_get_adapter_with_settings_wires_lens_api_key(monkeypatch):
+    test_value = "lens-" + "test-token"
+    monkeypatch.setattr(settings, "lens_api_key", test_value, raising=False)
+
+    adapter = get_adapter("lens", **tasks._adapter_kwargs("lens"))
+
+    assert adapter._api_key == test_value
 
 
 def test_get_adapter_without_settings_configured_keeps_adapter_defaults(monkeypatch):

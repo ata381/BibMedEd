@@ -71,6 +71,23 @@ def test_search_dry_run_uses_pubmed_by_default(monkeypatch, capsys):
     adapter.close.assert_awaited_once()
 
 
+def test_search_dry_run_wires_lens_api_key(monkeypatch, capsys):
+    from app import cli
+
+    test_value = "lens-" + "test-token"
+    adapter = AsyncMock()
+    adapter.search.return_value = SearchResponse(total_count=7, ids=[])
+    get_adapter_mock = Mock(return_value=adapter)
+    monkeypatch.setattr(cli, "get_adapter", get_adapter_mock)
+    monkeypatch.setattr(cli, "adapter_kwargs", Mock(return_value={"api_key": test_value}), raising=False)
+
+    exit_code = cli.main(["search", "medical education", "--source", "lens", "--dry-run"])
+
+    assert exit_code == 0
+    get_adapter_mock.assert_called_once_with("lens", api_key=test_value)
+    assert "7" in capsys.readouterr().out
+
+
 def test_search_dry_run_reports_unknown_source_without_traceback(monkeypatch, capsys):
     from app import cli
 

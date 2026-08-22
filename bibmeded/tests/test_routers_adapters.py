@@ -7,3 +7,6 @@ def test_list_adapters(client):
     pubmed = next(a for a in data if a["name"] == "pubmed")
     assert pubmed["display_name"] == "PubMed"
     assert pubmed["requires_api_key"] is False
+    lens = next(a for a in data if a["name"] == "lens")
+    assert lens["display_name"] == "Lens.org"
+    assert lens["requires_api_key"] is True
