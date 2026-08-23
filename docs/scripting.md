@@ -112,9 +112,9 @@ Polling cadence is up to you. The status endpoint at
 
 ## Rate limits and politeness
 
-Upstream APIs (PubMed E-utilities, OpenAlex, CrossRef, Semantic Scholar) have their own
+Upstream APIs (PubMed E-utilities, OpenAlex, CrossRef, Semantic Scholar, Lens.org) have their own
 rate limits. BibMedEd respects each adapter's documented courtesy patterns
-(`mailto=` for OpenAlex / CrossRef, `api_key` for PubMed and Semantic Scholar). Set these
+(`mailto=` for OpenAlex / CrossRef, `api_key` for PubMed, Semantic Scholar, and Lens.org). Set these
 in `bibmeded/.env` before starting the worker:
 
 ```dotenv
@@ -123,6 +123,7 @@ BIBMEDED_NCBI_EMAIL=you@example.com
 BIBMEDED_OPENALEX_EMAIL=you@example.com
 BIBMEDED_CROSSREF_EMAIL=you@example.com
 BIBMEDED_SEMANTIC_SCHOLAR_API_KEY=...
+BIBMEDED_LENS_API_KEY=...
 ```
 
 The Celery soft time limit is 600 seconds per task — for very large windowed searches you

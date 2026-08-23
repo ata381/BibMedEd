@@ -35,7 +35,7 @@
 
 ## Features
 
-- **Multi-database search** — PubMed, OpenAlex, CrossRef, and Semantic Scholar built-in, extensible to any source via plug-and-play adapters
+- **Multi-database search** — PubMed, OpenAlex, CrossRef, Semantic Scholar, and Lens.org built-in, extensible to any source via plug-and-play adapters
 - **Automated deduplication** — Cross-database dedup by DOI and PMID
 - **Six analysis modules** — Publications, authors, countries, keywords, citations, journals
 - **Interactive visualizations** — D3.js co-authorship and keyword co-occurrence network graphs
@@ -81,7 +81,7 @@ clearly labeled synthetic corpus without making any external API calls.
 The sample behaves like a normal editable project: your changes persist, and deleting
 it before choosing **Explore sample project** again restores the bundled dataset.
 
-> **Optional:** Create a free [NCBI API key](https://www.ncbi.nlm.nih.gov/account/) and add it to `.env` as `BIBMEDED_PUBMED_API_KEY=your_key` for 10 req/s instead of 3 req/s.
+> **Optional:** Create a free [NCBI API key](https://www.ncbi.nlm.nih.gov/account/) and add it to `.env` as `BIBMEDED_PUBMED_API_KEY=your_key` for 10 req/s instead of 3 req/s. Lens.org searches require a Lens Scholarly API token in `BIBMEDED_LENS_API_KEY`.
 
 See the full [Self-Hosting Guide](https://ata381.github.io/BibMedEd/deploy/) for configuration, reset, and dev setup.
 

@@ -6,7 +6,7 @@ BibMedEd is an open-source tool that enables medical education researchers to se
 
 ## Features
 
-- **Multi-database search** — Query PubMed, OpenAlex, and any database with a community adapter
+- **Multi-database search** — Query PubMed, OpenAlex, CrossRef, Semantic Scholar, and Lens.org
 - **Automated deduplication** — Cross-database dedup by DOI and PMID
 - **Six analysis modules** — Publications, authors, countries, keywords, citations, journals
 - **Interactive visualizations** — D3.js co-authorship and keyword co-occurrence networks

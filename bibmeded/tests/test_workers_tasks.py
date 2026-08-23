@@ -297,6 +297,29 @@ def task_session_factory(db):
     return sessionmaker(bind=db.connection())
 
 
+def test_run_search_rejects_unconfigured_lens_without_creating_adapter(
+    db, monkeypatch, task_session_factory
+):
+    query = _make_query(db)
+    monkeypatch.setattr(settings, "lens_api_key", "")
+    monkeypatch.setattr(tasks, "SessionLocal", task_session_factory)
+
+    def unexpected_adapter(*args, **kwargs):
+        pytest.fail("adapter should not be created without a Lens API key")
+
+    monkeypatch.setattr(tasks, "get_adapter", unexpected_adapter)
+
+    with pytest.raises(RuntimeError, match="BIBMEDED_LENS_API_KEY"):
+        asyncio.run(
+            tasks._run_search(
+                _StubTask(), query.id, "lens", None, None, tasks.DEFAULT_MAX_RESULTS
+            )
+        )
+
+    db.expire_all()
+    assert db.get(SearchQuery, query.id).status == QueryStatus.failed
+
+
 def test_run_search_enrichment_failure_still_completes_with_result_count(
     db, monkeypatch, task_session_factory
 ):

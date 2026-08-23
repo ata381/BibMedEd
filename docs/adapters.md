@@ -135,6 +135,21 @@ Patterns worth noting:
 
 Read the full source: [`app/adapters/semantic_scholar.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/app/adapters/semantic_scholar.py) — and the tests at [`tests/test_adapters_semantic_scholar.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/tests/test_adapters_semantic_scholar.py).
 
+## Walkthrough: Lens.org Adapter
+
+The Lens.org adapter (`app/adapters/lens.py`) shows the pattern for an API-keyed scholarly-search source with offset pagination and Lens-native identifiers.
+
+Patterns worth noting:
+
+1. **Bearer-token authentication** - passing `api_key` to the constructor sets the `Authorization: Bearer ...` header. Set `BIBMEDED_LENS_API_KEY` in `.env` for worker and CLI searches.
+2. **Offset pagination guided by upstream `total`** - `search_paginated()` advances by the number of records returned and keeps fetching until Lens reports all records seen, while respecting Lens's 10,000-record offset limit. A short page or record missing a Lens ID does not prematurely stop pagination.
+3. **Records without `lens_id` are skipped from ID batches** - search results lacking the source-native primary key are not passed to fetch, which prevents empty IDs from becoming invalid batch terms.
+4. **DOI normalization matches the RawRecord contract** - URL prefixes and `doi:` prefixes are stripped before the lowercased DOI is stored in both `doi` and `external_ids["doi"]`.
+5. **Cross-source IDs are preserved** - Lens IDs, DOIs, PMIDs, PMCIDs, CORE IDs, OpenAlex IDs, and Microsoft Academic IDs are copied into `external_ids` when present, improving downstream deduplication.
+6. **References stay source-native** - Lens reference IDs are emitted as `references`, matching the adapter contract that references use each source's native identifiers.
+
+Read the [official Lens Scholarly API documentation](https://docs.api.lens.org/) and the full source: [`app/adapters/lens.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/app/adapters/lens.py) - with fixture-based tests at [`tests/test_adapters_lens.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/tests/test_adapters_lens.py).
+
 ## Step-by-Step: Adding a New Source
 
 1. Create `app/adapters/mysource.py`

@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from app.adapters.base import RawRecord, SearchResponse
+from app.adapters import lens as lens_module
 from app.adapters.lens import LensAdapter
 
 
@@ -34,6 +35,8 @@ FETCH_RECORD = {
         {"type": "pmid", "value": "26082390"},
         {"type": "pmcid", "value": "PMC5024789"},
         {"type": "coreid", "value": "123456"},
+        {"type": "openalex", "value": "W123456789"},
+        {"type": "magid", "value": "987654321"},
     ],
     "source": {
         "title": "Journal of Medical Education",
@@ -114,6 +117,12 @@ def test_search_ignores_records_without_lens_ids(adapter: LensAdapter):
     assert result.ids == ["001-111-111-111-111"]
 
 
+def test_search_rejects_malformed_top_level_response(adapter: LensAdapter):
+    with patch.object(adapter._client, "post", return_value=_mock_resp([])):
+        with pytest.raises(ValueError, match="Lens API returned an invalid response"):
+            asyncio.run(adapter.search("medical education"))
+
+
 def test_search_applies_year_filter(adapter: LensAdapter):
     captured = {}
 
@@ -132,10 +141,12 @@ def test_search_applies_year_filter(adapter: LensAdapter):
 
 def test_search_paginated_walks_pages(adapter: LensAdapter):
     call_count = 0
+    offsets = []
 
     async def mock_post(url, json=None):
         nonlocal call_count
         call_count += 1
+        offsets.append(json["from"])
         if call_count == 1:
             return _mock_resp(SEARCH_PAGE_1)
         if call_count == 2:
@@ -155,6 +166,21 @@ def test_search_paginated_walks_pages(adapter: LensAdapter):
         ["001-111-111-111-111", "002-222-222-222-222"],
         ["003-333-333-333-333"],
     ]
+    assert offsets == [0, 2]
+
+
+def test_search_paginated_stops_at_lens_offset_limit(adapter: LensAdapter, monkeypatch):
+    monkeypatch.setattr(lens_module, "_MAX_OFFSET_RESULTS", 2)
+    response = {"total": 3, "data": SEARCH_PAGE_1["data"]}
+
+    with patch.object(adapter._client, "post", return_value=_mock_resp(response)) as post:
+        async def run():
+            return [batch async for batch in adapter.search_paginated("education")]
+
+        batches = asyncio.run(run())
+
+    assert batches == [["001-111-111-111-111", "002-222-222-222-222"]]
+    post.assert_called_once()
 
 
 def test_fetch_maps_to_raw_record(adapter: LensAdapter):
@@ -174,6 +200,8 @@ def test_fetch_maps_to_raw_record(adapter: LensAdapter):
     assert record.external_ids["pmid"] == "26082390"
     assert record.external_ids["pmcid"] == "PMC5024789"
     assert record.external_ids["coreid"] == "123456"
+    assert record.external_ids["openalex"] == "W123456789"
+    assert record.external_ids["magid"] == "987654321"
     assert record.external_ids["lens_id"] == "001-111-111-111-111"
     assert record.journal_name == "Journal of Medical Education"
     assert record.journal_issn == "10797114"
@@ -204,6 +232,48 @@ def test_fetch_empty_ids_avoids_api_call(adapter: LensAdapter):
 
     assert records == []
     post.assert_not_called()
+
+
+def test_fetch_ignores_records_without_valid_lens_ids(adapter: LensAdapter):
+    response = {"data": [{"title": "Missing ID"}, {"lens_id": 123}, FETCH_RECORD]}
+    with patch.object(adapter._client, "post", return_value=_mock_resp(response)):
+        records = asyncio.run(adapter.fetch(["001-111-111-111-111"]))
+
+    assert [record.source_id for record in records] == ["001-111-111-111-111"]
+
+
+def test_fetch_uses_author_display_name_and_publication_date_fallback(adapter: LensAdapter):
+    record = {
+        **FETCH_RECORD,
+        "year_published": None,
+        "date_published": "2023-07-14T00:00:00.000000+00:00",
+        "authors": [{"display_name": "Ada Lovelace", "ids": [], "affiliations": []}],
+    }
+    with patch.object(adapter._client, "post", return_value=_mock_resp({"data": [record]})):
+        records = asyncio.run(adapter.fetch(["001-111-111-111-111"]))
+
+    assert records[0].year == 2023
+    assert [author.name for author in records[0].authors] == ["Ada Lovelace"]
+
+
+def test_fetch_rejects_malformed_scalar_metadata_without_failing_batch(adapter: LensAdapter):
+    record = {
+        **FETCH_RECORD,
+        "title": ["not", "a", "string"],
+        "abstract": {"unexpected": "shape"},
+        "keywords": "not-a-list",
+        "authors": [
+            {"first_name": 123, "last_name": None, "ids": [], "affiliations": []},
+            {"display_name": "Grace Hopper", "ids": [], "affiliations": []},
+        ],
+    }
+    with patch.object(adapter._client, "post", return_value=_mock_resp({"data": [record]})):
+        records = asyncio.run(adapter.fetch(["001-111-111-111-111"]))
+
+    assert records[0].title == ""
+    assert records[0].abstract is None
+    assert records[0].keywords == []
+    assert [author.name for author in records[0].authors] == ["Grace Hopper"]
 
 
 def test_close_releases_http_client(adapter: LensAdapter):

@@ -7,6 +7,7 @@ import pytest
 from lxml import etree
 
 from app.adapters.base import SearchResponse
+from app.config import settings
 
 
 def test_search_dry_run_prints_estimated_count(monkeypatch, capsys):
@@ -36,7 +37,7 @@ def test_search_dry_run_prints_estimated_count(monkeypatch, capsys):
     assert exit_code == 0
     assert "1234" in output
 
-    get_adapter_mock.assert_called_once_with("pubmed")
+    get_adapter_mock.assert_called_once_with("pubmed", api_key="", rate_limit=3.0)
     adapter.search.assert_awaited_once_with("machine learning")
     adapter.fetch.assert_not_called()
     adapter.fetch_stream.assert_not_called()
@@ -66,7 +67,7 @@ def test_search_dry_run_uses_pubmed_by_default(monkeypatch, capsys):
     capsys.readouterr()
 
     assert exit_code == 0
-    get_adapter_mock.assert_called_once_with("pubmed")
+    get_adapter_mock.assert_called_once_with("pubmed", api_key="", rate_limit=3.0)
     adapter.search.assert_awaited_once_with("machine learning")
     adapter.close.assert_awaited_once()
 
@@ -79,6 +80,7 @@ def test_search_dry_run_wires_lens_api_key(monkeypatch, capsys):
     adapter.search.return_value = SearchResponse(total_count=7, ids=[])
     get_adapter_mock = Mock(return_value=adapter)
     monkeypatch.setattr(cli, "get_adapter", get_adapter_mock)
+    monkeypatch.setattr(settings, "lens_api_key", test_value)
     monkeypatch.setattr(cli, "adapter_kwargs", Mock(return_value={"api_key": test_value}), raising=False)
 
     exit_code = cli.main(["search", "medical education", "--source", "lens", "--dry-run"])
@@ -86,6 +88,61 @@ def test_search_dry_run_wires_lens_api_key(monkeypatch, capsys):
     assert exit_code == 0
     get_adapter_mock.assert_called_once_with("lens", api_key=test_value)
     assert "7" in capsys.readouterr().out
+
+
+def test_search_dry_run_reports_missing_lens_key_without_api_call(monkeypatch, capsys):
+    from app import cli
+
+    monkeypatch.setattr(settings, "lens_api_key", "")
+    get_adapter_mock = Mock()
+    monkeypatch.setattr(cli, "get_adapter", get_adapter_mock)
+
+    exit_code = cli.main(["search", "medical education", "--source", "lens", "--dry-run"])
+
+    assert exit_code == 1
+    assert "BIBMEDED_LENS_API_KEY" in capsys.readouterr().err
+    get_adapter_mock.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("source", "expected_kwargs"),
+    [
+        ("pubmed", {"api_key": "pm-key", "rate_limit": 9.5}),
+        ("openalex", {"email": "openalex@example.org"}),
+        ("crossref", {"email": "crossref@example.org"}),
+        ("semanticscholar", {"api_key": "s2-key"}),
+        ("lens", {"api_key": "lens-key"}),
+    ],
+)
+def test_search_dry_run_uses_configured_kwargs_for_every_source(
+    monkeypatch,
+    capsys,
+    source,
+    expected_kwargs,
+):
+    from app import cli
+
+    configured_values = {
+        "pubmed_api_key": "pm-key",
+        "pubmed_rate_limit": 9.5,
+        "openalex_email": "openalex@example.org",
+        "crossref_email": "crossref@example.org",
+        "semantic_scholar_api_key": "s2-key",
+        "lens_api_key": "lens-key",
+    }
+    for name, value in configured_values.items():
+        monkeypatch.setattr(settings, name, value)
+
+    adapter = AsyncMock()
+    adapter.search.return_value = SearchResponse(total_count=1, ids=[])
+    get_adapter_mock = Mock(return_value=adapter)
+    monkeypatch.setattr(cli, "get_adapter", get_adapter_mock)
+
+    exit_code = cli.main(["search", "medical education", "--source", source, "--dry-run"])
+
+    assert exit_code == 0
+    get_adapter_mock.assert_called_once_with(source, **expected_kwargs)
+    capsys.readouterr()
 
 
 def test_search_dry_run_reports_unknown_source_without_traceback(monkeypatch, capsys):
@@ -141,6 +198,7 @@ def test_search_dry_run_reports_network_failure_without_traceback(monkeypatch, c
     [
         json.JSONDecodeError("malformed JSON", "{", 0),
         etree.XMLSyntaxError("malformed XML", 1, 1, 1),
+        ValueError("malformed adapter response"),
     ],
 )
 def test_search_dry_run_reports_response_parse_failure_without_traceback(

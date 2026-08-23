@@ -13,7 +13,7 @@ _FATAL_DB_EXCEPTIONS = (OperationalError, DisconnectionError)
 
 from app.adapters.base import RawRecord
 from app.adapters.registry import get_adapter
-from app.config import settings
+from app.adapters.settings import adapter_configuration_error, adapter_kwargs as _adapter_kwargs
 from app.database import SessionLocal
 from app.models import (
     Affiliation, Author, Journal, Keyword, KeywordType,
@@ -321,27 +321,6 @@ def _log_step(db, query_id: int, step_order: int | None, phase: str, source: str
 DEFAULT_MAX_RESULTS = 2000
 FETCH_BATCH_SIZE = 200
 
-# Per-source kwargs builders for get_adapter() — only pass the kwargs each
-# adapter's constructor actually accepts (see app/adapters/*.py __init__).
-# Read settings lazily (inside the lambda) rather than at import time so
-# tests can monkeypatch app.workers.tasks.settings.* per-test.
-_ADAPTER_KWARGS_BUILDERS = {
-    "pubmed": lambda: {"api_key": settings.pubmed_api_key, "rate_limit": settings.pubmed_rate_limit},
-    "openalex": lambda: {"email": settings.openalex_email},
-    "crossref": lambda: {"email": settings.crossref_email},
-    "semanticscholar": lambda: {"api_key": settings.semantic_scholar_api_key},
-}
-
-
-def _adapter_kwargs(source: str) -> dict:
-    """Build constructor kwargs for `source` from configured Settings (BIBMEDED_* env vars).
-
-    Unknown sources get no extra kwargs — adapters fall back to their own defaults.
-    """
-    builder = _ADAPTER_KWARGS_BUILDERS.get(source)
-    return builder() if builder else {}
-
-
 @celery_app.task(bind=True, name="app.workers.tasks.run_search", soft_time_limit=600, time_limit=660)
 def run_search(self, query_id: int, source: str = "pubmed", year_start: str | None = None,
                year_end: str | None = None, max_results: int = DEFAULT_MAX_RESULTS,
@@ -361,7 +340,7 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
     # Binds request_id onto every log record emitted by this task run so the
     # originating API request can be grepped across the API -> Celery -> DB path.
     log = logging.LoggerAdapter(logger, {"request_id": request_id or "-"})
-    adapter = get_adapter(source, **_adapter_kwargs(source))
+    adapter = None
     db = SessionLocal()
     icite = ICiteClient()
     try:
@@ -369,6 +348,10 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
         if not query:
             log.warning("run_search called with unknown query_id=%s", query_id)
             return
+        configuration_error = adapter_configuration_error(source)
+        if configuration_error:
+            raise RuntimeError(configuration_error)
+        adapter = get_adapter(source, **_adapter_kwargs(source))
         query.status = QueryStatus.running
         db.commit()
         log.info("run_search started query_id=%d source=%s max_results=%d", query_id, source, max_results)
@@ -519,6 +502,7 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
             db.commit()
         raise
     finally:
-        await adapter.close()
+        if adapter is not None:
+            await adapter.close()
         await icite.close()
         db.close()

@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     openalex_email: str = ""
     crossref_email: str = ""
     semantic_scholar_api_key: str = ""  # optional — keyed S2 tier is 1 req/s instead of ~100/5min
+    lens_api_key: str = ""
     icite_base_url: str = "https://icite.od.nih.gov/api"
     cors_origins: list[str] = ["http://localhost:3000"]
     debug: bool = False

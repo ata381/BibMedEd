@@ -26,7 +26,7 @@ AND education[Filter]
 
 ## 2. Create the project
 
-In BibMedEd's UI, **New project → name it "AI in UME 2014-2024"**. Choose one source for the first run — here we start with **PubMed**. PubMed, OpenAlex, CrossRef, and Semantic Scholar all ship by default; Europe PMC and others are [open contribution issues](https://github.com/ata381/BibMedEd/issues?q=is%3Aissue+is%3Aopen+label%3Aadapter) if you want broader coverage.
+In BibMedEd's UI, **New project → name it "AI in UME 2014-2024"**. Choose one source for the first run — here we start with **PubMed**. PubMed, OpenAlex, CrossRef, Semantic Scholar, and Lens.org all ship by default; Lens searches require an API token. Europe PMC and others are [open contribution issues](https://github.com/ata381/BibMedEd/issues?q=is%3Aissue+is%3Aopen+label%3Aadapter) if you want broader coverage.
 
 Paste the query into the search box and run it once per source you want to include. Each run is dispatched to a Celery worker, and records from later runs are deduplicated against the project's existing corpus. For scripted multi-source runs, see the [programmatic-access guide](scripting.md).
 

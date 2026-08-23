@@ -2,7 +2,7 @@
 
 The fastest way to get a PR merged into BibMedEd is to write an adapter. Each adapter below is a self-contained ~50–100 line Python file plus a test fixture. Pick one, open an [adapter request issue](.github/ISSUE_TEMPLATE/adapter_request.yml) to claim it, and ship.
 
-Read the [adapter guide](https://ata381.github.io/BibMedEd/adapters/) first. Reference implementations: `bibmeded/app/adapters/pubmed.py` and `bibmeded/app/adapters/openalex.py` — plus `crossref.py` and `semantic_scholar.py`, which shipped in v0.2.0 and are no longer listed below.
+Read the [adapter guide](https://ata381.github.io/BibMedEd/adapters/) first. Reference implementations: `bibmeded/app/adapters/pubmed.py`, `openalex.py`, `crossref.py`, `semantic_scholar.py`, and the API-keyed `lens.py`.
 
 ## Open-access sources (no API key needed)
 
@@ -19,7 +19,6 @@ Read the [adapter guide](https://ata381.github.io/BibMedEd/adapters/) first. Ref
 
 | Source | API | Notes | Status |
 |---|---|---|---|
-| **Lens.org Scholarly** | <https://docs.api.lens.org/> | Scholarly + patent metadata. Free academic tier. | [#14](https://github.com/ata381/BibMedEd/issues/14) |
 | **Dimensions** | <https://docs.dimensions.ai/dsl/> | Strong grant + clinical-trial linkage. Free for non-commercial. | Open |
 
 ## Institutional / paid sources

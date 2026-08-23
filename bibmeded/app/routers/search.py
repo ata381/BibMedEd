@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
+from app.adapters.settings import adapter_configuration_error
 from app.database import get_db
 from app.models import QueryStatus, SearchProject, SearchQuery
 from app.schemas.search import SearchRequest, SearchStatusResponse
@@ -29,6 +30,9 @@ def trigger_search(project_id: int, body: SearchRequest, db: Session = Depends(g
     project = db.get(SearchProject, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
+    configuration_error = adapter_configuration_error(body.source)
+    if configuration_error:
+        raise HTTPException(status_code=503, detail=configuration_error)
     query = SearchQuery(project_id=project_id, query_string=body.query_string, database=body.source)
     db.add(query)
     db.commit()

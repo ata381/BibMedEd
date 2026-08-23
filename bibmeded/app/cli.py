@@ -2,19 +2,27 @@ import argparse
 import asyncio
 import json
 import sys
+import time
 from collections.abc import Sequence
+
 import httpx
 from lxml import etree
-import time
+
 from app.adapters.registry import get_adapter
+from app.adapters.settings import adapter_configuration_error, adapter_kwargs
 from app.database import SessionLocal
 from app.models import QueryStatus, SearchProject, SearchQuery
 from app.workers.tasks import run_search
 
 
 async def _dry_run_search(query: str, source: str) -> int:
+    configuration_error = adapter_configuration_error(source)
+    if configuration_error:
+        print(configuration_error, file=sys.stderr)
+        return 1
+
     try:
-        adapter = get_adapter(source)
+        adapter = get_adapter(source, **adapter_kwargs(source))
     except ValueError as exc:
         print(exc, file=sys.stderr)
         return 1
@@ -22,7 +30,7 @@ async def _dry_run_search(query: str, source: str) -> int:
     try:
         result = await adapter.search(query)
         print(f"Estimated results: {result.total_count}")
-    except (httpx.HTTPError, json.JSONDecodeError, etree.XMLSyntaxError) as exc:
+    except (httpx.HTTPError, json.JSONDecodeError, etree.XMLSyntaxError, ValueError) as exc:
         print(f"Search failed: {exc}", file=sys.stderr)
         return 1
     finally:
@@ -32,22 +40,28 @@ async def _dry_run_search(query: str, source: str) -> int:
 
 
 def _validate_source(source: str) -> bool:
+    configuration_error = adapter_configuration_error(source)
+    if configuration_error:
+        print(configuration_error, file=sys.stderr)
+        return False
+
     try:
-        get_adapter(source)
+        adapter = get_adapter(source, **adapter_kwargs(source))
     except ValueError as exc:
         print(exc, file=sys.stderr)
         return False
 
+    asyncio.run(adapter.close())
     return True
 
 
 def _run_search(
-            query: str,
-            source: str,
-            year_start: str | None,
-            year_end: str | None,
-            max_results: int
-        ) -> int:
+    query: str,
+    source: str,
+    year_start: str | None,
+    year_end: str | None,
+    max_results: int,
+) -> int:
     if not _validate_source(source):
         return 1
 
@@ -102,25 +116,18 @@ def _run_search(
 
         while True:
             if time.time() - start_time > timeout_seconds:
-                            print("Search timed out. Check worker logs", file=sys.stderr)
-                            return 1
+                print("Search timed out. Check worker logs", file=sys.stderr)
+                return 1
 
             db.refresh(search_query)
 
             if search_query.status == QueryStatus.completed:
-                print(
-                    f"Completed: {search_query.result_count or 0} records"
-                )
+                print(f"Completed: {search_query.result_count or 0} records")
                 return 0
 
             if search_query.status == QueryStatus.failed:
-                print(
-                    "Search failed",
-                    file=sys.stderr,
-                )
+                print("Search failed", file=sys.stderr)
                 return 1
-
-
 
             print(
                 f"Status: {search_query.status.value}",
@@ -131,6 +138,7 @@ def _run_search(
 
     finally:
         db.close()
+
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="bibmeded")
@@ -179,7 +187,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.command == "search":
-
         if args.dry_run:
             return asyncio.run(
                 _dry_run_search(
