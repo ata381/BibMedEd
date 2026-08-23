@@ -23,19 +23,19 @@
   --color-accent: #76d6d5;
   --color-on-accent: #00323a;
 
-  --color-success: #1f7a3a;
+  --color-success: #14612d;
   --color-on-success: #ffffff;
   --color-success-container: #d6f1de;
 
-  --color-warning: #a35900;
+  --color-warning: #744000;
   --color-on-warning: #ffffff;
   --color-warning-container: #ffe0bf;
 
-  --color-danger: #ba1a1a;
+  --color-danger: #9f1111;
   --color-on-danger: #ffffff;
   --color-danger-container: #ffdad6;
 
-  --color-info: #0073c1;
+  --color-info: #00568f;
   --color-on-info: #ffffff;
   --color-info-container: #d1e4ff;
 
@@ -45,7 +45,7 @@
   --color-surface-hover: #e6e8ea;
   --color-on-surface: #191c1e;
   --color-on-surface-muted: #43474e;
-  --color-on-surface-subtle: #74777f;
+  --color-on-surface-subtle: #5f646c;
 
   --color-outline: #c4c6cf;
   --color-outline-strong: #74777f;
@@ -142,7 +142,7 @@ html.dark {
   --color-surface-hover: #232a2e;
   --color-on-surface: #e2e2e6;
   --color-on-surface-muted: #c4c6cf;
-  --color-on-surface-subtle: #8b9197;
+  --color-on-surface-subtle: #aeb4ba;
 
   --color-outline: #3d4145;
   --color-outline-strong: #8b9197;

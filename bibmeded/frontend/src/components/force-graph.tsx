@@ -78,7 +78,7 @@ export function ForceGraph({ nodes, links, width = 400, height = 350 }: ForceGra
       .selectAll("line")
       .data(simLinks)
       .join("line")
-      .attr("stroke", "#c4c6cf")
+      .attr("stroke", "var(--color-outline)")
       .attr("stroke-opacity", 0.6)
       .attr("stroke-width", (d: any) => 0.5 + (d.weight ?? 1) / maxWeight * 2.5);
 
@@ -87,8 +87,8 @@ export function ForceGraph({ nodes, links, width = 400, height = 350 }: ForceGra
       .data(simNodes)
       .join("circle")
       .attr("r", (d: any) => 4 + (d.size ?? 1) / maxSize * 10)
-      .attr("fill", "#00327a")
-      .attr("stroke", "#001e4f")
+      .attr("fill", "var(--color-primary)")
+      .attr("stroke", "var(--color-outline-strong)")
       .attr("stroke-width", 1)
       .call(d3.drag<SVGCircleElement, any>()
         .on("start", (event, d) => {
@@ -114,7 +114,7 @@ export function ForceGraph({ nodes, links, width = 400, height = 350 }: ForceGra
       .text((d: any) => String(d.label || d.id).split(",")[0]?.slice(0, 15))
       .attr("font-size", "9px")
       .attr("font-weight", "600")
-      .attr("fill", "#191c1e")
+      .attr("fill", "var(--color-on-surface)")
       .attr("text-anchor", "middle")
       .attr("dy", (d: any) => -(6 + (d.size ?? 1) / maxSize * 10 + 4));
 
@@ -138,7 +138,7 @@ export function ForceGraph({ nodes, links, width = 400, height = 350 }: ForceGra
   if (nodes.length === 0) {
     return (
       <div className="flex items-center justify-center h-full text-on-surface-muted text-sm">
-        <span className="material-symbols-outlined mr-2">hub</span>
+        <span aria-hidden="true" className="material-symbols-outlined mr-2">hub</span>
         No network data available
       </div>
     );
@@ -172,7 +172,7 @@ export function ForceGraph({ nodes, links, width = 400, height = 350 }: ForceGra
         </ul>
       </div>
       {maxNodeSize > 1 && (
-        <div className="absolute top-3 right-3 bg-white/80 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-slate-100">
+        <div className="absolute top-3 right-3 bg-surface-raised/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-divider">
           <label htmlFor={sliderId} className="text-[9px] font-bold text-on-surface-muted uppercase tracking-widest block mb-1">
             Min. publications: {minPubs}
           </label>

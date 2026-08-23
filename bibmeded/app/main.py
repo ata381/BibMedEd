@@ -55,7 +55,7 @@ def create_app() -> FastAPI:
             "[`docs/scripting.md`](https://github.com/ata381/BibMedEd/blob/master/docs/scripting.md) "
             "for an end-to-end Jupyter-notebook example."
         ),
-        version="0.2.0",
+        version="0.3.0",
         contact={"name": "BibMedEd", "url": "https://github.com/ata381/BibMedEd"},
         license_info={"name": "MIT", "url": "https://github.com/ata381/BibMedEd/blob/master/LICENSE"},
     )

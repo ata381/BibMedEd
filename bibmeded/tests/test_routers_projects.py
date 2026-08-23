@@ -146,3 +146,7 @@ def test_sample_project_openapi_documents_create_and_reuse_responses(client):
     responses = client.get("/openapi.json").json()["paths"]["/api/projects/sample"]["post"]["responses"]
 
     assert {"200", "201"}.issubset(responses)
+
+
+def test_openapi_reports_current_release_version(client):
+    assert client.get("/openapi.json").json()["info"]["version"] == "0.3.0"

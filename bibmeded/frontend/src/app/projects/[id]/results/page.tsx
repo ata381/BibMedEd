@@ -79,6 +79,20 @@ function ExcludeButton({
     }
   };
 
+  const handleMenuKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
+    e.preventDefault();
+    const items = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>("[role='menuitem']"));
+    if (items.length === 0) return;
+    const current = Math.max(0, items.indexOf(document.activeElement as HTMLButtonElement));
+    const next = e.key === "Home"
+      ? 0
+      : e.key === "End"
+        ? items.length - 1
+        : (current + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+    items[next].focus();
+  };
+
   // Truncate the title for the accessible label so a screen reader announcing 20
   // identical "Included" buttons gets enough context to disambiguate.
   const labelTitle = (pub.title || "Untitled").slice(0, 60);
@@ -114,6 +128,7 @@ function ExcludeButton({
         <div
           role="menu"
           aria-label="Select exclusion reason"
+          onKeyDown={handleMenuKeyDown}
           className="absolute right-0 mt-1 w-64 bg-surface-raised rounded-lg shadow-lg border border-divider z-10 py-1 text-xs"
         >
           <p className="px-3 pt-2 pb-1 text-[9px] font-bold uppercase tracking-widest text-on-surface-muted">
@@ -123,12 +138,13 @@ function ExcludeButton({
             <button
               key={code}
               ref={idx === 0 ? firstItemRef : undefined}
+              autoFocus={idx === 0}
               role="menuitem"
               onClick={(e) => {
                 e.stopPropagation();
                 doToggle(code);
               }}
-              className="block w-full text-left px-3 py-1.5 hover:bg-surface-hover focus:bg-surface-hover focus:outline-none text-on-surface"
+              className="block w-full min-h-6 text-left px-3 py-2 hover:bg-surface-hover focus:bg-surface-hover focus:outline-none text-on-surface"
             >
               {EXCLUSION_REASON_LABELS[code]}
             </button>
@@ -210,8 +226,8 @@ export default function ResultsReview() {
         </h1>
         <div className="flex items-center gap-4">
           <p className="text-on-surface-muted font-medium">{total} unique publications found</p>
-          <span className="w-1.5 h-1.5 bg-accent rounded-full" />
-          <p className="text-on-surface-muted opacity-70">Duplicates removed</p>
+          <span aria-hidden="true" className="w-1.5 h-1.5 bg-secondary rounded-full" />
+          <p className="text-on-surface-muted">Duplicates removed</p>
         </div>
       </section>
 
@@ -252,7 +268,7 @@ export default function ResultsReview() {
           <h3 className="font-bold text-xl text-primary" style={{fontFamily:"var(--font-display)"}}>PRISMA Flow</h3>
           <span className="text-[10px] font-bold py-1 px-2 bg-primary-container text-primary rounded-full uppercase tracking-widest">Identification</span>
         </div>
-        <div className="flex items-center gap-4 overflow-x-auto pb-1 -mx-2 px-2 [&>div]:flex-shrink-0 [&>div.flex-1]:min-w-[140px]">
+        <div tabIndex={0} role="region" aria-label="PRISMA screening counts" className="flex items-center gap-4 overflow-x-auto pb-1 -mx-2 px-2 [&>div]:flex-shrink-0 [&>div.flex-1]:min-w-[140px]">
           {/* Raw Results */}
           <div className="flex-1 bg-surface-sunken rounded-xl p-5 text-center">
             <p className="text-[10px] font-bold text-on-surface-muted uppercase tracking-widest mb-2">Records Identified</p>
@@ -269,7 +285,7 @@ export default function ResultsReview() {
               {searchStats?.duplicate_count != null ? `-${searchStats.duplicate_count}` : "—"}
             </p>
             <p className="text-[10px] text-on-surface-muted mt-1">cross-journal overlaps</p>
-            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-code-bg text-code-fg text-[10px] py-1.5 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-code-bg text-code-fg text-[10px] py-1.5 px-3 rounded-lg hidden group-hover:block max-w-[calc(100vw-2rem)] whitespace-normal text-center z-10 pointer-events-none">
               Matched via exact PMID and DOI cross-check
             </div>
           </div>
@@ -288,7 +304,7 @@ export default function ResultsReview() {
             </>
           )}
           {/* Included */}
-          <div className="flex-1 bg-primary rounded-xl p-5 text-center text-white">
+          <div className="flex-1 bg-primary rounded-xl p-5 text-center text-on-primary">
             <p className="text-[10px] font-bold uppercase tracking-widest mb-2 opacity-80">Records Included</p>
             <p className="text-3xl font-extrabold" style={{fontFamily:"var(--font-display)"}}>
               {includedCount.toLocaleString()}
@@ -319,7 +335,7 @@ export default function ResultsReview() {
         </div>
         <button onClick={() => includedCount > 0 ? router.push(`/projects/${projectId}/dashboard`) : toast.error("No publications to analyze. Run a search first.")}
           disabled={includedCount === 0 && !loading}
-          className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-lg font-bold text-sm hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed">
+          className="flex items-center gap-2 px-6 py-2.5 bg-primary text-on-primary rounded-lg font-bold text-sm hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed">
           <span aria-hidden="true" className="material-symbols-outlined text-sm">auto_awesome</span>
           Run Bibliometric Analysis
         </button>
@@ -331,11 +347,11 @@ export default function ResultsReview() {
         <div className="text-on-surface-muted text-center py-20">Loading publications...</div>
       ) : publications.length === 0 ? (
         <div className="text-center py-20">
-          <span className="material-symbols-outlined text-6xl text-on-surface-subtle mb-4 block">search_off</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-6xl text-on-surface-subtle mb-4 block">search_off</span>
           <h3 className="text-xl font-bold text-on-surface mb-2" style={{fontFamily:"var(--font-display)"}}>No Publications Found</h3>
           <p className="text-sm text-on-surface-muted mb-6">Run a search first to populate results for this project.</p>
           <button onClick={() => router.push(`/projects/${projectId}/search`)}
-            className="px-6 py-2.5 bg-primary text-white rounded-lg font-bold text-sm hover:opacity-90 transition">
+            className="px-6 py-2.5 bg-primary text-on-primary rounded-lg font-bold text-sm hover:opacity-90 transition">
             Go to Search
           </button>
         </div>
@@ -344,7 +360,7 @@ export default function ResultsReview() {
           {publications.map((pub) => (
             <article key={pub.id} className={`group bg-surface-raised p-8 rounded-xl transition-all duration-300 hover:shadow-[0px_12px_32px_rgba(25,28,30,0.08)] border border-transparent hover:border-divider ${pub.excluded ? "opacity-50" : ""}`}>
               <div className="flex items-start justify-between gap-6">
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-[10px] font-bold py-1 px-2 bg-surface-hover rounded text-on-surface-muted uppercase tracking-wider">
                       {pub.publication_type || "Article"}
@@ -360,16 +376,16 @@ export default function ResultsReview() {
                     <span className="text-on-surface font-bold">
                       {pub.authors.slice(0, 2).map(a => a.name).join(", ")}{pub.authors.length > 2 ? " et al." : ""}
                     </span>
-                    <span className="mx-2 text-on-surface-subtle">•</span>
+                    <span aria-hidden="true" className="mx-2 text-on-surface-subtle">•</span>
                     <span>{pub.journal_name || "Unknown"}</span>
-                    <span className="mx-2 text-on-surface-subtle">•</span>
+                    <span aria-hidden="true" className="mx-2 text-on-surface-subtle">•</span>
                     <span>{pub.year}</span>
                   </div>
                 </div>
                 <div className="flex flex-col items-center gap-3 shrink-0">
                   <div className="flex flex-col items-center justify-center min-w-[64px] h-16 bg-surface-sunken rounded-lg">
                     <span className="text-lg font-extrabold text-primary">{pub.citation_count ?? 0}</span>
-                    <span className="text-[8px] font-bold uppercase tracking-tighter opacity-60">Citations</span>
+                    <span className="text-[9px] font-bold uppercase tracking-tighter text-on-surface-muted">Citations</span>
                   </div>
                   <ExcludeButton pub={pub} projectId={projectId} onToggle={handleToggleExclude} />
                 </div>
@@ -397,7 +413,7 @@ export default function ResultsReview() {
               <button key={p} onClick={() => setPage(p)}
                 aria-label={`Page ${p}`}
                 aria-current={page === p ? "page" : undefined}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold ${page === p ? "bg-primary text-white" : "hover:bg-surface-hover"}`}>
+                className={`px-4 py-1.5 rounded-full text-xs font-bold ${page === p ? "bg-primary text-on-primary" : "hover:bg-surface-hover"}`}>
                 {p}
               </button>
             ))}

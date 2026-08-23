@@ -144,7 +144,7 @@ function StatCard({ label, value, icon, subtitle }: { label: string; value: stri
         <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-subtle">{label}</span>
         <span
           aria-hidden="true"
-          className="material-symbols-outlined text-accent"
+          className="material-symbols-outlined text-secondary"
           style={{ fontVariationSettings: "'FILL' 1" }}
         >
           {icon}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ui";
@@ -15,6 +15,7 @@ const projectNavItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   // Close the drawer on nav — handled via each link's onClick (closeDrawer) rather
   // than a pathname effect, to avoid synchronous setState-in-effect (React Compiler
@@ -27,6 +28,7 @@ export function Sidebar() {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") triggerRef.current?.focus();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -54,6 +56,7 @@ export function Sidebar() {
     <>
       {/* Mobile hamburger — fixed top-left, hidden above md where the sidebar is always-on. */}
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(v => !v)}
         aria-label={open ? "Close navigation" : "Open navigation"}
@@ -79,11 +82,11 @@ export function Sidebar() {
         id="primary-sidebar"
         aria-label="Primary navigation"
         className={[
-          "fixed left-0 top-0 h-full z-40 flex flex-col p-4",
+          "fixed left-0 top-0 h-full z-40 flex-col p-4",
           "bg-surface-sunken w-64 border-r border-divider",
           "transition-transform duration-200 ease-out",
-          open ? "translate-x-0" : "-translate-x-full",
-          "md:translate-x-0",  // always visible above md
+          open ? "flex translate-x-0" : "hidden -translate-x-full",
+          "md:flex md:translate-x-0",  // always visible above md
         ].join(" ")}
       >
         <div className="mb-8 px-4 pt-2">

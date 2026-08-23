@@ -12,15 +12,17 @@ export default function NewProject() {
   const [description, setDescription] = useState("");
   const [dateStart, setDateStart] = useState("2022-01-01");
   const [dateEnd, setDateEnd] = useState("2025-06-30");
+  const [dateError, setDateError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     if (dateStart && dateEnd && dateStart > dateEnd) {
-      toast.error("Start date must be before end date.");
+      setDateError("Start date must be before end date.");
       return;
     }
+    setDateError(null);
     setLoading(true);
     try {
       const res = await projectsApi.create({
@@ -87,7 +89,12 @@ export default function NewProject() {
                 id="date-start"
                 type="date"
                 value={dateStart}
-                onChange={(e) => setDateStart(e.target.value)}
+                onChange={(e) => {
+                  setDateStart(e.target.value);
+                  setDateError(null);
+                }}
+                aria-invalid={dateError ? "true" : undefined}
+                aria-describedby={dateError ? "date-range-error" : undefined}
                 className={inputClass}
               />
             </Field>
@@ -96,11 +103,22 @@ export default function NewProject() {
                 id="date-end"
                 type="date"
                 value={dateEnd}
-                onChange={(e) => setDateEnd(e.target.value)}
+                onChange={(e) => {
+                  setDateEnd(e.target.value);
+                  setDateError(null);
+                }}
+                aria-invalid={dateError ? "true" : undefined}
+                aria-describedby={dateError ? "date-range-error" : undefined}
                 className={inputClass}
               />
             </Field>
           </div>
+
+          {dateError ? (
+            <p id="date-range-error" role="alert" className="-mt-2 text-sm font-semibold text-danger">
+              {dateError}
+            </p>
+          ) : null}
 
           <div className="pt-2">
             <Button

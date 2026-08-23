@@ -10,7 +10,10 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "sw
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "BibMedEd — Bibliometric Analysis for Medical Education",
+  title: {
+    default: "BibMedEd — Bibliometric Analysis for Medical Education",
+    template: "%s | BibMedEd",
+  },
   description:
     "Search PubMed, OpenAlex, CrossRef, and Semantic Scholar. Analyze trends. Visualize co-authorship and keyword networks. Export PRISMA-ready methodology logs.",
 };
@@ -59,7 +62,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to main content
         </a>
         <Sidebar />
-        <div className="flex-1 md:ml-64 min-h-screen flex flex-col pb-8">
+        <div className="flex-1 min-w-0 md:ml-64 min-h-screen flex flex-col pb-8">
           <main id="main" className="px-4 pt-20 md:px-8 md:pt-8 max-w-7xl w-full mx-auto flex-1">
             {children}
           </main>

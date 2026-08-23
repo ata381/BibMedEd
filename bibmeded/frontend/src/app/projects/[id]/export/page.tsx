@@ -338,6 +338,15 @@ export default function ExportManager() {
           </Card>
         </section>
       )}
+      {TABS.filter((tab) => tab.value !== activeTab).map((tab) => (
+        <div
+          key={tab.value}
+          id={`panel-${tab.value}`}
+          role="tabpanel"
+          aria-labelledby={`tab-${tab.value}`}
+          hidden
+        />
+      ))}
     </div>
   );
 }

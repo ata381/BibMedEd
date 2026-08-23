@@ -35,13 +35,14 @@ export function Tabs<T extends string = string>({
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className={`inline-flex items-center gap-1 p-1 rounded-[var(--radius-md)] bg-surface-sunken ${className}`}
+      className={`flex w-full sm:inline-flex sm:w-auto items-center gap-1 p-1 rounded-[var(--radius-md)] bg-surface-sunken ${className}`}
     >
       {items.map((item, i) => {
         const active = item.value === value;
         return (
           <button
             key={item.value}
+            id={`tab-${item.value}`}
             ref={(el) => {
               refs.current[item.value] = el;
             }}
@@ -66,7 +67,7 @@ export function Tabs<T extends string = string>({
               }
             }}
             className={[
-              "inline-flex items-center gap-2 px-4 h-9 rounded-[var(--radius-sm)]",
+              "flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-2 sm:px-4 h-9 rounded-[var(--radius-sm)]",
               "text-sm font-semibold cursor-pointer",
               "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)]",
               "focus-visible:outline-2 focus-visible:outline-[color:var(--color-focus-ring)] focus-visible:outline-offset-2",
