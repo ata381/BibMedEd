@@ -69,3 +69,7 @@ Style nits below the bar of correctness should be grouped or skipped.
 ## Reviewer setup
 
 Codex Cloud handles automatic PR reviews on this repo (see e.g. PR #4). Do not duplicate that loop with a second AI reviewer workflow.
+
+## Security review before pulling external PRs
+
+For PRs from outside contributors (not `ata381`), do the security pass **from afar first** — read the diff via `gh pr diff <n>` / `gh pr view <n>` / `gh api` without checking out the branch. Fetching refs (`git fetch origin pull/<n>/head`) and reading blobs (`git show <ref>:<path>`) is fine since neither executes anything. Do not run `pytest`, install deps, `docker compose up`, pre-commit hooks, or anything else that executes the contributor's code (including their CI-invoked scripts) until the diff has been read and cleared. Flag anything that would run on checkout/build (setup.py/postinstall hooks, entrypoint scripts, CI workflow changes) as CRITICAL regardless of what else the PR does.
