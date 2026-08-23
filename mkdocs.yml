@@ -20,6 +20,9 @@ theme:
 extra_css:
   - stylesheets/extra.css
 
+extra_javascript:
+  - javascripts/accessibility.js
+
 nav:
   - Home: index.md
   - Why BibMedEd?: why-bibmeded.md
