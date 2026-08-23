@@ -53,6 +53,6 @@ Analysis modules use NetworkX [@hagberg2008networkx] for graph computations and 
 
 # Acknowledgements
 
-We thank the maintainers of the bibliographic APIs that make `BibMedEd` possible and the contributors of the open-source libraries on which the platform is built. We also thank Baygeldi (`@BaygeldiAza`) for contributing the command-line search workflow and Landon Kruse (`@landon-personal`) for improving its error handling.
+We thank the maintainers of the bibliographic APIs that make `BibMedEd` possible and the contributors of the open-source libraries on which the platform is built. We also thank `@BaygeldiAza` for contributing the command-line search workflow and `@landon-personal` for improving its error handling.
 
 # References

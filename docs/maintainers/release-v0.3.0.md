@@ -4,14 +4,16 @@ This is the maintainer-side checklist and copy deck for publishing BibMedEd 0.3.
 
 ## Release sequence
 
-The repository contains complete 0.2.0 metadata at commit `fa0e222`, but the corresponding Git tag and GitHub release were not published. Preserve that history before publishing 0.3.0:
+The repository contains complete 0.2.0 metadata at commit `fa0e2226dc05c8f596009048bddcbaecfc23b6d9`, but the corresponding Git tag and GitHub release were not published. Preserve that history before publishing 0.3.0:
 
-1. Run the backend, frontend, documentation, and metadata checks on the 0.3.0 release commit.
-2. Create annotated local tag `v0.2.0` at `fa0e222`.
-3. With approval, push `v0.2.0` and publish the matching GitHub release so its changelog link and Zenodo archive resolve.
-4. Push the reviewed 0.3.0 release commit.
-5. Create annotated tag `v0.3.0` on that commit, push it, and publish the GitHub release using the 0.3.0 section of `CHANGELOG.md`.
-6. Verify the GitHub Pages deployment, Zenodo version record, citation metadata, and release links.
+1. Fetch remote tags and confirm `refs/tags/v0.2.0` does not already exist upstream. Never overwrite a remote release tag.
+2. Verify `git rev-parse 'v0.2.0^{commit}'` equals `fa0e2226dc05c8f596009048bddcbaecfc23b6d9` and inspect the annotated tag object before publishing.
+3. Confirm the historical commit's required GitHub checks passed. If evidence is incomplete, run the release test suite from an isolated worktree at that exact commit.
+4. Run the backend, frontend, documentation, security, and metadata checks on the exact 0.3.0 release commit.
+5. With approval, push `v0.2.0` and publish the matching GitHub release so its changelog link and Zenodo archive resolve.
+6. Push the reviewed 0.3.0 release commit.
+7. Create an annotated `v0.3.0` tag on that full commit SHA, verify the tag object, push it, and publish the GitHub release using the 0.3.0 section of `CHANGELOG.md`.
+8. Verify that both GitHub releases resolve to the intended commits and that GitHub Pages, Zenodo version metadata, citation metadata, and release links agree.
 
 Do not deploy the application itself as a public writable demo. BibMedEd has no built-in authentication. Use the workflow recording, screenshots, and bundled sample project until a deliberately read-only demo mode exists.
 
@@ -39,7 +41,7 @@ Post this on the most recent contribution thread after approval:
 >
 > This release is designed to make the project easier to evaluate before committing a real dataset: a bundled synthetic project now opens the complete analysis and export workflow without an API key or network request. It also adds Lens.org Scholarly and a full command-line search workflow.
 >
-> The CLI is BibMedEd's first substantial externally contributed feature. Thank you to Baygeldi (@BaygeldiAza) for the dry-run and full-search work, and Landon Kruse (@landon-personal) for improving failure handling.
+> The CLI is BibMedEd's first substantial externally contributed feature. Thank you to @BaygeldiAza for the dry-run and full-search work, and @landon-personal for improving failure handling.
 >
 > I am looking for three medical-education researchers or academic librarians to try the sample workflow and give candid feedback. I am especially interested in the first confusing step, missing database, or export that would stop you using it in a real study.
 >
