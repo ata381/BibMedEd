@@ -15,13 +15,14 @@ BibMedEd is an open-source tool that enables medical education researchers to se
 
 ## User Interface Tour
 
-The BibMedEd Agentic QA recording demonstrates the dynamic features, layout scaling, and state preservation:
+This short workflow recording demonstrates project creation, search progress, analysis, and state preservation:
 <p align="center">
   <img src="assets/demo.webp" alt="BibMedEd Workflow Recording" width="100%">
 </p>
 
-### **Dashboard Analysis & Search Pipeline**
-The system gracefully visualizes bibliometric markers and updates fetching blocks via Celery sockets.
+### Dashboard analysis and search pipeline
+
+The dashboard visualizes bibliometric indicators and reports asynchronous search progress from the Celery worker.
 <p align="center">
   <img src="assets/dashboard.png" alt="BibMedEd Dashboard" width="48%">
   <img src="assets/results.png" alt="BibMedEd Results Table" width="48%">
@@ -46,7 +47,11 @@ See the [Self-Hosting Guide](deploy.md) for configuration options.
 
 ## Extend It
 
-BibMedEd uses a plug-and-play adapter pattern. Adding a new data source is a single Python file (~50 lines) that implements three methods. See the [Writing Adapters](adapters.md) guide.
+BibMedEd uses a plug-and-play adapter pattern. A new data source starts with one focused Python module plus fixture-based tests and any source-specific setup notes. See the [Writing Adapters](adapters.md) guide.
+
+## Join the community
+
+Researchers can share workflow feedback, and developers can claim a focused adapter or starter issue. See the [community page](community.md) for the shortest path.
 
 ## Cite
 

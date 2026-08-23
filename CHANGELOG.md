@@ -4,19 +4,35 @@ All notable changes to BibMedEd are recorded here. This project follows [Keep a 
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-08-23
+
 ### Added
 
 - Added a deterministic, network-free synthetic sample workflow (`POST /api/projects/sample`) with 12 records, meaningful author/country/keyword/citation networks, screening state, and a reproducible methodology trace. Repeated requests reopen the same sample instead of creating unbounded copies.
 - Added the `bibmeded search --dry-run` CLI for estimating an upstream result count without fetching or persisting records ([#17](https://github.com/ata381/BibMedEd/issues/17)).
+- Added full `bibmeded search` execution through the existing database and Celery pipeline, including year and result-limit options ([#52](https://github.com/ata381/BibMedEd/pull/52)).
+- Added Lens.org Scholarly as the fifth built-in source, with token-based configuration, pagination, record mapping, fixture-based tests, and empty-result handling ([#14](https://github.com/ata381/BibMedEd/issues/14)).
 
 ### Changed
 
 - Improved first-run usability with a homepage shortcut that creates the sample project and opens its analysis dashboard immediately.
-- Corrected the homepage and metadata to reflect all four built-in sources, including Semantic Scholar.
+- Updated the homepage, documentation, and adapter registry to reflect all five built-in sources.
+- Clarified how newcomers claim work, how adapter auto-discovery works, and what a complete adapter contribution includes.
+
+### Fixed
+
+- Replaced CLI tracebacks for unknown sources and network failures with actionable stderr messages and non-zero exit codes ([#50](https://github.com/ata381/BibMedEd/pull/50)).
+- Prevented full CLI searches from polling forever when adapter construction fails.
+- Handled empty Lens.org result pages without raising an indexing error.
 
 ### Security
 
 - Updated Next.js and its matching lint configuration from 16.2.9 to 16.3.1, then refreshed transitive dependencies so `npm audit` reports zero known vulnerabilities.
+
+### Community
+
+- Thank you to [@BaygeldiAza](https://github.com/BaygeldiAza) for the dry-run and full CLI search contributions ([#46](https://github.com/ata381/BibMedEd/pull/46), [#52](https://github.com/ata381/BibMedEd/pull/52)).
+- Thank you to [@landon-personal](https://github.com/landon-personal) for improving CLI source and network error handling ([#50](https://github.com/ata381/BibMedEd/pull/50)).
 
 ## [0.2.0] — 2026-05-28
 
@@ -182,7 +198,8 @@ First tagged public release.
 - Hardened the global error handler so exception types no longer leak in API responses.
 - Added `rel="noopener noreferrer"` to `window.open` in the export page (tabnabbing defence).
 
-[Unreleased]: https://github.com/ata381/BibMedEd/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/ata381/BibMedEd/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/ata381/BibMedEd/releases/tag/v0.3.0
 [0.2.0]: https://github.com/ata381/BibMedEd/releases/tag/v0.2.0
 [0.1.2]: https://github.com/ata381/BibMedEd/releases/tag/v0.1.2
 [0.1.1]: https://github.com/ata381/BibMedEd/releases/tag/v0.1.1

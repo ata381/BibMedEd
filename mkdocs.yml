@@ -23,13 +23,18 @@ extra_css:
 nav:
   - Home: index.md
   - Why BibMedEd?: why-bibmeded.md
+  - What's New: whats-new.md
   - Case Study: case-study.md
   - Self-Hosting: deploy.md
   - Scripting & API: scripting.md
   - Writing Adapters: adapters.md
+  - Community: community.md
+  - Contribute: https://github.com/ata381/BibMedEd/blob/master/CONTRIBUTING.md
 
 exclude_docs: |
   superpowers/
+  maintainers/
+  lens-connector-wip.md
 
 markdown_extensions:
   - admonition

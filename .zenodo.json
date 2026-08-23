@@ -1,6 +1,6 @@
 {
   "title": "BibMedEd: An Open-Source Bibliometric Analysis Platform for Medical Education Research",
-  "description": "BibMedEd unifies multi-database bibliographic search (PubMed, OpenAlex, and contributable adapters), automated cross-source deduplication, six bibliometric analysis modules, D3.js network visualisations, and a reproducible methodology log in a single self-hostable web application. Designed for medical-education researchers conducting systematic reviews and scientometric studies under PRISMA 2020.",
+  "description": "BibMedEd unifies multi-database bibliographic search (PubMed, OpenAlex, CrossRef, Semantic Scholar, and Lens.org), automated cross-source deduplication, six bibliometric analysis modules, D3.js network visualisations, PRISMA 2020 exports, and a reproducible methodology log in a single self-hostable application. Designed for medical-education researchers conducting systematic reviews and scientometric studies.",
   "license": "MIT",
   "upload_type": "software",
   "access_right": "open",
@@ -12,6 +12,9 @@
     "PRISMA",
     "PubMed",
     "OpenAlex",
+    "CrossRef",
+    "Semantic Scholar",
+    "Lens.org",
     "network analysis",
     "research software"
   ],

@@ -11,12 +11,13 @@
 - [ ] New analysis module
 - [ ] Docs / examples
 - [ ] Refactor / chore
+- [ ] Feature / CLI enhancement
 
 ## Checklist
 
 - [ ] `pytest` passes locally (`cd bibmeded && pytest -q`)
 - [ ] Touched code paths have tests
-- [ ] If adding an adapter: implements `search`, `fetch`, `methodology_label`; registered in `app/adapters/__init__.py`; has a fixture-based test
+- [ ] If adding an adapter: implements `search` and `fetch`; has a clear `display_name` / methodology label; is auto-discovered by the registry; has fixture-based tests
 - [ ] Docs updated (`docs/` and / or README) if user-visible behaviour changed
 - [ ] No secrets, API keys, or personal data committed
 

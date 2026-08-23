@@ -18,6 +18,7 @@
 
 <p align="center">
   <a href="https://ata381.github.io/BibMedEd/why-bibmeded/">Why BibMedEd?</a> &bull;
+  <a href="https://ata381.github.io/BibMedEd/whats-new/">What's New</a> &bull;
   <a href="https://ata381.github.io/BibMedEd/case-study/">Case Study</a> &bull;
   <a href="https://ata381.github.io/BibMedEd/">Documentation</a> &bull;
   <a href="https://ata381.github.io/BibMedEd/deploy/">Self-Hosting</a> &bull;
@@ -33,6 +34,14 @@
 >
 > New here? Read **[Why BibMedEd vs Covidence / VOSviewer / Bibliometrix](https://ata381.github.io/BibMedEd/why-bibmeded/)** for an honest capability comparison, or jump into the **[end-to-end case study](https://ata381.github.io/BibMedEd/case-study/)**.
 
+<p align="center">
+  <a href="https://ata381.github.io/BibMedEd/#user-interface-tour">
+    <img src="docs/assets/dashboard.png" alt="BibMedEd analysis dashboard showing publication trends and bibliometric summaries" width="900">
+  </a>
+  <br>
+  <em><a href="https://ata381.github.io/BibMedEd/#user-interface-tour">Watch the workflow and explore the full UI tour</a></em>
+</p>
+
 ## Features
 
 - **Multi-database search** — PubMed, OpenAlex, CrossRef, Semantic Scholar, and Lens.org built-in, extensible to any source via plug-and-play adapters
@@ -45,8 +54,6 @@
 - **Programmatic access** — Auto-generated OpenAPI spec at `/openapi.json`, interactive Swagger UI at `/docs`, ReDoc at `/redoc`. Analysis responses carry a `schema_version` field for downstream pinning.
 - **Self-hostable** — Single `docker compose up` on any lab server, no cloud account needed
 - **Result cap** — Default 2,000 records (configurable up to 10,000); results page warns when upstream returned more than was fetched so truncation is never silent
-
-> **See it in action:** [UI Tour with screenshots and demo video](https://ata381.github.io/BibMedEd/#user-interface-tour)
 
 ## Architecture
 
@@ -95,7 +102,7 @@ One click provisions PostgreSQL, Redis, FastAPI, Celery, and the Next.js fronten
 
 ## Write Your Own Adapter
 
-Adding a new bibliographic database is a single Python file (~50 lines):
+Adding a bibliographic database starts with one focused Python module; richer APIs need more mapping and pagination code:
 
 ```python
 from app.adapters.base import BaseSourceAdapter, RawRecord, SearchResponse
@@ -125,10 +132,10 @@ Want to help shape BibMedEd?
 
 - **Start contributing:** See [CONTRIBUTING.md](CONTRIBUTING.md)
 - **Request or claim work:** [GitHub Issues](https://github.com/ata381/BibMedEd/issues)
-- **Discuss major ideas in a PR:** [Pull Requests](https://github.com/ata381/BibMedEd/pulls)
+- **Ask questions or discuss major ideas:** [GitHub Discussions](https://github.com/ata381/BibMedEd/discussions)
 - **Use in research and cite the project:** See [Citation](#citation)
 
-If you are looking for a first task, open an issue titled **"Good first issue request"** and we will suggest one.
+Looking for a first task? Pick an open item from [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md), comment on its issue, and ask to be assigned.
 
 ## Tech Stack
 
@@ -158,10 +165,10 @@ If you use BibMedEd in your research, please cite:
 
 ## Contributing
 
-Contributions are warmly welcome. The fastest path to a merged PR is to write an adapter for a new data source — most take ~50 lines.
+Contributions are warmly welcome. A focused adapter is often the fastest path to a high-impact first PR; complete submissions include fixture-based tests and source-specific documentation.
 
 - **Read** the [Contributing Guide](CONTRIBUTING.md) for setup, code style, and PR flow.
-- **Pick a starter task** from [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md) — 10+ vetted adapter ideas waiting for an owner.
+- **Pick and claim a starter task** from [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md).
 - **Report bugs or request features** with the [issue templates](.github/ISSUE_TEMPLATE/).
 - **Improve docs** — PRs to `docs/` auto-deploy to GitHub Pages on merge.
 

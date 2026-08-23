@@ -6,7 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        Adapters are the easiest way to contribute. Most take ~50 lines of Python.
+        Adapters are the easiest way to contribute. The adapter module is focused;
+        a complete contribution also includes fixture-based tests and any source-specific setup notes.
         Read the [adapter guide](https://ata381.github.io/BibMedEd/adapters/) before starting.
 
   - type: input
@@ -46,4 +47,4 @@ body:
     attributes:
       label: Claim it
       options:
-        - label: I'm planning to implement this myself.
+        - label: I'm planning to implement this myself. Please assign the issue to me.

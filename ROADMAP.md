@@ -2,9 +2,9 @@
 
 A living document. Items move up and down as the community contributes adapters and bug reports.
 
-## Now (0.2.0 — shipped 2026-05-28)
+## Now (0.3.0 — shipped 2026-08-23)
 
-- [x] Four adapters: PubMed, OpenAlex, CrossRef, Semantic Scholar — with cross-source DOI / PMID deduplication
+- [x] Five adapters: PubMed, OpenAlex, CrossRef, Semantic Scholar, Lens.org — with cross-source DOI / PMID deduplication
 - [x] Six analysis modules (publications, authors, countries, keywords, citations, journals)
 - [x] Per-author h-index, g-index, e-index — cited (Hirsch 2005, Egghe 2006, Zhang 2009)
 - [x] Bibliographic coupling + co-citation networks (Kessler 1963, Small 1973)
@@ -23,13 +23,13 @@ A living document. Items move up and down as the community contributes adapters 
 - [x] WCAG 2.2 a11y pass (heading hierarchy, ARIA menus, aria-live for dynamic state, force-graph alt text)
 - [x] One-click Render.com deploy
 - [x] CI on every PR (Python 3.12 / 3.13, frontend lint + tsc + build, Docker build)
+- [x] Bundled synthetic sample project for network-free first-run exploration
+- [x] Command-line dry-run estimates and full search execution
 
-## Next (0.2.x → 1.0)
+## Next (0.3.x → 1.0)
 
-- [x] [Lens.org Scholarly adapter #14](https://github.com/ata381/BibMedEd/issues/14)
 - [ ] Additional adapters: [Europe PMC #7](https://github.com/ata381/BibMedEd/issues/7), [arXiv #9](https://github.com/ata381/BibMedEd/issues/9), [DOAJ #10](https://github.com/ata381/BibMedEd/issues/10), [OpenCitations #11](https://github.com/ata381/BibMedEd/issues/11), [CORE #12](https://github.com/ata381/BibMedEd/issues/12), [BASE #13](https://github.com/ata381/BibMedEd/issues/13)
 - [ ] [Frontend i18n + Turkish locale #16](https://github.com/ata381/BibMedEd/issues/16)
-- [x] [Search CLI `--dry-run` for cost estimation #17](https://github.com/ata381/BibMedEd/issues/17)
 - [ ] Title/abstract vs full-text screening-stage distinction (PRISMA 2020 splits these; currently one binary excluded flag)
 - [ ] Project sharing — read-only public project URLs
 - [ ] Saved query alerts (cron re-runs notify on new matching records)
@@ -38,9 +38,8 @@ A living document. Items move up and down as the community contributes adapters 
 - [ ] Prometheus metrics endpoint (`/api/metrics`) once a Grafana dashboard ships alongside
 - [ ] Strategic-diagram (thematic quadrants) plot in the dashboard
 - [ ] LLM-assisted PICO extraction and abstract screening (opt-in, bring-your-own key)
-- [x] Bundled synthetic sample project for network-free first-run exploration
 - [ ] Polished public demo deployment with a read-only seeded project
-- [ ] JOSS submission (paper.md and paper.bib are ready as of v0.2.0)
+- [ ] JOSS readiness: six months of public development history, at least one independent research use case, current paper metadata, and an explicit AI-usage disclosure
 
 ## Later (1.x+)
 

@@ -1,6 +1,6 @@
 [project]
 name = "bibmeded"
-version = "0.2.0"
+version = "0.3.0"
 description = "Bibliometric Analysis Platform for Medical Education"
 requires-python = ">=3.12"
 dependencies = [

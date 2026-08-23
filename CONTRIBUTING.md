@@ -6,7 +6,7 @@ Thanks for considering a contribution. BibMedEd is built so that the most useful
 
 ### 1. Write an adapter (highest leverage)
 
-Every new adapter immediately broadens the literature base every BibMedEd user can analyse. The adapter API is intentionally small: implement `search` and `fetch`, map the source's record format to `RawRecord`, register the class, done.
+Every new adapter immediately broadens the literature base every BibMedEd user can analyse. The adapter API is intentionally small: implement `search` and `fetch`, map the source's record format to `RawRecord`, and let the registry auto-discover the class.
 
 - Read the [adapter guide](https://ata381.github.io/BibMedEd/adapters/) for a walkthrough of the `OpenAlexAdapter`.
 - Check [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md) for vetted source ideas you can claim.
@@ -16,7 +16,7 @@ A good adapter PR includes:
 
 - A class in `bibmeded/app/adapters/<source>.py` subclassing `BaseSourceAdapter`. The registry auto-discovers any `BaseSourceAdapter` subclass dropped here — **you do NOT need to touch `__init__.py` or any registration file**. Drop the module, set `name` / `display_name` / `requires_api_key` on the class, and the `/api/adapters` route + the frontend source picker pick it up at the next request.
 - A fixture-based test under `bibmeded/tests/test_adapters_<source>.py` that exercises `search` and `fetch` against captured JSON / XML payloads — no live API calls in CI.
-- A one-line mention in `README.md`'s feature list, plus a short walkthrough section in `docs/adapters.md` (it is manually maintained — not auto-generated — so it must be updated by hand when a new adapter ships).
+- A one-line mention in `README.md`'s feature list, plus source-specific credentials, caveats, or setup notes in `docs/adapters.md`. The guide is manually maintained, so update it when a new adapter ships.
 
 **Load-bearing invariants — easy to miss, hard to debug:**
 - Lowercase DOIs at the adapter boundary (`doi.lower()`). The cross-source dedup keys on DOI string equality and will silently miss duplicates across sources if cases differ.
@@ -30,6 +30,15 @@ Use the [issue templates](.github/ISSUE_TEMPLATE/). Bugs need a reproduction; fe
 ### 3. Improve docs and examples
 
 `docs/` is rendered with MkDocs Material and deployed automatically on merge to `master`. Walkthroughs of real bibliometric studies you have run with BibMedEd are especially welcome — they double as marketing and tutorials.
+
+## New-contributor checklist
+
+1. Pick an open item from [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md), or propose one with an issue template.
+2. Comment on the existing issue before starting so two contributors do not duplicate work.
+3. Fork the repository, branch from `master`, and run the focused tests while you work.
+4. Open a PR with `Closes #N`, fixture-based tests, and any user-facing documentation the change needs.
+
+Questions and early design ideas are welcome in [GitHub Discussions](https://github.com/ata381/BibMedEd/discussions). Maintainers aim to acknowledge contribution questions and claims within three working days; if a thread is quiet for a week, one friendly ping is welcome.
 
 ## Local development
 

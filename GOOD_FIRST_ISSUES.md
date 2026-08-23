@@ -1,6 +1,15 @@
 # Good First Contributions
 
-The fastest way to get a PR merged into BibMedEd is to write an adapter. Each adapter below is a self-contained ~50–100 line Python file plus a test fixture. Pick one, open an [adapter request issue](.github/ISSUE_TEMPLATE/adapter_request.yml) to claim it, and ship.
+The fastest way to make a high-impact contribution to BibMedEd is to write an adapter. The adapter module is usually focused, while a complete contribution also includes captured API fixtures, parsing and pagination tests, and short source-specific documentation.
+
+How to claim:
+
+1. Pick an item below.
+2. Comment on its existing GitHub issue and ask to be assigned.
+3. If no issue exists, open an [adapter request](https://github.com/ata381/BibMedEd/issues/new?template=adapter_request.yml) and tick the claim checkbox.
+4. Open a PR linked to the issue and include fixture-based tests.
+
+Open items have one active owner at a time. Maintainers aim to acknowledge claims within three working days; if a claim has no update for two weeks, it may be opened for someone else.
 
 Read the [adapter guide](https://ata381.github.io/BibMedEd/adapters/) first. Reference implementations: `bibmeded/app/adapters/pubmed.py`, `openalex.py`, `crossref.py`, `semantic_scholar.py`, and the API-keyed `lens.py`.
 
@@ -30,11 +39,12 @@ Read the [adapter guide](https://ata381.github.io/BibMedEd/adapters/) first. Ref
 
 ## Non-adapter starter tasks
 
-- **PRISMA flow diagram export** — [#15](https://github.com/ata381/BibMedEd/issues/15)
 - **i18n scaffold + Turkish locale** — [#16](https://github.com/ata381/BibMedEd/issues/16)
-- **Search CLI `--dry-run` for cost estimation** — [#17](https://github.com/ata381/BibMedEd/issues/17)
+- **Wire configured API settings into the CLI** — [#47](https://github.com/ata381/BibMedEd/issues/47)
 - **Locale-aware date parsing** in `app/services/cleaning.py` — currently assumes ISO; some adapters emit `DD-MM-YYYY`.
 - **Improve the empty-state copy** in the frontend project dashboard (`bibmeded/frontend/app/projects/`).
+
+For an untracked idea above, open a [feature request](https://github.com/ata381/BibMedEd/issues/new?template=feature_request.yml) before starting so the scope can be agreed.
 
 ## Claiming and shipping
 
