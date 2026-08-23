@@ -1,6 +1,7 @@
 import asyncio
 from unittest.mock import AsyncMock, patch
 
+import httpx
 import pytest
 
 from app.adapters.base import RawRecord, SearchResponse
@@ -107,6 +108,18 @@ def test_search(adapter: LensAdapter):
     assert isinstance(result, SearchResponse)
     assert result.total_count == 3
     assert result.ids == ["001-111-111-111-111", "002-222-222-222-222"]
+
+
+def test_search_treats_not_found_as_empty_result(adapter: LensAdapter):
+    response = httpx.Response(
+        status_code=404,
+        request=httpx.Request("POST", f"{lens_module.LENS_API}/scholarly/search"),
+    )
+
+    with patch.object(adapter._client, "post", return_value=response):
+        result = asyncio.run(adapter.search("query with no matches"))
+
+    assert result == SearchResponse(total_count=0, ids=[])
 
 
 def test_search_ignores_records_without_lens_ids(adapter: LensAdapter):

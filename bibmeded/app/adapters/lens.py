@@ -169,6 +169,11 @@ class LensAdapter(BaseSourceAdapter):
 
     async def _post(self, payload: dict) -> dict:
         resp = await self._client.post(f"{LENS_API}/scholarly/search", json=payload)
+        # Lens uses 404 for valid searches with no matching records. The URL is
+        # fixed here and this adapter does not use scroll IDs, so that response
+        # unambiguously represents an empty result set for this request.
+        if resp.status_code == httpx.codes.NOT_FOUND:
+            return {"total": 0, "data": []}
         resp.raise_for_status()
         parsed = await self._parse_json(resp)
         if not isinstance(parsed, dict):

@@ -50,13 +50,13 @@ export default function Home() {
           Welcome to BibMedEd
         </h1>
         <p className="text-on-surface-muted text-base md:text-lg max-w-2xl leading-relaxed">
-          Search PubMed, OpenAlex, CrossRef, and Semantic Scholar; deduplicate across sources; run six bibliometric analyses; export a PRISMA-ready methodology log.
+          Search PubMed, OpenAlex, CrossRef, Semantic Scholar, and Lens.org; deduplicate across sources; run six bibliometric analyses; export a PRISMA-ready methodology log.
         </p>
       </header>
 
       <section aria-label="Workspace summary" className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard label="Active projects" value={loading ? null : projects.length.toString().padStart(2, "0")} icon="folder_open" />
-        <StatCard label="Data sources" value="04" icon="hub" subtitle="PubMed · OpenAlex · CrossRef · Semantic Scholar" />
+        <StatCard label="Data sources" value="05" icon="hub" subtitle="PubMed · OpenAlex · CrossRef · Semantic Scholar · Lens.org" />
         <StatCard label="Analysis modules" value="06" icon="auto_graph" subtitle="Publications · Authors · Keywords · …" />
       </section>
 
