@@ -15,20 +15,24 @@ BibMedEd is an open-source tool that enables medical education researchers to se
 
 ## User Interface Tour
 
-This short workflow recording demonstrates project creation, search progress, analysis, and state preservation:
+The full workflow recording demonstrates project creation, search progress, analysis, and state preservation. It is loaded only when opened so the documentation stays fast on mobile connections:
 <p align="center">
-  <img src="assets/demo.webp" alt="BibMedEd Workflow Recording" width="100%">
+  <a href="assets/demo.webp">
+    <img src="assets/dashboard.png" alt="Open the BibMedEd workflow recording" width="100%" loading="lazy" decoding="async">
+  </a>
+  <br>
+  <em><a href="assets/demo.webp">Open the full workflow recording (15 MB)</a></em>
 </p>
 
 ### Dashboard analysis and search pipeline
 
 The dashboard visualizes bibliometric indicators and reports asynchronous search progress from the Celery worker.
 <p align="center">
-  <img src="assets/dashboard.png" alt="BibMedEd Dashboard" width="48%">
-  <img src="assets/results.png" alt="BibMedEd Results Table" width="48%">
+  <img src="assets/dashboard.png" alt="BibMedEd Dashboard" width="48%" loading="lazy" decoding="async">
+  <img src="assets/results.png" alt="BibMedEd Results Table" width="48%" loading="lazy" decoding="async">
 </p>
 <p align="center">
-  <img src="assets/search.png" alt="Dynamic Search Progress" width="100%">
+  <img src="assets/search.png" alt="Dynamic Search Progress" width="100%" loading="lazy" decoding="async">
 </p>
 
 ## Quick Start
