@@ -47,7 +47,7 @@ test("new project gives an inline date correction and continues to search", asyn
   await page.getByLabel("Date range end").fill("2025-12-31");
   await continueButton.click();
   await expect(page).toHaveURL(/\/projects\/1\/search$/);
-  await expect(page.getByRole("heading", { name: "Precision Search Strategy" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Search strategy" })).toBeVisible();
 });
 
 test("search builder exposes labels and selected options", async ({ page }) => {
