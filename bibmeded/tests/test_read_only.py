@@ -288,6 +288,7 @@ def test_get_db_guards_sessions_only_in_read_only_mode(monkeypatch, read_only):
     from app.database import get_db
 
     monkeypatch.setattr(settings, "read_only", read_only)
+    monkeypatch.setattr("app.database._ReadOnlySessionLocal", None)
     generator = get_db()
     session = next(generator)
     try:

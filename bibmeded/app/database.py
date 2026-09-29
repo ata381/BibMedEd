@@ -10,6 +10,7 @@ class Base(DeclarativeBase):
 
 _engine: Engine | None = None
 _SessionLocal = None
+_ReadOnlySessionLocal = None
 
 
 def get_engine() -> Engine:
@@ -30,6 +31,16 @@ def get_session_factory():
     return _SessionLocal
 
 
+def get_read_only_session_factory():
+    global _ReadOnlySessionLocal
+    if _ReadOnlySessionLocal is None:
+        from app.config import settings
+        from app.read_only import create_read_only_engine
+
+        _ReadOnlySessionLocal = sessionmaker(bind=create_read_only_engine(settings.database_url))
+    return _ReadOnlySessionLocal
+
+
 # Module-level alias used by legacy code that does `from app.database import engine`
 # This is a property-like approach: access triggers lazy init.
 # For simple compatibility we expose a callable.
@@ -37,10 +48,10 @@ def get_db() -> Generator[Session, None, None]:
     from app.config import settings
     from app.read_only import guard_session
 
-    factory = get_session_factory()
-    db = factory()
     if settings.read_only:
-        guard_session(db)
+        db = guard_session(get_read_only_session_factory()())
+    else:
+        db = get_session_factory()()
     try:
         yield db
     finally:

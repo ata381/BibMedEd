@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.config import settings
+from app.config import settings, unrecognised_env_vars
 from app.read_only import ReadOnlyMiddleware, ReadOnlyViolation, read_only_violation_handler
 from app.routers import projects, search, publications, analysis, export, adapters
 
@@ -55,10 +55,16 @@ def _seed_read_only_demo() -> None:
         session.close()
 
 
+def _log_startup_configuration() -> None:
+    logger.info("BibMedEd mode: read_only=%s", settings.read_only)
+    for name in unrecognised_env_vars(os.environ):
+        logger.warning("ignoring unrecognised environment variable %s (typo of a BIBMEDED_* setting?)", name)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _log_startup_configuration()
     if settings.read_only:
-        logger.warning("BIBMEDED_READ_ONLY is enabled: rejecting every non-GET request")
         _seed_read_only_demo()
     yield
 
