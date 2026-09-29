@@ -17,3 +17,11 @@ ANALYSIS_FUNCTIONS = {
     "citations": analyze_citations,
     "journals": analyze_journals,
 }
+
+
+def with_schema_version(results: dict) -> dict:
+    """Stamp every analysis response with the schema version so programmatic users can
+    pin against a known shape."""
+    if isinstance(results, dict) and "schema_version" not in results:
+        return {"schema_version": ANALYSIS_SCHEMA_VERSION, **results}
+    return results
