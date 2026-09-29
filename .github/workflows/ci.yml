@@ -162,7 +162,7 @@ jobs:
           cache-dependency-path: bibmeded/pyproject.toml
 
       - name: Install dependencies
-        run: pip install -e .
+        run: pip install -e ".[server]"
 
       - name: Fresh-DB guard path (alembic upgrade head on empty Postgres)
         run: alembic upgrade head

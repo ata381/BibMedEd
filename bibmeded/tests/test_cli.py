@@ -573,3 +573,15 @@ def test_sources_json_output_returns_structured_list_without_leaking_keys(
         "status": "missing BIBMEDED_LENS_API_KEY",
     }
 
+
+def test_search_without_server_extras_prints_install_hint(monkeypatch, capsys):
+    from app import cli
+
+    monkeypatch.setattr(cli, "run_search", None)
+
+    exit_code = cli.main(["search", "AI in medical education"])
+
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert "bibmeded[server]" in captured.err

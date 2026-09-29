@@ -84,6 +84,19 @@ def _list_sources(as_json: bool = False) -> int:
 
     return 0
 
+try:
+    from app.database import SessionLocal
+    from app.workers.tasks import run_search
+except ImportError:  # server extras (celery, redis, DB driver) not installed
+    SessionLocal = None
+    run_search = None
+
+SERVER_EXTRA_HINT = (
+    "Fetching records needs the task worker stack. "
+    'Install it with: pip install "bibmeded[server]" (or use docker compose). '
+    "`--dry-run` works without it."
+)
+
 
 async def _dry_run_search(query: str, source: str) -> int:
     configuration_error = adapter_configuration_error(source)
@@ -132,6 +145,10 @@ def _run_search(
     year_end: str | None,
     max_results: int,
 ) -> int:
+    if SessionLocal is None or run_search is None:
+        print(SERVER_EXTRA_HINT, file=sys.stderr)
+        return 1
+
     if not _validate_source(source):
         return 1
 

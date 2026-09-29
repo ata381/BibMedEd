@@ -10,3 +10,8 @@ docs/superpowers/
 
 # Personal / agent working notes — never published.
 .notes/
+
+# Python build artifacts
+dist/
+build/
+*.egg-info/
