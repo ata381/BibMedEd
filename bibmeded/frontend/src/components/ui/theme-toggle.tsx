@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Icon, type IconName } from "./icon";
 
 type Theme = "light" | "dark" | "system";
 
 const STORAGE_KEY = "bibmeded:theme";
+const NEXT: Record<Theme, Theme> = { light: "dark", dark: "system", system: "light" };
+const ICON: Record<Theme, IconName> = { light: "sun", dark: "moon", system: "contrast" };
 
 function applyTheme(theme: Theme) {
   const root = document.documentElement;
@@ -12,22 +15,19 @@ function applyTheme(theme: Theme) {
   if (theme === "system") {
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     root.classList.add(prefersDark ? "dark" : "light");
-    root.dataset.themeChoice = "system";
   } else {
     root.classList.add(theme);
-    root.dataset.themeChoice = theme;
   }
+  root.dataset.themeChoice = theme;
 }
 
-export function ThemeToggle() {
+export function ThemeToggle({ className = "" }: { className?: string }) {
   const [theme, setTheme] = useState<Theme>("system");
 
   useEffect(() => {
     const stored = (localStorage.getItem(STORAGE_KEY) as Theme | null) ?? "system";
-    // Synchronising React state with localStorage on mount is fundamental
-    // — the layout's beforeInteractive bootstrap script already applied
-    // the right theme class to <html>; we just need to mirror the choice
-    // into React state for the toggle UI.
+    // The layout's beforeInteractive bootstrap already applied the class to
+    // <html>; this mirrors the stored choice into React state for the button.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(stored);
     applyTheme(stored);
@@ -45,8 +45,7 @@ export function ThemeToggle() {
     applyTheme(next);
   };
 
-  const next: Theme = theme === "light" ? "dark" : theme === "dark" ? "system" : "light";
-  const icon = theme === "light" ? "light_mode" : theme === "dark" ? "dark_mode" : "contrast";
+  const next = NEXT[theme];
   const label = `Theme: ${theme} — click to switch to ${next}`;
 
   return (
@@ -60,9 +59,10 @@ export function ThemeToggle() {
         "text-on-surface-muted hover:text-on-surface hover:bg-surface-hover",
         "cursor-pointer transition-colors duration-[var(--duration-fast)]",
         "focus-visible:outline-2 focus-visible:outline-[color:var(--color-focus-ring)] focus-visible:outline-offset-2",
+        className,
       ].join(" ")}
     >
-      <span className="material-symbols-outlined" aria-hidden="true">{icon}</span>
+      <Icon name={ICON[theme]} size={18} />
     </button>
   );
 }
