@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 logger = logging.getLogger(__name__)
 
 from app.adapters.settings import adapter_configuration_error
+from app.config import settings
 from app.database import get_db
 from app.models import QueryStatus, SearchProject, SearchQuery
 from app.schemas.search import SearchRequest, SearchStatusResponse
@@ -15,10 +16,10 @@ from app.workers.tasks import run_search
 router = APIRouter(prefix="/api/projects/{project_id}/search", tags=["search"])
 
 
-def _infer_progress(query: SearchQuery) -> float | None:
-    if query.status == QueryStatus.completed:
+def _infer_progress(status: QueryStatus) -> float | None:
+    if status == QueryStatus.completed:
         return 100.0
-    if query.status == QueryStatus.failed:
+    if status == QueryStatus.failed:
         return 0.0
     return None
 
@@ -63,7 +64,7 @@ def get_latest_search(project_id: int, db: Session = Depends(get_db)):
         result_count=query.result_count,
         raw_result_count=query.raw_result_count,
         duplicate_count=query.duplicate_count,
-        progress=_infer_progress(query),
+        progress=_infer_progress(query.status),
     )
 
 
@@ -72,17 +73,20 @@ def get_search_status(project_id: int, query_id: int, db: Session = Depends(get_
     query = db.get(SearchQuery, query_id)
     if not query or query.project_id != project_id:
         raise HTTPException(status_code=404, detail="Search query not found")
-    if query.status == QueryStatus.running:
+    status = query.status
+    if status == QueryStatus.running:
         cutoff = datetime.now(timezone.utc) - timedelta(minutes=STALE_THRESHOLD_MINUTES)
         started = query.created_at
         if started and started.replace(tzinfo=timezone.utc) < cutoff:
-            query.status = QueryStatus.failed
-            db.commit()
+            status = QueryStatus.failed
+            if not settings.read_only:
+                query.status = status
+                db.commit()
     return SearchStatusResponse(
         query_id=query.id,
-        status=query.status.value,
+        status=status.value,
         result_count=query.result_count,
         raw_result_count=query.raw_result_count,
         duplicate_count=query.duplicate_count,
-        progress=_infer_progress(query),
+        progress=_infer_progress(status),
     )

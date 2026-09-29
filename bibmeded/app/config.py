@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     icite_base_url: str = "https://icite.od.nih.gov/api"
     cors_origins: list[str] = ["http://localhost:3000"]
     debug: bool = False
+    read_only: bool = False
 
     model_config = {"env_prefix": "BIBMEDED_"}
 

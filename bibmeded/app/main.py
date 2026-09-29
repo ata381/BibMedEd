@@ -1,4 +1,5 @@
 import contextvars
+from contextlib import asynccontextmanager
 import logging
 import os
 import time
@@ -9,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import settings
+from app.read_only import ReadOnlyMiddleware, ReadOnlyViolation, read_only_violation_handler
 from app.routers import projects, search, publications, analysis, export, adapters
 
 # Per-request id propagated to every log line emitted during the request. The
@@ -42,8 +44,28 @@ _configure_logging()
 logger = logging.getLogger(__name__)
 
 
+def _seed_read_only_demo() -> None:
+    from app.database import SessionLocal
+    from app.services.demo_seed import seed_demo_data
+
+    session = SessionLocal()
+    try:
+        seed_demo_data(session)
+    finally:
+        session.close()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if settings.read_only:
+        logger.warning("BIBMEDED_READ_ONLY is enabled: rejecting every non-GET request")
+        _seed_read_only_demo()
+    yield
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
+        lifespan=lifespan,
         title="BibMedEd",
         description=(
             "Bibliometric Analysis Platform for Medical Education.\n\n"
@@ -59,6 +81,11 @@ def create_app() -> FastAPI:
         contact={"name": "BibMedEd", "url": "https://github.com/ata381/BibMedEd"},
         license_info={"name": "MIT", "url": "https://github.com/ata381/BibMedEd/blob/master/LICENSE"},
     )
+    if settings.read_only:
+        # Added before CORS so CORSMiddleware wraps it and the 403 still carries
+        # CORS headers the browser needs to surface the JSON error to the UI.
+        app.add_middleware(ReadOnlyMiddleware)
+        app.add_exception_handler(ReadOnlyViolation, read_only_violation_handler)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
@@ -117,6 +144,10 @@ def create_app() -> FastAPI:
         # pointing here. New deploys should target /api/live + /api/ready.
         return {"status": "ok"}
 
+    @app.get("/api/config")
+    def public_config():
+        return {"read_only": settings.read_only}
+
     @app.get("/api/live")
     def liveness():
         """Liveness probe — confirms the process is up. No I/O, never fails."""
@@ -142,14 +173,19 @@ def create_app() -> FastAPI:
             checks["db"] = f"error: {type(exc).__name__}"
             all_ok = False
 
-        try:
-            import redis as redis_lib  # imported lazily so test environments
-            client = redis_lib.from_url(settings.redis_url, socket_connect_timeout=2)
-            client.ping()
-            checks["redis"] = "ok"
-        except Exception as exc:
-            checks["redis"] = f"error: {type(exc).__name__}"
-            all_ok = False
+        if settings.read_only:
+            # Read-only mode never dispatches Celery tasks, so a demo deploy can
+            # run without Redis and a worker.
+            checks["redis"] = "skipped"
+        else:
+            try:
+                import redis as redis_lib  # imported lazily so test environments
+                client = redis_lib.from_url(settings.redis_url, socket_connect_timeout=2)
+                client.ping()
+                checks["redis"] = "ok"
+            except Exception as exc:
+                checks["redis"] = f"error: {type(exc).__name__}"
+                all_ok = False
 
         payload = {"status": "ready" if all_ok else "not_ready", "checks": checks}
         if not all_ok:

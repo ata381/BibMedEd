@@ -34,8 +34,13 @@ def get_session_factory():
 # This is a property-like approach: access triggers lazy init.
 # For simple compatibility we expose a callable.
 def get_db() -> Generator[Session, None, None]:
+    from app.config import settings
+    from app.read_only import guard_session
+
     factory = get_session_factory()
     db = factory()
+    if settings.read_only:
+        guard_session(db)
     try:
         yield db
     finally:
