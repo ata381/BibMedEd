@@ -574,10 +574,24 @@ def test_sources_json_output_returns_structured_list_without_leaking_keys(
     }
 
 
+def _fail_worker_import(monkeypatch, error):
+    import builtins
+
+    real_import = builtins.__import__
+
+    def fake_import(name, *args, **kwargs):
+        if name == "app.workers.tasks":
+            raise error
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+
+
 def test_search_without_server_extras_prints_install_hint(monkeypatch, capsys):
     from app import cli
 
-    monkeypatch.setattr(cli, "run_search", None)
+    monkeypatch.setattr(cli, "_validate_source", Mock(return_value=True))
+    _fail_worker_import(monkeypatch, ModuleNotFoundError("No module named 'celery'", name="celery"))
 
     exit_code = cli.main(["search", "AI in medical education"])
 
@@ -585,3 +599,22 @@ def test_search_without_server_extras_prints_install_hint(monkeypatch, capsys):
 
     assert exit_code == 1
     assert "bibmeded[server]" in captured.err
+
+
+def test_missing_server_module_detection_is_limited_to_server_packages():
+    from app import cli
+
+    assert cli._is_missing_server_module(ModuleNotFoundError(name="celery"))
+    assert cli._is_missing_server_module(ModuleNotFoundError(name="redis.asyncio"))
+    assert not cli._is_missing_server_module(ModuleNotFoundError(name="app.models.typo"))
+    assert not cli._is_missing_server_module(ModuleNotFoundError())
+
+
+def test_unrelated_import_error_in_worker_chain_propagates(monkeypatch):
+    from app import cli
+
+    monkeypatch.setattr(cli, "_validate_source", Mock(return_value=True))
+    _fail_worker_import(monkeypatch, ModuleNotFoundError("No module named 'typo'", name="typo"))
+
+    with pytest.raises(ModuleNotFoundError):
+        cli.main(["search", "AI in medical education"])
