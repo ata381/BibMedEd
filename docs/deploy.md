@@ -41,6 +41,30 @@ The database schema is created automatically on first startup.
 
     Treat an unprotected BibMedEd deployment the same way you'd treat an admin panel with no login screen — because that's exactly what it is.
 
+## Public read-only demo
+
+Setting `BIBMEDED_READ_ONLY=true` turns an instance into a public demo that visitors can explore without installing anything, and that they cannot change.
+
+When the flag is on:
+
+- **Every non-`GET`/`HEAD`/`OPTIONS` request is rejected with `403`** and `{"detail": "...read-only public demo...", "read_only": true}`. This is enforced by a middleware that runs before routing, so it also covers endpoints added in future releases and paths that don't exist. Blocked today: creating, renaming, or deleting projects; creating the sample project; triggering searches; bulk or single exclusion; and running analyses.
+- **No outbound API calls can be triggered.** Searches (PubMed, OpenAlex, CrossRef, Semantic Scholar, Lens.org) and iCite enrichment only ever run inside a Celery task dispatched by `POST /search`, which is blocked. A read-only deploy therefore needs **no Redis and no worker**, and `/api/ready` reports `"redis": "skipped"`.
+- **Database writes are refused as a second line of defence.** Request-scoped sessions raise on flush, which is returned as `403`. `GET /search/{query_id}` still reports a stale running search as `failed`, but no longer persists that change.
+- **The bundled sample project is seeded on startup** (if missing), and all six analyses are precomputed so the dashboard has data even though `POST /analysis/{type}` is blocked. Seeding is idempotent and fails the startup loudly if the database is unreachable.
+- **All exports keep working** (CSV, RIS, JSON, PRISMA SVG, methodology log, bundle zip) because they are `GET` downloads.
+- `GET /api/config` returns `{"read_only": true}`; the web UI uses it to show a "Read-only demo" banner and hide create/delete/search controls.
+
+Run the demo against its **own database** — never point a read-only instance at a database that holds real projects, since every project in it becomes publicly readable.
+
+!!! warning "Residual risks"
+    Read-only mode stops mutation and outbound calls; it does not make a public instance hardened.
+
+    - **Denial of service.** Every read still hits the database, and `/export/bundle` builds a zip in memory. Put a reverse proxy or CDN in front with a per-IP rate limit (for example nginx `limit_req zone=bibmeded burst=20` at around 5 requests/second, or Caddy's `rate_limit`, or Cloudflare rate-limiting rules), plus request-size and timeout limits.
+    - **No rate limiting in BibMedEd itself.** The application does not throttle clients; that has to happen at the proxy.
+    - **Everything in the database is public.** Only seed demo data.
+    - **Interactive API docs remain available** at `/docs`. "Try it out" on a write endpoint just returns `403`, but you can hide the docs at the proxy if you prefer.
+    - **Configuration mistakes.** The flag defaults to `false`; if the environment variable is missing or misspelled the instance is fully writable. Check `GET /api/config` after every deploy.
+
 ## Configuration
 
 Copy `.env.example` to `.env` to customize:
@@ -53,6 +77,7 @@ cp .env.example .env
 |----------|---------|-------------|
 | `BIBMEDED_PUBMED_API_KEY` | *(empty)* | Optional. Register free at [NCBI](https://www.ncbi.nlm.nih.gov/account/) for 10 req/s (default is 3 req/s) |
 | `BIBMEDED_LENS_API_KEY` | *(empty)* | Required only for Lens.org searches. Scholarly API bearer token |
+| `BIBMEDED_READ_ONLY` | `false` | Public demo mode — see [Public read-only demo](#public-read-only-demo) |
 | `POSTGRES_USER` | `bibmeded` | Database username |
 | `POSTGRES_PASSWORD` | `bibmeded` | Database password |
 | `POSTGRES_DB` | `bibmeded` | Database name |
