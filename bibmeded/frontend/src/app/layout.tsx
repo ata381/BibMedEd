@@ -1,13 +1,28 @@
 import type { Metadata } from "next";
-import { Inter, Manrope } from "next/font/google";
+import { Atkinson_Hyperlegible_Next, Crimson_Pro } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 import { StatusBar } from "@/components/status-bar";
 import { ToastProvider } from "@/components/toast-provider";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
+const crimson = Crimson_Pro({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  variable: "--font-crimson",
+  display: "swap",
+});
+
+const atkinson = Atkinson_Hyperlegible_Next({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  variable: "--font-atkinson",
+  display: "swap",
+  // next/font has no metric table for this family yet, so it can't synthesise
+  // a size-adjusted fallback; name one explicitly instead of warning at build.
+  adjustFontFallback: false,
+  fallback: ["system-ui", "Segoe UI", "Helvetica Neue", "sans-serif"],
+});
 
 export const metadata: Metadata = {
   title: {
@@ -15,7 +30,7 @@ export const metadata: Metadata = {
     template: "%s | BibMedEd",
   },
   description:
-    "Search PubMed, OpenAlex, CrossRef, and Semantic Scholar. Analyze trends. Visualize co-authorship and keyword networks. Export PRISMA-ready methodology logs.",
+    "Search PubMed, OpenAlex, CrossRef, Semantic Scholar, and Lens.org. Analyze trends. Visualize co-authorship and keyword networks. Export PRISMA-ready methodology logs.",
 };
 
 // No-flash theme bootstrap: runs before React hydration so the first paint
@@ -39,35 +54,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Material Symbols Outlined isn't available via next/font/google
-           (it's an icon font with variable-axes). Loading via a <link> is
-           the supported path; the no-page-custom-font rule doesn't fit. */}
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-          rel="stylesheet"
-        />
         <Script id="theme-bootstrap" strategy="beforeInteractive">
           {THEME_BOOTSTRAP}
         </Script>
       </head>
       <body
         suppressHydrationWarning
-        className={`${inter.variable} ${manrope.variable} font-sans antialiased bg-surface text-on-surface min-h-screen flex`}
+        className={`${crimson.variable} ${atkinson.variable} font-sans antialiased paper text-on-surface min-h-screen flex`}
       >
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-on-primary focus:rounded-[var(--radius-md)]"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-16 md:focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-ink focus:text-on-ink focus:rounded-[var(--radius-md)]"
         >
           Skip to main content
         </a>
         <Sidebar />
-        <div className="flex-1 min-w-0 md:ml-64 min-h-screen flex flex-col pb-8">
-          <main id="main" className="px-4 pt-20 md:px-8 md:pt-8 max-w-7xl w-full mx-auto flex-1">
+        <div className="flex-1 min-w-0 md:ml-[17rem] min-h-screen flex flex-col">
+          <main id="main" className="px-4 pt-20 pb-12 md:px-10 md:pt-10 lg:px-14 max-w-7xl w-full mx-auto flex-1">
             {children}
           </main>
+          <StatusBar />
         </div>
-        <StatusBar />
         <ToastProvider />
       </body>
     </html>
