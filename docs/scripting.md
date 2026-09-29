@@ -21,7 +21,7 @@ Each JSON entry reports `api_key_requirement` as `required`, `optional`, or `no`
 
 ## Install from PyPI (CLI only)
 
-If you only want the command line tool (no Docker, no web UI), install it into a virtual environment:
+If you only want the command line tool (no Docker, no web UI), install it with `pipx install bibmeded` or into a dedicated virtual environment (the package currently ships a top-level module named `app`, so avoid shared environments):
 
 ```bash
 python -m venv .venv && source .venv/bin/activate   # Python 3.12 or newer

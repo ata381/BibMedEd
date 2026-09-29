@@ -16,6 +16,7 @@ Maintainer checklist. This folder is excluded from the public MkDocs build (`exc
 
 ## Per-release steps
 
+0. Tag only from a green `master` (CI passing on the exact commit). The release workflow re-runs the backend test suite on the tagged commit and blocks the build and publish jobs if it fails, but it is a last gate, not a substitute for CI. Make sure the `pypi` environment has a required reviewer configured (one-time step 3) so nothing uploads without a human approval.
 1. Bump `version` in `bibmeded/pyproject.toml`, move the `CHANGELOG.md` entries under the new version, and merge to `master`.
 2. Create an annotated tag `vX.Y.Z` on the merge commit and publish a GitHub release for it.
 3. The workflow verifies the tag equals `v` plus the pyproject version, builds the sdist and wheel, runs `twine check --strict`, then waits for `pypi` environment approval and uploads.
@@ -25,4 +26,4 @@ PyPI versions are immutable. If a release is bad, yank it and publish a new patc
 
 ## Known packaging caveat
 
-The wheel installs a top-level Python package named `app` (the repository's existing layout), which can collide with other packages of the same name in a shared environment. Recommend installing into a dedicated virtualenv or with `pipx`. Renaming the package to `bibmeded` is a larger refactor tracked separately.
+**Collision risk.** The wheel installs a top-level Python package named `app` (the repository's existing layout). Any other distribution in the same environment that also ships a top-level `app` package will silently overwrite or be overwritten by BibMedEd, and `import app` may resolve to the wrong one. Until a rename lands, tell users to run `pipx install bibmeded` (or use a dedicated virtualenv), and do not advertise plain `pip install` into shared or system environments. Renaming the package to `bibmeded` is a breaking refactor and a maintainer decision; it is deliberately not part of this release pipeline.
