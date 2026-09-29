@@ -1,5 +1,7 @@
 # Good First Contributions
 
+> **Hacktoberfest 2026:** BibMedEd participates. Every issue labelled [`hacktoberfest`](https://github.com/ata381/BibMedEd/issues?q=is%3Aissue+is%3Aopen+label%3Ahacktoberfest) is scoped, has acceptance criteria, and can be tested without live APIs. Merged PRs get the `hacktoberfest-accepted` label.
+
 The fastest way to make a high-impact contribution to BibMedEd is to write an adapter. The adapter module is usually focused, while a complete contribution also includes captured API fixtures, parsing and pagination tests, and short source-specific documentation.
 
 How to claim:
@@ -28,7 +30,7 @@ Read the [adapter guide](https://ata381.github.io/BibMedEd/adapters/) first. Ref
 
 | Source | API | Notes | Status |
 |---|---|---|---|
-| **Dimensions** | <https://docs.dimensions.ai/dsl/> | Strong grant + clinical-trial linkage. Free for non-commercial. | Open |
+| **Dimensions** | <https://docs.dimensions.ai/dsl/> | Strong grant + clinical-trial linkage. Free for non-commercial. | [#69](https://github.com/ata381/BibMedEd/issues/69) |
 
 ## Institutional / paid sources
 
@@ -40,9 +42,16 @@ Read the [adapter guide](https://ata381.github.io/BibMedEd/adapters/) first. Ref
 ## Non-adapter starter tasks
 
 - **i18n scaffold + Turkish locale** — [#16](https://github.com/ata381/BibMedEd/issues/16)
-- **Wire configured API settings into the CLI** — [#47](https://github.com/ata381/BibMedEd/issues/47)
-- **Locale-aware date parsing** in `app/services/cleaning.py` — currently assumes ISO; some adapters emit `DD-MM-YYYY`.
-- **Improve the empty-state copy** in the frontend project dashboard (`bibmeded/frontend/app/projects/`).
+- **CLI `--version` flag** — [#65](https://github.com/ata381/BibMedEd/issues/65)
+- **CLI `bibmeded sources` command** — [#64](https://github.com/ata381/BibMedEd/issues/64)
+- **BibTeX export** — [#60](https://github.com/ata381/BibMedEd/issues/60)
+- **Robust country extraction from affiliations** — [#63](https://github.com/ata381/BibMedEd/issues/63)
+- **CAGR and doubling time in publication trends** — [#62](https://github.com/ata381/BibMedEd/issues/62)
+- **Lotka's law for author productivity** — [#61](https://github.com/ata381/BibMedEd/issues/61)
+- **Web of Science plain-text export for VOSviewer / Bibliometrix** — [#68](https://github.com/ata381/BibMedEd/issues/68)
+- **Troubleshooting / FAQ docs page** — [#67](https://github.com/ata381/BibMedEd/issues/67)
+- **Example Jupyter notebook for the REST API** — [#66](https://github.com/ata381/BibMedEd/issues/66)
+- **Locale-aware date parsing** in `app/services/cleaning.py`: currently assumes ISO; some adapters emit `DD-MM-YYYY`.
 
 For an untracked idea above, open a [feature request](https://github.com/ata381/BibMedEd/issues/new?template=feature_request.yml) before starting so the scope can be agreed.
 
