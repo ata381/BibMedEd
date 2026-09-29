@@ -6,6 +6,7 @@ All notable changes to BibMedEd are recorded here. This project follows [Keep a 
 
 ### Added
 
+- PyPI packaging metadata, a `server` optional-dependency extra (FastAPI, Celery, Redis, Postgres driver, Alembic), and a Trusted Publishing release workflow. `pip install bibmeded` now installs a lightweight CLI; `bibmeded search --dry-run`, `sources` and `--version` work without server dependencies.
 - Added `bibmeded --version` ([#72](https://github.com/ata381/BibMedEd/pull/72), thanks @Sandro850).
 - Added the `bibmeded sources` command to list adapters and their configuration status ([#71](https://github.com/ata381/BibMedEd/pull/71), thanks @DYNOSuprovo).
 
