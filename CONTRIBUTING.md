@@ -71,6 +71,15 @@ Tests use in-memory SQLite and require no external services. The full Docker sta
 4. Fill in the [PR template](.github/PULL_REQUEST_TEMPLATE.md). Link the issue you're closing.
 5. A maintainer will review. Most adapter PRs are reviewed within a week.
 
+## AI-assisted contributions
+
+AI coding tools are welcome here. The bar is the same as for any PR:
+
+- You must understand, and be able to explain, every line you submit.
+- Run the tests (`pytest -q`) and check the behaviour yourself; do not rely on the tool's claim that it works.
+- Disclose substantial AI assistance in the PR description (which tool, and roughly what it produced).
+- Low-effort generated PRs (unreviewed output, untested changes, boilerplate that ignores the adapter contract) will be closed.
+
 ## Code of Conduct
 
 Participation in this project is governed by the [Contributor Covenant](CODE_OF_CONDUCT.md).

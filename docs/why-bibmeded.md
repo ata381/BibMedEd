@@ -62,7 +62,7 @@ Legend: ✅ first-class · ⚠️ partial · 📋 on roadmap · ❌ not supporte
 - **Single-reviewer screening only.** Dual-reviewer with conflict resolution is on the [roadmap](https://github.com/ata381/BibMedEd/blob/master/ROADMAP.md) but Covidence ships it today.
 - **Frontend visualisations are interactive but not publication-ready.** VOSviewer and CiteSpace produce better static images for journal figures; BibMedEd exports the underlying data so you can re-render in either if needed.
 - **Adapter coverage is still growing.** PubMed, OpenAlex, CrossRef, Semantic Scholar, and Lens.org ship; Europe PMC, arXiv, DOAJ, OpenCitations, CORE, and BASE are open issues waiting on contributors ([adapter label](https://github.com/ata381/BibMedEd/issues?q=is%3Aissue+is%3Aopen+label%3Aadapter)). Scopus and Web of Science require paid API agreements.
-- **No published bibliometric methodology paper yet** — JOSS submission is in flight. Bibliometrix's [methodology paper](https://doi.org/10.1016/j.joi.2017.08.007) has thousands of citations; we have zero so far.
+- **No published bibliometric methodology paper yet** — a JOSS-style `paper.md` is maintained in the repository, and submission is planned once there is independent research use. Nothing has been submitted yet. Bibliometrix's [methodology paper](https://doi.org/10.1016/j.joi.2017.08.007) has thousands of citations; we have zero so far.
 
 We'd rather be honest about these gaps than oversell. If any of them are dealbreakers, pick a tool above and come back when the gap closes (or — better — [open the PR that closes it](https://github.com/ata381/BibMedEd/blob/master/CONTRIBUTING.md)).
 

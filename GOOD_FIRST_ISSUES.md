@@ -1,6 +1,6 @@
 # Good First Contributions
 
-> **Hacktoberfest 2026:** BibMedEd participates. Every issue labelled [`hacktoberfest`](https://github.com/ata381/BibMedEd/issues?q=is%3Aissue+is%3Aopen+label%3Ahacktoberfest) is scoped, has acceptance criteria, and can be tested without live APIs. Merged PRs get the `hacktoberfest-accepted` label.
+> **October contribution sprint:** Hacktoberfest 2026 no longer counts pull requests, so this is not a swag or PR-count event. We are still running an October sprint: every issue labelled [`hacktoberfest`](https://github.com/ata381/BibMedEd/issues?q=is%3Aissue+is%3Aopen+label%3Ahacktoberfest) is scoped, has acceptance criteria, and can be tested without live APIs. Maintainers aim to review sprint PRs within three working days, and contributors are credited in the CHANGELOG and release notes.
 
 The fastest way to make a high-impact contribution to BibMedEd is to write an adapter. The adapter module is usually focused, while a complete contribution also includes captured API fixtures, parsing and pagination tests, and short source-specific documentation.
 

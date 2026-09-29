@@ -39,7 +39,7 @@ A living document. Items move up and down as the community contributes adapters 
 - [ ] Strategic-diagram (thematic quadrants) plot in the dashboard
 - [ ] LLM-assisted PICO extraction and abstract screening (opt-in, bring-your-own key)
 - [ ] Polished public demo deployment with a read-only seeded project
-- [ ] JOSS readiness: six months of public development history, at least one independent research use case, current paper metadata, and an explicit AI-usage disclosure
+- [ ] JOSS readiness (not yet submitted): remaining blockers are at least one independent research use case and an explicit AI-usage disclosure in `paper.md`; six months of public development history and current paper metadata are also required
 
 ## Later (1.x+)
 
