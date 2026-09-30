@@ -4,15 +4,14 @@ import json
 import sys
 import time
 from collections.abc import Sequence
+from importlib.metadata import version
 
 import httpx
 from lxml import etree
 
 from app.adapters.registry import get_adapter
 from app.adapters.settings import adapter_configuration_error, adapter_kwargs
-from app.database import SessionLocal
 from app.models import QueryStatus, SearchProject, SearchQuery
-from app.workers.tasks import run_search
 
 
 async def _dry_run_search(query: str, source: str) -> int:
@@ -64,6 +63,10 @@ def _run_search(
 ) -> int:
     if not _validate_source(source):
         return 1
+
+    # Deferred so `bibmeded --version` works without database or Celery dependencies.
+    from app.database import SessionLocal
+    from app.workers.tasks import run_search
 
     db = SessionLocal()
 
@@ -142,6 +145,12 @@ def _run_search(
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="bibmeded")
+
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {version('bibmeded')}",
+    )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
