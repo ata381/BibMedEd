@@ -38,7 +38,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      BIBMEDED_DATABASE_URL: postgresql://${POSTGRES_USER:-bibmeded}:${POSTGRES_PASSWORD:-bibmeded}@db:5432/${POSTGRES_DB:-bibmeded}
+      BIBMEDED_DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-bibmeded}:${POSTGRES_PASSWORD:-bibmeded}@db:5432/${POSTGRES_DB:-bibmeded}
       BIBMEDED_REDIS_URL: redis://redis:6379/0
       BIBMEDED_PUBMED_API_KEY: ${BIBMEDED_PUBMED_API_KEY:-}
       BIBMEDED_LENS_API_KEY: ${BIBMEDED_LENS_API_KEY:-}
@@ -62,7 +62,7 @@ services:
   worker:
     build: .
     environment:
-      BIBMEDED_DATABASE_URL: postgresql://${POSTGRES_USER:-bibmeded}:${POSTGRES_PASSWORD:-bibmeded}@db:5432/${POSTGRES_DB:-bibmeded}
+      BIBMEDED_DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-bibmeded}:${POSTGRES_PASSWORD:-bibmeded}@db:5432/${POSTGRES_DB:-bibmeded}
       BIBMEDED_REDIS_URL: redis://redis:6379/0
       BIBMEDED_PUBMED_API_KEY: ${BIBMEDED_PUBMED_API_KEY:-}
       BIBMEDED_LENS_API_KEY: ${BIBMEDED_LENS_API_KEY:-}
