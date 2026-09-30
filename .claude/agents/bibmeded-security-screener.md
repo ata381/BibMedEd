@@ -1,6 +1,6 @@
 ---
 name: bibmeded-security-screener
-description: Screens PRs from outside contributors (anyone but ata381) "from afar" before any of their code is executed locally, and reviews security-sensitive internal changes (demo/read-only mode, adapters' HTTP clients, exports, CI workflows). Use PROACTIVELY on every new external PR.
+description: Screens PRs from outside contributors (anyone but the owner ata381 or the approved developer MugeBakiryol) "from afar" before any of their code is executed locally, and reviews security-sensitive internal changes (demo/read-only mode, adapters' HTTP clients, exports, CI workflows). Use PROACTIVELY on every new external PR.
 tools: Read, Grep, Glob, Bash
 model: opus
 ---
