@@ -36,7 +36,7 @@
 
 <p align="center">
   <a href="https://ata381.github.io/BibMedEd/#user-interface-tour">
-    <img src="docs/assets/dashboard.png" alt="BibMedEd analysis dashboard showing publication trends and bibliometric summaries" width="900">
+    <img src="docs/assets/dashboard.png" alt="BibMedEd analysis overview showing publication trends, top authors and bibliometric summaries (sample data)" width="900">
   </a>
   <br>
   <em><a href="https://ata381.github.io/BibMedEd/#user-interface-tour">Watch the workflow and explore the full UI tour</a></em>

@@ -18,7 +18,7 @@ BibMedEd is an open-source tool that enables medical education researchers to se
 The full workflow recording demonstrates project creation, search progress, analysis, and state preservation. It is loaded only when opened so the documentation stays fast on mobile connections:
 <p align="center">
   <a href="assets/demo.webp">
-    <img src="assets/dashboard.png" alt="Open the BibMedEd workflow recording" width="100%" loading="lazy" decoding="async">
+    <img src="assets/dashboard.png" alt="BibMedEd analysis overview (opens the workflow recording)" width="100%" loading="lazy" decoding="async">
   </a>
   <br>
   <em><a href="assets/demo.webp">Open the full workflow recording (15 MB)</a></em>
@@ -26,13 +26,13 @@ The full workflow recording demonstrates project creation, search progress, anal
 
 ### Dashboard analysis and search pipeline
 
-The dashboard visualizes bibliometric indicators and reports asynchronous search progress from the Celery worker.
+The search page builds and previews the query, the results page shows PRISMA flow counts and screening, and the dashboard visualizes bibliometric indicators. Screenshots use sample data.
 <p align="center">
-  <img src="assets/dashboard.png" alt="BibMedEd Dashboard" width="48%" loading="lazy" decoding="async">
-  <img src="assets/results.png" alt="BibMedEd Results Table" width="48%" loading="lazy" decoding="async">
+  <img src="assets/dashboard.png" alt="BibMedEd analysis overview with publication trends, top authors, network preview and most cited publications" width="48%" loading="lazy" decoding="async">
+  <img src="assets/results.png" alt="BibMedEd results review with PRISMA flow counts and a publication list" width="48%" loading="lazy" decoding="async">
 </p>
 <p align="center">
-  <img src="assets/search.png" alt="Dynamic Search Progress" width="100%" loading="lazy" decoding="async">
+  <img src="assets/search.png" alt="BibMedEd search strategy page with query builder, publication years, data source and query preview" width="100%" loading="lazy" decoding="async">
 </p>
 
 ## Quick Start
