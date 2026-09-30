@@ -16,6 +16,10 @@ WORKDIR /app
 # build context, without needing a .dockerignore entry.
 COPY . .
 COPY --from=deps /app/node_modules ./node_modules
+# NEXT_PUBLIC_* values are inlined into the browser bundle by `next build`, so
+# they must exist at build time; setting them only at runtime has no effect.
+ARG NEXT_PUBLIC_API_URL=http://localhost:8000
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm run build
 
 # ---- runner: production runtime ----------------------------------------
