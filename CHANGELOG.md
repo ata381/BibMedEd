@@ -4,6 +4,10 @@ All notable changes to BibMedEd are recorded here. This project follows [Keep a 
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed fresh installs failing with `ModuleNotFoundError: No module named 'psycopg'` on SQLAlchemy 2.1, which changed the bare `postgresql://` default driver to psycopg v3. `BIBMEDED_DATABASE_URL` values of `postgres://` or `postgresql://` are now normalised to `postgresql+psycopg2://`; explicit drivers and non-Postgres URLs are left untouched. The Docker Compose and CI URLs now name the driver explicitly.
+
 ## [0.3.0] — 2026-08-23
 
 ### Added
