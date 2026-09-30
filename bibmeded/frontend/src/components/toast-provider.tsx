@@ -8,8 +8,7 @@ export function ToastProvider() {
       position="top-right"
       // react-hot-toast defaults to aria-live="off" — make success/info toasts
       // polite (announce when the screen reader is idle) and errors assertive
-      // (announce immediately). Without this, "Publication excluded" and
-      // "Bulk exclude failed" silently never reach screen-reader users.
+      // (announce immediately).
       toastOptions={{
         duration: 5000,
         ariaProps: {
@@ -17,21 +16,25 @@ export function ToastProvider() {
           "aria-live": "polite",
         },
         error: {
-          iconTheme: { primary: "#ef4444", secondary: "#f7f9fb" },
+          iconTheme: { primary: "var(--color-danger)", secondary: "var(--color-on-danger)" },
           ariaProps: {
             role: "alert",
             "aria-live": "assertive",
           },
         },
         success: {
-          iconTheme: { primary: "#22c55e", secondary: "#f7f9fb" },
+          iconTheme: { primary: "var(--color-accent)", secondary: "var(--color-on-accent)" },
         },
         style: {
-          background: "#191c1e",
-          color: "#f7f9fb",
-          fontSize: "13px",
-          fontFamily: "'Manrope', sans-serif",
-          fontWeight: 600,
+          background: "var(--color-ink)",
+          color: "var(--color-on-ink)",
+          border: "1px solid var(--color-outline-strong)",
+          borderRadius: "var(--radius-md)",
+          boxShadow: "var(--shadow-lg)",
+          fontSize: "14px",
+          fontFamily: "var(--font-sans)",
+          fontWeight: 500,
+          maxWidth: "26rem",
         },
       }}
     />

@@ -31,6 +31,11 @@ updates:
         update-types: [version-update:semver-major]
       - dependency-name: react-dom
         update-types: [version-update:semver-major]
+      # Track the Node 20 runtime used in CI and Docker
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
     labels: [dependencies, area/frontend]
     commit-message:
       prefix: "chore(deps)"

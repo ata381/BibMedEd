@@ -3,9 +3,20 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { projectsApi, Project } from "@/lib/api";
 import toast from "react-hot-toast";
-import { Badge, Button, Card, EmptyState, Skeleton } from "@/components/ui";
+import { projectsApi, Project } from "@/lib/api";
+import { ANALYSIS_MODULES, DATA_SOURCES, WORKFLOW_STEPS } from "@/lib/sources";
+import { NetworkFigure } from "@/components/network-figure";
+import { Button, ButtonLink, Icon, LoadingState, PageHeader, Skeleton, Stat, StatRow } from "@/components/ui";
+
+const HEADLINE = (
+  <>
+    Reproducible bibliometrics for <span className="italic text-primary">medical education</span>.
+  </>
+);
+
+const LEDE =
+  "Search five literature databases at once, deduplicate by DOI and PMID, run six analyses, and export a PRISMA-ready methodology log — from one self-hosted tool.";
 
 export default function Home() {
   const router = useRouter();
@@ -14,7 +25,8 @@ export default function Home() {
   const [creatingSample, setCreatingSample] = useState(false);
 
   useEffect(() => {
-    projectsApi.list()
+    projectsApi
+      .list()
       .then((res) => setProjects(res.data))
       .catch(() => toast.error("Failed to load projects. Is the backend running?"))
       .finally(() => setLoading(false));
@@ -22,8 +34,12 @@ export default function Home() {
 
   const handleDelete = (project: Project) => {
     if (!confirm(`Delete project "${project.name}"? This will permanently remove all searches, publications, and analyses.`)) return;
-    projectsApi.delete(project.id)
-      .then(() => { setProjects((prev) => prev.filter((p) => p.id !== project.id)); toast.success("Project deleted"); })
+    projectsApi
+      .delete(project.id)
+      .then(() => {
+        setProjects((prev) => prev.filter((p) => p.id !== project.id));
+        toast.success("Project deleted");
+      })
       .catch(() => toast.error("Failed to delete project"));
   };
 
@@ -39,168 +55,164 @@ export default function Home() {
     }
   };
 
+  const isEmpty = !loading && projects.length === 0;
+
   return (
-    <div className="py-10 space-y-10">
-      <header className="space-y-3">
-        <Badge tone="primary">Workspace</Badge>
-        <h1
-          className="text-4xl md:text-5xl font-extrabold tracking-tight text-primary"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          Welcome to BibMedEd
-        </h1>
-        <p className="text-on-surface-muted text-base md:text-lg max-w-2xl leading-relaxed">
-          Search PubMed, OpenAlex, CrossRef, Semantic Scholar, and Lens.org; deduplicate across sources; run six bibliometric analyses; export a PRISMA-ready methodology log.
-        </p>
-      </header>
+    <div className="space-y-12">
+      {isEmpty ? (
+        <EmptyWorkspace creatingSample={creatingSample} onCreateSample={handleCreateSample} />
+      ) : (
+        <PageHeader
+          eyebrow="Workspace"
+          title={HEADLINE}
+          lede={LEDE}
+          aside={<ButtonLink href="/projects/new" leadingIcon="plus">New project</ButtonLink>}
+        />
+      )}
 
-      <section aria-label="Workspace summary" className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard label="Active projects" value={loading ? null : projects.length.toString().padStart(2, "0")} icon="folder_open" />
-        <StatCard label="Data sources" value="05" icon="hub" subtitle="PubMed · OpenAlex · CrossRef · Semantic Scholar · Lens.org" />
-        <StatCard label="Analysis modules" value="06" icon="auto_graph" subtitle="Publications · Authors · Keywords · …" />
-      </section>
-
-      <section>
-        <div className="flex items-baseline justify-between mb-5">
-          <h2
-            className="text-xl font-bold text-on-surface"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Projects
-          </h2>
-          <span className="text-sm text-on-surface-muted tabular-nums">
-            {loading ? "—" : `${projects.length} total`}
-          </span>
-        </div>
-
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} rounded="lg" className="h-[240px]" />
-            ))}
+      {!isEmpty && (
+        <section aria-labelledby="projects-heading">
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 id="projects-heading" className="text-2xl text-on-surface">
+              Projects
+            </h2>
+            <span className="text-sm text-on-surface-subtle tabular-nums">{loading ? "—" : `${projects.length} total`}</span>
           </div>
-        ) : projects.length === 0 ? (
-          <Card padding="lg">
-            <EmptyState
-              icon="folder_off"
-              title="No projects yet"
-              description="Start a bibliometric analysis by creating your first project."
-              action={
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Link href="/projects/new">
-                    <Button leadingIcon="add" size="lg">New project</Button>
-                  </Link>
-                  <Button
-                    leadingIcon="science"
-                    size="lg"
-                    onClick={handleCreateSample}
-                    loading={creatingSample}
-                    disabled={creatingSample}
-                  >
-                    {creatingSample ? "Building sample project..." : "Explore sample project"}
-                  </Button>
-                </div>
-              }
-            />
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project) => (
-              <ProjectCard key={project.id} project={project} onDelete={handleDelete} />
-            ))}
-            <Link
-              href="/projects/new"
-              className="group flex flex-col items-center justify-center gap-4 min-h-[240px] rounded-[var(--radius-lg)] border-2 border-dashed border-outline hover:border-primary hover:bg-primary-container/30 transition-colors focus-visible:outline-2 focus-visible:outline-[color:var(--color-focus-ring)] focus-visible:outline-offset-2"
-            >
-              <span
-                aria-hidden="true"
-                className="w-14 h-14 rounded-full bg-primary text-on-primary flex items-center justify-center elev-2 group-active:scale-95 transition-transform"
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: "28px" }}>add</span>
-              </span>
-              <span className="text-center">
-                <span
-                  className="block text-lg font-bold text-primary"
-                  style={{ fontFamily: "var(--font-display)" }}
-                >
-                  New project
-                </span>
-                <span className="block text-xs text-on-surface-muted mt-1">
-                  Start a new bibliometric analysis
-                </span>
-              </span>
-            </Link>
+
+          {loading ? (
+            <LoadingState label="Loading projects" className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-20" />
+              ))}
+            </LoadingState>
+          ) : (
+            <ol className="rule-t">
+              {projects.map((project) => (
+                <ProjectRow key={project.id} project={project} onDelete={handleDelete} />
+              ))}
+            </ol>
+          )}
+
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <ButtonLink href="/projects/new" variant="outline" leadingIcon="plus">
+              New project
+            </ButtonLink>
+            <Button variant="ghost" leadingIcon="flask" onClick={handleCreateSample} loading={creatingSample} disabled={creatingSample}>
+              {creatingSample ? "Building sample project…" : "Explore sample project"}
+            </Button>
           </div>
-        )}
-      </section>
+        </section>
+      )}
     </div>
   );
 }
 
-function StatCard({ label, value, icon, subtitle }: { label: string; value: string | null; icon: string; subtitle?: string }) {
+function EmptyWorkspace({ creatingSample, onCreateSample }: { creatingSample: boolean; onCreateSample: () => void }) {
   return (
-    <Card padding="md">
-      <div className="flex items-start justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-subtle">{label}</span>
-        <span
-          aria-hidden="true"
-          className="material-symbols-outlined text-secondary"
-          style={{ fontVariationSettings: "'FILL' 1" }}
-        >
-          {icon}
-        </span>
-      </div>
-      <p
-        className="mt-3 text-4xl font-extrabold text-primary tabular-nums"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        {value ?? "—"}
-      </p>
-      {subtitle ? <p className="mt-1 text-xs text-on-surface-muted">{subtitle}</p> : null}
-    </Card>
+    <>
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center pt-2">
+        <div className="lg:col-span-7 max-w-2xl">
+          <p className="eyebrow mb-4 rise" style={{ "--rise-index": 0 } as React.CSSProperties}>
+            Workspace · Open source · Self-hosted
+          </p>
+          <h1 className="text-4xl md:text-5xl lg:text-[3.6rem] leading-[1.02] text-on-surface rise" style={{ "--rise-index": 1 } as React.CSSProperties}>
+            {HEADLINE}
+          </h1>
+          <p className="mt-5 text-lg text-on-surface-muted leading-relaxed rise" style={{ "--rise-index": 2 } as React.CSSProperties}>
+            {LEDE}
+          </p>
+          <div className="mt-8 flex flex-col sm:flex-row sm:items-center gap-3 rise" style={{ "--rise-index": 3 } as React.CSSProperties}>
+            <Button size="lg" leadingIcon="flask" onClick={onCreateSample} loading={creatingSample} disabled={creatingSample}>
+              {creatingSample ? "Building sample project…" : "Explore sample project"}
+            </Button>
+            <ButtonLink href="/projects/new" size="lg" variant="outline" leadingIcon="plus">
+              New project
+            </ButtonLink>
+          </div>
+          <p className="mt-4 text-sm text-on-surface-subtle rise" style={{ "--rise-index": 4 } as React.CSSProperties}>
+            The sample is a synthetic corpus of 12 records — no API key, no network request, fully editable.
+          </p>
+        </div>
+        <figure className="lg:col-span-5 rise" style={{ "--rise-index": 2 } as React.CSSProperties}>
+          <div className="rounded-[var(--radius-lg)] border border-divider bg-surface-raised p-3 elev-2">
+            <NetworkFigure />
+          </div>
+          <figcaption className="mt-3 text-sm text-on-surface-subtle font-display italic">
+            Figure 1. Co-authorship network of the bundled sample corpus (illustrative).
+          </figcaption>
+        </figure>
+      </section>
+
+      <StatRow ariaLabel="What BibMedEd includes">
+        <Stat label="Data sources" value={String(DATA_SOURCES.length).padStart(2, "0")} note={DATA_SOURCES.join(" · ")} />
+        <Stat label="Analysis modules" value={String(ANALYSIS_MODULES.length).padStart(2, "0")} note={ANALYSIS_MODULES.join(" · ")} />
+        <Stat label="Deduplication" value={<span className="text-2xl">DOI &amp; PMID</span>} note="Exact cross-source matching, counted in the PRISMA flow" />
+        <Stat label="Exports" value={<span className="text-2xl">CSV · RIS · JSON</span>} note="Plus the methodology log, PRISMA 2020 SVG, and a zip bundle" />
+      </StatRow>
+
+      <section aria-labelledby="how-heading">
+        <h2 id="how-heading" className="text-2xl text-on-surface mb-5">
+          How a project runs
+        </h2>
+        <ol className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-x-8 gap-y-6 rule-t pt-6">
+          {WORKFLOW_STEPS.map((step, i) => (
+            <li key={step.suffix} className="flex gap-4">
+              <span className="numeral text-3xl text-primary leading-none">{String(i + 1).padStart(2, "0")}</span>
+              <div>
+                <p className="font-semibold text-on-surface">{step.label}</p>
+                <p className="mt-1 text-sm text-on-surface-muted leading-relaxed">{step.description}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+    </>
   );
 }
 
-function ProjectCard({ project, onDelete }: { project: Project; onDelete: (p: Project) => void }) {
+function yearOf(date: string | null) {
+  return date ? new Date(date).getFullYear() : "—";
+}
+
+function ProjectRow({ project, onDelete }: { project: Project; onDelete: (p: Project) => void }) {
   return (
-    <Card padding="md" interactive className="relative group">
-      <Link
-        href={`/projects/${project.id}/results`}
-        aria-label={`Open project ${project.name}`}
-        className="absolute inset-0 rounded-[var(--radius-lg)] focus-visible:outline-2 focus-visible:outline-[color:var(--color-focus-ring)] focus-visible:outline-offset-2"
-      />
-      <div className="relative flex justify-between items-start mb-4">
-        <Badge tone="info">Bibliometric</Badge>
-        <button
-          type="button"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(project); }}
-          aria-label={`Delete project ${project.name}`}
-          className="relative z-10 p-1.5 rounded-[var(--radius-sm)] text-on-surface-muted hover:text-danger hover:bg-danger-container transition-colors focus-visible:outline-2 focus-visible:outline-[color:var(--color-focus-ring)] focus-visible:outline-offset-2"
-        >
-          <span className="material-symbols-outlined" aria-hidden="true">delete</span>
-        </button>
+    <li className="group relative grid grid-cols-[1fr_3rem] md:grid-cols-[1fr_9rem_8rem_3rem] items-center gap-x-6 gap-y-3 py-5 rule-b transition-colors hover:bg-surface-raised/70 -mx-3 px-3 rounded-[var(--radius-sm)]">
+      <div className="min-w-0">
+        <h3 className="text-xl leading-snug">
+          <Link
+            href={`/projects/${project.id}/results`}
+            aria-label={`Open project ${project.name}`}
+            className="text-on-surface hover:text-primary transition-colors after:absolute after:inset-0 after:content-[''] focus-visible:outline-2 focus-visible:outline-[color:var(--color-focus-ring)] focus-visible:outline-offset-4 rounded-[var(--radius-sm)]"
+          >
+            {project.name}
+          </Link>
+        </h3>
+        <p className="mt-1 text-sm text-on-surface-muted line-clamp-2 leading-relaxed">
+          {project.description || "No description provided"}
+        </p>
       </div>
-      <h3
-        className="relative text-lg font-bold text-on-surface mb-2 line-clamp-2"
-        style={{ fontFamily: "var(--font-display)" }}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onDelete(project);
+        }}
+        aria-label={`Delete project ${project.name}`}
+        className="md:order-last relative z-10 justify-self-end self-start md:self-center inline-flex items-center justify-center w-10 h-10 rounded-[var(--radius-md)] text-on-surface-subtle hover:text-danger hover:bg-danger-container transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[color:var(--color-focus-ring)] focus-visible:outline-offset-2"
       >
-        {project.name}
-      </h3>
-      <p className="relative text-sm text-on-surface-muted mb-5 line-clamp-2 leading-relaxed">
-        {project.description || "No description provided"}
-      </p>
-      <div className="relative flex items-center justify-between pt-4 border-t border-divider">
-        <div>
-          <p className="text-[10px] uppercase font-bold tracking-[0.14em] text-on-surface-subtle">Date range</p>
-          <p className="text-xs font-semibold text-primary tabular-nums">
-            {project.date_range_start ? new Date(project.date_range_start).getFullYear() : "—"} – {project.date_range_end ? new Date(project.date_range_end).getFullYear() : "—"}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-[10px] uppercase font-bold tracking-[0.14em] text-on-surface-subtle">Created</p>
-          <p className="text-xs font-semibold text-on-surface tabular-nums">{new Date(project.created_at).toLocaleDateString()}</p>
-        </div>
+        <Icon name="trash" size={17} />
+      </button>
+      <div className="text-sm">
+        <p className="eyebrow">Date range</p>
+        <p className="mt-1 text-on-surface tabular-nums">
+          {yearOf(project.date_range_start)} – {yearOf(project.date_range_end)}
+        </p>
       </div>
-    </Card>
+      <div className="text-sm">
+        <p className="eyebrow">Created</p>
+        <p className="mt-1 text-on-surface tabular-nums">{new Date(project.created_at).toLocaleDateString()}</p>
+      </div>
+    </li>
   );
 }

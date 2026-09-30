@@ -409,3 +409,116 @@ def test_full_search_invalid_source_fails_fast(monkeypatch, capsys):
 
     assert exit_code == 1
     assert "Unknown adapter: invalid" in captured.err
+
+
+def test_sources_prints_table_with_adapter_statuses(monkeypatch, capsys):
+    from app import cli
+
+    monkeypatch.setattr(settings, "pubmed_api_key", "pm-secret-token-123")
+    monkeypatch.setattr(settings, "semantic_scholar_api_key", "")
+    monkeypatch.setattr(settings, "lens_api_key", "")
+
+    exit_code = cli.main(["sources"])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert captured.err == ""
+    assert "pm-secret-token-123" not in captured.out
+
+    lines = [line for line in captured.out.splitlines() if line.strip()]
+    assert lines[0].split() == ["NAME", "DISPLAY", "NAME", "API", "KEY", "STATUS"]
+
+    by_name = {}
+    for line in lines[1:]:
+        parts = [part.strip() for part in line.split("   ") if part.strip()]
+        by_name[parts[0]] = parts
+
+    assert by_name["pubmed"] == ["pubmed", "PubMed", "optional", "ready (key configured)"]
+    assert by_name["openalex"] == ["openalex", "OpenAlex", "no", "ready"]
+    assert by_name["crossref"] == ["crossref", "CrossRef", "no", "ready"]
+    assert by_name["semanticscholar"] == [
+        "semanticscholar",
+        "Semantic Scholar",
+        "optional",
+        "ready",
+    ]
+    assert by_name["lens"] == [
+        "lens",
+        "Lens.org",
+        "required",
+        "missing BIBMEDED_LENS_API_KEY",
+    ]
+
+
+def test_sources_reports_lens_ready_when_key_configured_without_leaking_secrets(
+    monkeypatch,
+    capsys,
+):
+    from app import cli
+
+    monkeypatch.setattr(settings, "pubmed_api_key", "secret-pm-value")
+    monkeypatch.setattr(settings, "semantic_scholar_api_key", "secret-s2-value")
+    monkeypatch.setattr(settings, "lens_api_key", "secret-lens-value")
+
+    exit_code = cli.main(["sources"])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    for secret in ("secret-pm-value", "secret-s2-value", "secret-lens-value"):
+        assert secret not in captured.out
+        assert secret not in captured.err
+
+    by_name = {}
+    for line in captured.out.splitlines()[1:]:
+        parts = [part.strip() for part in line.split("   ") if part.strip()]
+        by_name[parts[0]] = parts
+
+    assert by_name["lens"] == ["lens", "Lens.org", "required", "ready (key configured)"]
+    assert by_name["semanticscholar"] == [
+        "semanticscholar",
+        "Semantic Scholar",
+        "optional",
+        "ready (key configured)",
+    ]
+
+
+def test_sources_json_output_returns_structured_list_without_leaking_keys(
+    monkeypatch,
+    capsys,
+):
+    from app import cli
+
+    monkeypatch.setattr(settings, "pubmed_api_key", "secret-pm-json")
+    monkeypatch.setattr(settings, "semantic_scholar_api_key", "")
+    monkeypatch.setattr(settings, "lens_api_key", "")
+
+    exit_code = cli.main(["sources", "--json"])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert captured.err == ""
+    assert "secret-pm-json" not in captured.out
+
+    payload = json.loads(captured.out)
+    assert isinstance(payload, list)
+
+    by_name = {entry["name"]: entry for entry in payload}
+    assert by_name["pubmed"] == {
+        "name": "pubmed",
+        "display_name": "PubMed",
+        "api_key": "optional",
+        "status": "ready (key configured)",
+    }
+    assert by_name["openalex"] == {
+        "name": "openalex",
+        "display_name": "OpenAlex",
+        "api_key": "no",
+        "status": "ready",
+    }
+    assert by_name["lens"] == {
+        "name": "lens",
+        "display_name": "Lens.org",
+        "api_key": "required",
+        "status": "missing BIBMEDED_LENS_API_KEY",
+    }
+

@@ -3,9 +3,9 @@ import { expect, test, type Page } from "@playwright/test";
 import { installMockApi } from "./mock-api";
 
 const routes = [
-  { path: "/", heading: "Welcome to BibMedEd", title: /Bibliometric Analysis for Medical Education/ },
+  { path: "/", heading: "Reproducible bibliometrics for medical education", title: /Bibliometric Analysis for Medical Education/ },
   { path: "/projects/new", heading: "New project", title: /New project/ },
-  { path: "/projects/1/search", heading: "Precision Search Strategy", title: /Search strategy/ },
+  { path: "/projects/1/search", heading: "Search strategy", title: /Search strategy/ },
   { path: "/projects/1/results", heading: "Results Review", title: /Results review/ },
   { path: "/projects/1/dashboard", heading: "Analysis Overview", title: /Analysis dashboard/ },
   { path: "/projects/1/export", heading: "Export your dataset", title: /Export project/ },

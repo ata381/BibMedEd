@@ -1,102 +1,130 @@
 @import "tailwindcss";
 
 /* =====================================================================
- * BibMedEd — Design System Tokens
- * Single source of truth for color, type, spacing, radius, motion.
- * Token-only API: pages reference Tailwind utility classes (bg-primary,
- * text-on-surface, etc) — never raw hex.
+ * BibMedEd — Design tokens
+ *
+ * Direction: "journal editorial". Crimson Pro carries headings and
+ * numerals like a well-set journal; Atkinson Hyperlegible Next carries
+ * body and UI text (designed for low-vision readers). Colour is a teal
+ * ink family derived from design-system/bibmeded/MASTER.md, adjusted so
+ * every text/background pairing here passes WCAG AA — see MASTER.md for
+ * the audited ratios.
+ *
+ * Token-only API: pages use Tailwind utilities (bg-surface, text-primary,
+ * font-display, …) and never raw hex.
  * ===================================================================== */
 
 @theme {
-  /* ----- Brand & semantic color (LIGHT) -------------------------------- */
-  --color-primary: #001e4f;
-  --color-primary-hover: #002a6e;
-  --color-on-primary: #ffffff;
-  --color-primary-container: #d5e3fc;
-  --color-on-primary-container: #002a6e;
-
-  --color-secondary: #00787a;
-  --color-on-secondary: #ffffff;
-  --color-secondary-container: #b2eced;
-  --color-on-secondary-container: #002626;
-
-  --color-accent: #76d6d5;
-  --color-on-accent: #00323a;
-
-  --color-success: #14612d;
-  --color-on-success: #ffffff;
-  --color-success-container: #d6f1de;
-
-  --color-warning: #744000;
-  --color-on-warning: #ffffff;
-  --color-warning-container: #ffe0bf;
-
-  --color-danger: #9f1111;
-  --color-on-danger: #ffffff;
-  --color-danger-container: #ffdad6;
-
-  --color-info: #00568f;
-  --color-on-info: #ffffff;
-  --color-info-container: #d1e4ff;
-
-  --color-surface: #f7f9fb;
+  /* ----- Surfaces & text (LIGHT) --------------------------------------- */
+  --color-surface: #f5f7f6;
   --color-surface-raised: #ffffff;
-  --color-surface-sunken: #eceef0;
-  --color-surface-hover: #e6e8ea;
-  --color-on-surface: #191c1e;
-  --color-on-surface-muted: #43474e;
-  --color-on-surface-subtle: #5f646c;
+  --color-surface-sunken: #e9eeec;
+  --color-surface-hover: #dee6e4;
+  --color-on-surface: #12201f;
+  --color-on-surface-muted: #3d4f4d;
+  --color-on-surface-subtle: #5b6d6b;
 
-  --color-outline: #c4c6cf;
-  --color-outline-strong: #74777f;
-  --color-divider: #e6e8ea;
+  /* Ink panels — the inverse surface used for the query preview, toasts
+     and primary buttons. Flips to paper in dark mode. */
+  --color-ink: #12201f;
+  --color-ink-hover: #243634;
+  --color-on-ink: #f5f7f6;
+  --color-on-ink-muted: #b4c3c1;
 
-  --color-overlay: rgba(25, 28, 30, 0.55);
-  --color-focus-ring: #00327a;
+  /* ----- Brand & semantic ---------------------------------------------- */
+  --color-primary: #0b6b7c;
+  --color-primary-hover: #08525f;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #d3eff3;
+  --color-on-primary-container: #08525f;
 
-  /* Terminal-style code surfaces don't flip in dark mode. */
-  --color-code-bg: #0a1628;
-  --color-code-fg: #93f2f2;
+  --color-secondary: #0891b2;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #ccf3f8;
+  --color-on-secondary-container: #08525f;
+
+  --color-accent: #15803d;
+  --color-on-accent: #ffffff;
+  --color-accent-container: #dcf5e3;
+  --color-on-accent-container: #0f5a2c;
+
+  --color-success: #15803d;
+  --color-on-success: #ffffff;
+  --color-success-container: #dcf5e3;
+
+  --color-warning: #8a4b00;
+  --color-on-warning: #ffffff;
+  --color-warning-container: #ffeacb;
+
+  --color-danger: #b42318;
+  --color-on-danger: #ffffff;
+  --color-danger-container: #fde3e1;
+
+  --color-info: #0b6b7c;
+  --color-on-info: #ffffff;
+  --color-info-container: #d3eff3;
+
+  --color-outline: #b9c6c4;
+  --color-outline-strong: #6b7e7c;
+  --color-divider: #dde5e3;
+
+  --color-overlay: rgba(18, 32, 31, 0.55);
+  --color-focus-ring: #08525f;
+
+  /* Code / query surfaces stay dark in both themes. */
+  --color-code-bg: #0e1a1b;
+  --color-code-fg: #a9edf2;
+  --color-code-muted: #7fc1c8;
+  --color-code-border: #244244;
+
+  /* Chart ramp — steps 3–5 pass 3:1 on raised surfaces for meaningful marks. */
+  --color-chart-1: #9bd9e0;
+  --color-chart-2: #5bb9c6;
+  --color-chart-3: #2a96a8;
+  --color-chart-4: #0b6b7c;
+  --color-chart-5: #08525f;
+  --color-chart-grid: #dde5e3;
 
   /* ----- Typography ---------------------------------------------------- */
-  --font-display: 'Manrope', ui-sans-serif, system-ui, sans-serif;
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, 'SFMono-Regular', 'Menlo', monospace;
+  --font-display: var(--font-crimson), "Crimson Pro", Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-atkinson), "Atkinson Hyperlegible Next", system-ui, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
 
-  --text-xs: 0.75rem;     /* 12 */
-  --text-sm: 0.875rem;    /* 14 */
-  --text-base: 1rem;      /* 16 */
-  --text-lg: 1.125rem;    /* 18 */
-  --text-xl: 1.25rem;     /* 20 */
-  --text-2xl: 1.5rem;     /* 24 */
-  --text-3xl: 1.875rem;   /* 30 */
-  --text-4xl: 2.25rem;    /* 36 */
-  --text-5xl: 3rem;       /* 48 */
+  --text-2xs: 0.6875rem;   /* 11 — eyebrows only */
+  --text-xs: 0.8125rem;    /* 13 */
+  --text-sm: 0.875rem;     /* 14 */
+  --text-base: 1rem;       /* 16 */
+  --text-lg: 1.125rem;     /* 18 */
+  --text-xl: 1.375rem;     /* 22 */
+  --text-2xl: 1.75rem;     /* 28 */
+  --text-3xl: 2.25rem;     /* 36 */
+  --text-4xl: 2.875rem;    /* 46 */
+  --text-5xl: 3.75rem;     /* 60 */
 
-  --leading-tight: 1.25;
-  --leading-snug: 1.4;
-  --leading-normal: 1.5;
+  --leading-tight: 1.1;
+  --leading-snug: 1.3;
+  --leading-normal: 1.55;
   --leading-relaxed: 1.7;
 
-  /* ----- Radius -------------------------------------------------------- */
-  --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
+  /* ----- Radius (restrained — rules, not pills) ------------------------ */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
   --radius-pill: 9999px;
 
   /* ----- Elevation ----------------------------------------------------- */
-  --shadow-sm: 0 1px 2px rgba(25, 28, 30, 0.06);
-  --shadow-md: 0 4px 12px rgba(25, 28, 30, 0.07);
-  --shadow-lg: 0 12px 32px rgba(25, 28, 30, 0.09);
-  --shadow-xl: 0 24px 56px rgba(25, 28, 30, 0.12);
+  --shadow-sm: 0 1px 2px rgba(18, 32, 31, 0.06);
+  --shadow-md: 0 4px 14px rgba(18, 32, 31, 0.08);
+  --shadow-lg: 0 14px 36px rgba(18, 32, 31, 0.10);
+  --shadow-xl: 0 26px 60px rgba(18, 32, 31, 0.14);
 
   /* ----- Motion -------------------------------------------------------- */
   --duration-instant: 80ms;
   --duration-fast: 150ms;
   --duration-base: 220ms;
-  --duration-slow: 320ms;
+  --duration-slow: 360ms;
 
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-decelerate: cubic-bezier(0, 0, 0, 1);
@@ -106,73 +134,108 @@
 
 /* ----- Dark mode (sibling override) ----------------------------------- */
 html.dark {
-  --color-primary: #a8c5ff;
-  --color-primary-hover: #c5d8ff;
-  --color-on-primary: #00214f;
-  --color-primary-container: #00337a;
-  --color-on-primary-container: #d5e3fc;
+  --color-surface: #0b1414;
+  --color-surface-raised: #122020;
+  --color-surface-sunken: #070f0f;
+  --color-surface-hover: #1b2c2c;
+  --color-on-surface: #e5edeb;
+  --color-on-surface-muted: #b4c3c1;
+  --color-on-surface-subtle: #93a6a3;
 
-  --color-secondary: #4dc6c8;
-  --color-on-secondary: #003235;
-  --color-secondary-container: #00474b;
-  --color-on-secondary-container: #b2eced;
+  --color-ink: #e5edeb;
+  --color-ink-hover: #ffffff;
+  --color-on-ink: #0b1414;
+  --color-on-ink-muted: #3d4f4d;
 
-  --color-accent: #76d6d5;
-  --color-on-accent: #00323a;
+  --color-primary: #63d3e3;
+  --color-primary-hover: #8fe2ee;
+  --color-on-primary: #062b31;
+  --color-primary-container: #0e4550;
+  --color-on-primary-container: #c6f0f6;
 
-  --color-success: #76d99a;
-  --color-on-success: #003915;
-  --color-success-container: #00552a;
+  --color-secondary: #22d3ee;
+  --color-on-secondary: #062b31;
+  --color-secondary-container: #0e4550;
+  --color-on-secondary-container: #c6f0f6;
 
-  --color-warning: #ffba6a;
+  --color-accent: #6bd996;
+  --color-on-accent: #05301a;
+  --color-accent-container: #134d2c;
+  --color-on-accent-container: #c8f2d6;
+
+  --color-success: #6bd996;
+  --color-on-success: #05301a;
+  --color-success-container: #134d2c;
+
+  --color-warning: #f6bc63;
   --color-on-warning: #2b1500;
-  --color-warning-container: #5a3a00;
+  --color-warning-container: #4a2e00;
 
-  --color-danger: #ffb4ab;
-  --color-on-danger: #690005;
-  --color-danger-container: #93000a;
+  --color-danger: #ff9089;
+  --color-on-danger: #4a0a06;
+  --color-danger-container: #5c1b15;
 
-  --color-info: #a3c8ff;
-  --color-on-info: #00305b;
-  --color-info-container: #00478b;
+  --color-info: #63d3e3;
+  --color-on-info: #062b31;
+  --color-info-container: #0e4550;
 
-  --color-surface: #0e1416;
-  --color-surface-raised: #181d20;
-  --color-surface-sunken: #0a1013;
-  --color-surface-hover: #232a2e;
-  --color-on-surface: #e2e2e6;
-  --color-on-surface-muted: #c4c6cf;
-  --color-on-surface-subtle: #aeb4ba;
+  --color-outline: #2e403f;
+  --color-outline-strong: #7f9391;
+  --color-divider: #1f3130;
 
-  --color-outline: #3d4145;
-  --color-outline-strong: #8b9197;
-  --color-divider: #232a2e;
+  --color-overlay: rgba(0, 0, 0, 0.7);
+  --color-focus-ring: #8fe2ee;
 
-  --color-overlay: rgba(0, 0, 0, 0.65);
-  --color-focus-ring: #a8c5ff;
+  --color-chart-1: #1e5f6a;
+  --color-chart-2: #2f8a99;
+  --color-chart-3: #48b4c5;
+  --color-chart-4: #63d3e3;
+  --color-chart-5: #a6eaf2;
+  --color-chart-grid: #1f3130;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 14px 36px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 26px 60px rgba(0, 0, 0, 0.55);
 }
 
-/* Honor system preference on first load when no class is set yet. */
+html.dark { color-scheme: dark; }
+html.light { color-scheme: light; }
+
 @media (prefers-color-scheme: dark) {
-  html:not(.light):not(.dark) {
-    color-scheme: dark;
-  }
+  html:not(.light):not(.dark) { color-scheme: dark; }
 }
 
 /* =====================================================================
  * Base layer
  * ===================================================================== */
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
   background: var(--color-surface);
   color: var(--color-on-surface);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
-  letter-spacing: -0.011em;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  text-wrap: balance;
+}
+
+p { text-wrap: pretty; }
+
+::selection {
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
 }
 
 /* Unified, visible focus ring for all interactive elements. */
@@ -183,58 +246,150 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 a, button, [role="button"], input, select, textarea, summary {
-  /* Default focus styles are inconsistent across UAs; rely on :focus-visible. */
   outline: none;
 }
 
-/* Numeric data — use tabular figures to prevent layout shift in tables/charts */
-.tabular-nums {
-  font-variant-numeric: tabular-nums;
-}
-
-/* Material Symbols normalisation */
-.material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-  user-select: none;
-}
+/* Numeric data — tabular figures prevent layout shift in tables/charts. */
+.tabular-nums { font-variant-numeric: tabular-nums; }
 
 /* =====================================================================
- * Reusable elevation utility (used by Card primitive)
+ * Editorial utilities
  * ===================================================================== */
+
+/* Eyebrow: small caps label above a heading or a data point. */
+.eyebrow {
+  font-family: var(--font-sans);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-on-surface-subtle);
+}
+
+/* Serif numeral for KPIs and counts. */
+.numeral {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+/* Hairline rules — the primary structuring device instead of boxes. */
+.rule-t { border-top: 1px solid var(--color-divider); }
+.rule-b { border-bottom: 1px solid var(--color-divider); }
+.rule-strong { border-color: var(--color-on-surface); }
+
+/* Paper atmosphere: faint grain + a soft teal wash at the top edge. */
+.paper {
+  background-color: var(--color-surface);
+  background-image:
+    radial-gradient(1200px 420px at 18% -10%, color-mix(in oklab, var(--color-primary-container) 55%, transparent), transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.035 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-attachment: fixed, local;
+}
+
+html.dark .paper {
+  background-image:
+    radial-gradient(1200px 420px at 18% -10%, color-mix(in oklab, var(--color-primary-container) 40%, transparent), transparent 70%);
+}
+
+/* Reusable elevation utilities (used by Card) */
 .elev-1 { box-shadow: var(--shadow-sm); }
 .elev-2 { box-shadow: var(--shadow-md); }
 .elev-3 { box-shadow: var(--shadow-lg); }
 .elev-4 { box-shadow: var(--shadow-xl); }
 
+/* Staggered reveal for the landing composition — opacity/transform only. */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rise {
+  animation: rise var(--duration-slow) var(--ease-decelerate) both;
+  animation-delay: calc(var(--rise-index, 0) * 70ms);
+}
+
+@keyframes draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+.draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 1.4s var(--ease-decelerate) 200ms forwards;
+}
+
+/* =====================================================================
+ * Form controls
+ * ===================================================================== */
+.field {
+  width: 100%;
+  background: var(--color-surface-raised);
+  color: var(--color-on-surface);
+  border: 1px solid var(--color-outline-strong);
+  border-radius: var(--radius-md);
+  padding: 0.7rem 0.9rem;
+  font-size: var(--text-base);
+  line-height: 1.4;
+  transition: border-color var(--duration-fast) var(--ease-standard),
+              box-shadow var(--duration-fast) var(--ease-standard);
+}
+.field::placeholder { color: var(--color-on-surface-subtle); }
+.field:hover { border-color: var(--color-on-surface-muted); }
+.field:focus-visible {
+  border-color: var(--color-primary);
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+.field[aria-invalid="true"] { border-color: var(--color-danger); }
+
+.field-code {
+  background: var(--color-code-bg);
+  color: var(--color-code-fg);
+  border-color: var(--color-code-border);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+}
+.field-code::placeholder { color: var(--color-code-muted); }
+.field-code:hover { border-color: var(--color-code-muted); }
+
+input[type="range"] { accent-color: var(--color-primary); }
+
 /* =====================================================================
  * Scrollbar — subtle, theme-aware
  * ===================================================================== */
-::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
   background: var(--color-outline);
   border-radius: var(--radius-pill);
+  border: 2px solid var(--color-surface);
 }
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-outline-strong);
-}
+::-webkit-scrollbar-thumb:hover { background: var(--color-outline-strong); }
 
 /* =====================================================================
  * Reduced motion — disable nonessential animation
  * ===================================================================== */
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+  .draw { stroke-dasharray: none; stroke-dashoffset: 0; }
+  .paper { background-attachment: local; }
 }
 
 /* =====================================================================
- * Print
+ * Print — reads like the article it came from
  * ===================================================================== */
 @media print {
-  aside, nav, [data-print="hide"] { display: none !important; }
-  body { background: white; color: black; }
+  aside, nav, footer, [data-print="hide"] { display: none !important; }
+  body, .paper { background: white !important; color: black !important; }
+  main { margin: 0 !important; padding: 0 !important; max-width: none !important; }
 }

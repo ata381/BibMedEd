@@ -1,8 +1,11 @@
 # Case Study: AI in Undergraduate Medical Education (2014–2024)
 
-> A worked example showing how a medical-education researcher uses BibMedEd to go from a research question to a deduplicated dataset, six analyses, two network visualisations, and a PRISMA-ready methodology log in under thirty minutes.
+!!! note "Illustrative walkthrough, not a real study"
+    Every figure on this page (hit counts, dedup counts, timestamps, growth rates) is hypothetical and chosen to show what each step looks like. None of it comes from an actual BibMedEd run or a published study. Your own numbers will differ.
 
-This case study uses a real research question — *"How has AI been integrated into undergraduate medical-education curricula over the last decade?"* — and walks through every step you would actually run. Screenshots correspond to the UI shown on the [home page tour](index.md#user-interface-tour).
+> A worked example showing how a medical-education researcher could use BibMedEd to go from a research question to a deduplicated dataset, six analyses, two network visualisations, and a PRISMA-ready methodology log.
+
+This case study uses a plausible research question — *"How has AI been integrated into undergraduate medical-education curricula over the last decade?"* — and walks through every step you would actually run. Screenshots correspond to the UI shown on the [home page tour](index.md#user-interface-tour).
 
 ## 1. Frame the research question
 
@@ -35,13 +38,13 @@ What's happening under the hood:
 - Each adapter's `fetch()` pages the records and maps them to a unified `RawRecord` dataclass.
 - Every step is recorded into the methodology log with a timestamp.
 
-For this worked example, assume PubMed returns ~3,200 hits and a subsequent OpenAlex run returns ~5,800. Cross-source dedup runs automatically as the records enter the same project.
+For this hypothetical example, assume PubMed returns ~3,200 hits and a subsequent OpenAlex run returns ~5,800. Cross-source dedup runs automatically as the records enter the same project.
 
 ## 3. Dedup and inspect
 
-Cross-source dedup keys on `external_ids.doi` and `external_ids.pmid` — both normalised (lower-case DOI with `https://doi.org/` prefix stripped, whitespace-trimmed PMID). For this query the dedup pass removes ~2,400 records (mostly OpenAlex records that already have a PMID and matched a PubMed hit).
+Cross-source dedup keys on `external_ids.doi` and `external_ids.pmid` — both normalised (lower-case DOI with `https://doi.org/` prefix stripped, whitespace-trimmed PMID). In this hypothetical scenario the dedup pass removes ~2,400 records (mostly OpenAlex records that already have a PMID and matched a PubMed hit).
 
-Final dataset: ~6,600 unique publications. The results table is sortable by year, citation count, journal, and source. Click any row for the full abstract and identifiers.
+Hypothetical final dataset: ~6,600 unique publications. The results table is sortable by year, citation count, journal, and source. Click any row for the full abstract and identifiers.
 
 > **Tip:** the default result cap is 2,000. API and CLI users can pass `max_results` up to 10,000; the UI currently uses the default. The results page tells you when the upstream count exceeded what was fetched.
 
@@ -70,10 +73,11 @@ From the **Export** page:
 
 - **.RIS** — feeds straight into Zotero, EndNote, or Mendeley.
 - **.CSV** — for ad-hoc analysis in pandas, R, or Excel.
-- **Methodology log** — a plain-text file like the sample below. Cite it as supplementary material in your PRISMA Methods section.
+- **Methodology log** — a plain-text file like the sample below (all values illustrative). Cite it as supplementary material in your PRISMA Methods section.
 - **PRISMA 2020 flow diagram** — `GET /api/projects/{id}/export/prisma` returns an SVG of the identified → screened → included pipeline with per-source breakdown, derived directly from the methodology log. Drop it into your Supplementary Figure section without re-typing the counts.
 
 ```
+# Illustrative sample: hypothetical values, not output from a real run
 BibMedEd methodology log — Project: AI in UME 2014-2024
 Generated: 2026-05-27T14:22:11Z
 DOI of software: 10.5281/zenodo.20404321
@@ -99,7 +103,7 @@ Cite BibMedEd in your paper's Methods section:
 
 > Bibliometric data were retrieved via BibMedEd (v0.2.0; Akillioglu, 2026; doi:10.5281/zenodo.20404321), an open-source platform that performs multi-source bibliographic search, automated cross-source deduplication via DOI and PMID, and bibliometric analysis. The full pipeline — search query, source order, retrieval timestamps, deduplication counts, and exclusion filters — is recorded in the BibMedEd methodology log supplied as Supplementary File S1.
 
-That's it. Search to write-up in under thirty minutes, every step reproducible because every step is logged.
+That's the workflow: every step is reproducible because every step is logged.
 
 ## Reproducing this case study
 
@@ -116,8 +120,8 @@ Once you have the stack running ([deploy guide](deploy.md)):
 4. Date range: 2014-01-01 to 2024-12-31.
 5. Run all analyses; export methodology log.
 
-Your numbers will differ from this case study (PubMed and OpenAlex are live and growing) — that's the point. The query and the methodology log are what you cite, not the snapshot.
+Your numbers will differ from the hypothetical figures above (PubMed and OpenAlex are live and growing) — that's the point. The query and the methodology log are what you cite, not the snapshot.
 
 ## Want a different worked example?
 
-If you've run a bibliometric study with BibMedEd, a one-page case-study contribution is one of the highest-leverage PRs you can send. See [CONTRIBUTING.md](https://github.com/ata381/BibMedEd/blob/master/CONTRIBUTING.md) — "Improve docs and examples". Real-world studies double as marketing and as tutorial material; they will be linked from this page.
+If you've run a bibliometric study with BibMedEd, a one-page case-study contribution is one of the highest-leverage PRs you can send. See [CONTRIBUTING.md](https://github.com/ata381/BibMedEd/blob/master/CONTRIBUTING.md) — "Improve docs and examples". Real-world studies (with real numbers) double as marketing and as tutorial material; they will be linked from this page.
