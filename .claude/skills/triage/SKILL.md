@@ -5,6 +5,8 @@ description: Hacktoberfest / community triage pass for BibMedEd — new issues, 
 
 # Triage pass
 
+> Cloud routines run under `.claude/harness/constitution.md` and their role file; the never-post/push/merge limits in this file apply to local supervised sessions.
+
 State file: `.claude/state/triage.json` → `{"last_run": "<ISO8601>", "seen": {"issue:<n>": "<updatedAt>", "pr:<n>": "<updatedAt>"}}`. Create it if missing with `last_run` = 7 days ago. Report items whose `updatedAt` is newer than `seen`, AND on every pass re-evaluate the time-based rules for all open assigned issues and open PRs, whatever their `updatedAt`. Those rules are the 14-day stale claim, the 7-day follow-up and the 2-working-day URGENT. Crossing a time threshold doesn't change GitHub timestamps.
 
 Gather (read-only)

@@ -1,5 +1,7 @@
 # Report Contract
 
+> Cloud routines run under `.claude/harness/constitution.md` and their role file; the never-post/push/merge limits in this file apply to local supervised sessions.
+
 Every BibMedEd subagent ends its run with exactly this block, so the manager can parse results without rereading transcripts.
 
 ```yaml

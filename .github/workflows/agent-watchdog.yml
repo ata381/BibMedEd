@@ -1,0 +1,65 @@
+name: Agent watchdog
+
+# Fails (and so emails the owner) when the maintainer agent has gone quiet, when it took a
+# consequential action in the last 24 h, or when a PyPI release has waited for approval too long.
+# Reads only public data with the default read-only token.
+
+on:
+  schedule:
+    - cron: '17 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+  actions: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read the inbox heartbeat and pending releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re, subprocess, sys
+          from datetime import datetime, timedelta, timezone
+
+          repo = os.environ["REPO"]
+          def api(path):
+              return json.loads(subprocess.check_output(["gh", "api", path], text=True))
+
+          problems = []
+          body = api(f"repos/{repo}/issues/102").get("body") or ""
+          first = body.splitlines()[0] if body else ""
+          m = re.match(r"Last run: (\d{4}-\d{2}-\d{2}T\d{2}:\d{2})Z by (\w+) \| (\w+) \| closes:(\d+) reverts:(\d+) holds:(\d+)", first)
+          now = datetime.now(timezone.utc)
+          if not m:
+              problems.append(f"no heartbeat line on #102 (first line: {first[:80]!r})")
+          else:
+              last = datetime.strptime(m.group(1), "%Y-%m-%dT%H:%M").replace(tzinfo=timezone.utc)
+              age = now - last
+              if age > timedelta(hours=24):
+                  problems.append(f"last agent run was {age} ago ({m.group(1)}Z)")
+              if m.group(3) in ("error", "paused"):
+                  problems.append(f"last run status {m.group(3)}")
+              closes, reverts, holds = (int(m.group(i)) for i in (4, 5, 6))
+              if closes or reverts or holds:
+                  problems.append(f"consequential actions in the last 24 h: closes={closes} reverts={reverts} holds={holds}")
+
+          waiting = api(f"repos/{repo}/actions/runs?status=waiting&per_page=20").get("workflow_runs", [])
+          for run in waiting:
+              if run.get("name") == "Release to PyPI":
+                  created = datetime.fromisoformat(run["created_at"].replace("Z", "+00:00"))
+                  if now - created > timedelta(days=3):
+                      problems.append(f"PyPI release {run['display_title']!r} has waited for approval since {run['created_at']}: {run['html_url']}")
+
+          if problems:
+              print("WATCHDOG: attention needed")
+              for p in problems:
+                  print(" -", p)
+              sys.exit(1)
+          print("watchdog: all quiet;", first)
+          PY

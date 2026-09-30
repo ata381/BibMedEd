@@ -5,6 +5,8 @@ description: Manager's merge-readiness gate for a BibMedEd branch produced by a 
 
 # Ship a branch
 
+> Cloud routines run under `.claude/harness/constitution.md` and their role file; the never-post/push/merge limits in this file apply to local supervised sessions.
+
 Input: branch name.
 
 1. Read the producing agent's report. Distrust claims until re-verified.

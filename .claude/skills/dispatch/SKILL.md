@@ -5,6 +5,8 @@ description: Manager routing policy for BibMedEd — which agent and model gets 
 
 # Dispatch policy
 
+> Cloud routines run under `.claude/harness/constitution.md` and their role file; the never-post/push/merge limits in this file apply to local supervised sessions.
+
 | Work | Agent | Model | Isolation |
 |---|---|---|---|
 | Scoped issue, bug, adapter, docs, CLI, routine UI | `bibmeded-implementer` | sonnet | worktree |
