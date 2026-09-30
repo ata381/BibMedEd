@@ -5,6 +5,7 @@ import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 import { StatusBar } from "@/components/status-bar";
 import { ToastProvider } from "@/components/toast-provider";
+import { ReadOnlyBanner } from "@/components/read-only-banner";
 
 const crimson = localFont({
   src: [
@@ -73,6 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Sidebar />
         <div className="flex-1 min-w-0 md:ml-[17rem] min-h-screen flex flex-col">
           <main id="main" className="px-4 pt-20 pb-12 md:px-10 md:pt-10 lg:px-14 max-w-7xl w-full mx-auto flex-1">
+            <ReadOnlyBanner />
             {children}
           </main>
           <StatusBar />

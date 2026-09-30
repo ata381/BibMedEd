@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { analysisApi, projectsApi, Project } from "@/lib/api";
+import { fetchReadOnly } from "@/lib/read-only";
 import { ForceGraph } from "@/components/force-graph";
 import { BarChart } from "@/components/charts/bar-chart";
 import { RankedBars } from "@/components/charts/ranked-bars";
@@ -89,6 +90,7 @@ export default function Dashboard() {
             const r = await analysisApi.get(projectId, t);
             results[t] = r.data.results as AnalysisData;
           } catch {
+            if (await fetchReadOnly()) continue;
             try {
               const r = await analysisApi.run(projectId, t);
               results[t] = r.data.results as AnalysisData;
