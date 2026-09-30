@@ -4,15 +4,83 @@ import json
 import sys
 import time
 from collections.abc import Sequence
+from importlib.metadata import version
 
 import httpx
 from lxml import etree
 
-from app.adapters.registry import get_adapter
+from app.adapters.registry import get_adapter, list_adapters
 from app.adapters.settings import adapter_configuration_error, adapter_kwargs
-from app.database import SessionLocal
 from app.models import QueryStatus, SearchProject, SearchQuery
-from app.workers.tasks import run_search
+
+
+def _collect_sources() -> list[dict[str, str]]:
+    sources: list[dict[str, str]] = []
+    for adapter in list_adapters():
+        name = adapter["name"]
+        kwargs = adapter_kwargs(name)
+        requires_key = bool(adapter.get("requires_api_key"))
+        if requires_key:
+            api_key_mode = "required"
+        elif "api_key" in kwargs:
+            api_key_mode = "optional"
+        else:
+            api_key_mode = "no"
+
+        config_error = adapter_configuration_error(name)
+        has_key = bool(str(kwargs.get("api_key") or "").strip())
+        if config_error:
+            if " require " in config_error:
+                status = f"missing {config_error.split(' require ', 1)[1]}"
+            else:
+                status = config_error
+        elif requires_key and not has_key:
+            status = "missing API key"
+        elif has_key:
+            status = "ready (key configured)"
+        else:
+            status = "ready"
+
+        sources.append(
+            {
+                "name": name,
+                "display_name": adapter["display_name"],
+                "api_key": api_key_mode,
+                "status": status,
+            }
+        )
+    return sources
+
+
+def _list_sources(as_json: bool = False) -> int:
+    sources = _collect_sources()
+    if as_json:
+        print(json.dumps(sources, indent=2))
+        return 0
+
+    columns = (
+        ("name", "NAME"),
+        ("display_name", "DISPLAY NAME"),
+        ("api_key", "API KEY"),
+        ("status", "STATUS"),
+    )
+    widths = {
+        key: max(len(header), *(len(row[key]) for row in sources)) if sources else len(header)
+        for key, header in columns[:-1]
+    }
+
+    header_line = "   ".join(
+        [*(header.ljust(widths[key]) for key, header in columns[:-1]), columns[-1][1]]
+    )
+    print(header_line)
+
+    for row in sources:
+        line = "   ".join(
+            [*(row[key].ljust(widths[key]) for key, _ in columns[:-1]), row["status"]]
+        )
+        print(line)
+
+    return 0
 
 
 async def _dry_run_search(query: str, source: str) -> int:
@@ -64,6 +132,10 @@ def _run_search(
 ) -> int:
     if not _validate_source(source):
         return 1
+
+    # Deferred so `bibmeded --version` works without database or Celery dependencies.
+    from app.database import SessionLocal
+    from app.workers.tasks import run_search
 
     db = SessionLocal()
 
@@ -143,7 +215,24 @@ def _run_search(
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="bibmeded")
 
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {version('bibmeded')}",
+    )
+
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    sources_parser = subparsers.add_parser(
+        "sources",
+        help="List available bibliographic sources and configuration status",
+    )
+
+    sources_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output sources as JSON",
+    )
 
     search_parser = subparsers.add_parser(
         "search",
@@ -185,6 +274,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
 
     args = parser.parse_args(argv)
+
+    if args.command == "sources":
+        return _list_sources(as_json=args.json)
 
     if args.command == "search":
         if args.dry_run:
