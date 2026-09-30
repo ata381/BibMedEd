@@ -1,25 +1,27 @@
 import type { Metadata } from "next";
-import { Atkinson_Hyperlegible_Next, Crimson_Pro } from "next/font/google";
+import localFont from "next/font/local";
 import Script from "next/script";
 import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 import { StatusBar } from "@/components/status-bar";
 import { ToastProvider } from "@/components/toast-provider";
 
-const crimson = Crimson_Pro({
-  subsets: ["latin"],
-  style: ["normal", "italic"],
+const crimson = localFont({
+  src: [
+    { path: "./fonts/crimson-pro/CrimsonPro-latin.woff2", weight: "200 900", style: "normal" },
+    { path: "./fonts/crimson-pro/CrimsonPro-Italic-latin.woff2", weight: "200 900", style: "italic" },
+  ],
   variable: "--font-crimson",
   display: "swap",
 });
 
-const atkinson = Atkinson_Hyperlegible_Next({
-  subsets: ["latin"],
-  style: ["normal", "italic"],
+const atkinson = localFont({
+  src: [
+    { path: "./fonts/atkinson-hyperlegible-next/AtkinsonHyperlegibleNext-latin.woff2", weight: "200 800", style: "normal" },
+    { path: "./fonts/atkinson-hyperlegible-next/AtkinsonHyperlegibleNext-Italic-latin.woff2", weight: "200 800", style: "italic" },
+  ],
   variable: "--font-atkinson",
   display: "swap",
-  // next/font has no metric table for this family yet, so it can't synthesise
-  // a size-adjusted fallback; name one explicitly instead of warning at build.
   adjustFontFallback: false,
   fallback: ["system-ui", "Segoe UI", "Helvetica Neue", "sans-serif"],
 });
