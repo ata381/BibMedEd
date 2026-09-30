@@ -15,7 +15,7 @@ The repository contains complete 0.2.0 metadata at commit `fa0e2226dc05c8f596009
 7. Create an annotated `v0.3.0` tag on that full commit SHA, verify the tag object, push it, and publish the GitHub release using the 0.3.0 section of `CHANGELOG.md`.
 8. Verify that both GitHub releases resolve to the intended commits and that GitHub Pages, Zenodo version metadata, citation metadata, and release links agree.
 
-Do not deploy the application itself as a public writable demo. BibMedEd has no built-in authentication. Use the workflow recording, screenshots, and bundled sample project until a deliberately read-only demo mode exists.
+Do not deploy the application itself as a public writable demo. BibMedEd has no built-in authentication. Use the screenshots, and bundled sample project until a deliberately read-only demo mode exists.
 
 ## Contributor discovery note
 
