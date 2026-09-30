@@ -10,6 +10,7 @@ from bibmeded.adapters.settings import adapter_configuration_error
 from bibmeded.config import settings
 from bibmeded.database import get_db
 from bibmeded.models import QueryStatus, SearchProject, SearchQuery
+from bibmeded.request_context import request_id_ctx
 from bibmeded.schemas.search import SearchRequest, SearchStatusResponse
 from bibmeded.workers.tasks import run_search
 
@@ -38,10 +39,6 @@ def trigger_search(project_id: int, body: SearchRequest, db: Session = Depends(g
     db.add(query)
     db.commit()
     db.refresh(query)
-    # Lazy import: bibmeded.main isn't fully initialized yet when this module is first
-    # imported (bibmeded.main imports bibmeded.routers.search while defining request_id_ctx),
-    # so importing at call time avoids a circular-import failure.
-    from bibmeded.main import request_id_ctx
     request_id = request_id_ctx.get()
     run_search.delay(query.id, body.source, body.year_start, body.year_end, body.max_results, request_id)
     logger.info(
