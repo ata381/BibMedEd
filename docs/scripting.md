@@ -13,6 +13,12 @@ bibmeded sources
 bibmeded sources --json
 ```
 
+Each JSON entry reports `api_key_requirement` as `required`, `optional`, or `no`; key values are never printed:
+
+```json
+{"name": "lens", "display_name": "Lens.org", "api_key_requirement": "required", "status": "missing BIBMEDED_LENS_API_KEY"}
+```
+
 ## Estimate search results from the CLI
 
 Before fetching a large result set, use `--dry-run` to estimate how many records a query will return:

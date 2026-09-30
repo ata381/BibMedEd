@@ -4,13 +4,17 @@ import json
 import sys
 import time
 from collections.abc import Sequence
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 
 import httpx
 from lxml import etree
 
 from app.adapters.registry import get_adapter, list_adapters
-from app.adapters.settings import adapter_configuration_error, adapter_kwargs
+from app.adapters.settings import (
+    adapter_configuration_error,
+    adapter_kwargs,
+    required_setting_env_var,
+)
 from app.models import QueryStatus, SearchProject, SearchQuery
 
 
@@ -30,10 +34,8 @@ def _collect_sources() -> list[dict[str, str]]:
         config_error = adapter_configuration_error(name)
         has_key = bool(str(kwargs.get("api_key") or "").strip())
         if config_error:
-            if " require " in config_error:
-                status = f"missing {config_error.split(' require ', 1)[1]}"
-            else:
-                status = config_error
+            env_var = required_setting_env_var(name)
+            status = f"missing {env_var}" if env_var else config_error
         elif requires_key and not has_key:
             status = "missing API key"
         elif has_key:
@@ -45,7 +47,7 @@ def _collect_sources() -> list[dict[str, str]]:
             {
                 "name": name,
                 "display_name": adapter["display_name"],
-                "api_key": api_key_mode,
+                "api_key_requirement": api_key_mode,
                 "status": status,
             }
         )
@@ -61,7 +63,7 @@ def _list_sources(as_json: bool = False) -> int:
     columns = (
         ("name", "NAME"),
         ("display_name", "DISPLAY NAME"),
-        ("api_key", "API KEY"),
+        ("api_key_requirement", "API KEY"),
         ("status", "STATUS"),
     )
     widths = {
@@ -212,13 +214,20 @@ def _run_search(
         db.close()
 
 
+def _package_version() -> str:
+    try:
+        return version("bibmeded")
+    except PackageNotFoundError:
+        return "unknown"
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="bibmeded")
 
     parser.add_argument(
         "--version",
         action="version",
-        version=f"%(prog)s {version('bibmeded')}",
+        version=f"%(prog)s {_package_version()}",
     )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
