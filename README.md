@@ -185,6 +185,21 @@ Contributions are warmly welcome. A focused adapter is often the fastest path to
 
 By contributing you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md). Security issues should be reported via the process in [SECURITY.md](SECURITY.md).
 
+### Contributors
+
+Thank you to everyone who has shipped code to BibMedEd:
+
+| Contributor | Contribution |
+|---|---|
+| [@BaygeldiAza](https://github.com/BaygeldiAza) | Dry-run and full CLI search pipeline ([#46](https://github.com/ata381/BibMedEd/pull/46), [#52](https://github.com/ata381/BibMedEd/pull/52)) |
+| [@landon-personal](https://github.com/landon-personal) | CLI source and network error handling ([#50](https://github.com/ata381/BibMedEd/pull/50)) |
+| [@DYNOSuprovo](https://github.com/DYNOSuprovo) | `bibmeded sources` command ([#71](https://github.com/ata381/BibMedEd/pull/71)) |
+| [@Sandro850](https://github.com/Sandro850) | `bibmeded --version` ([#72](https://github.com/ata381/BibMedEd/pull/72)) |
+
+<a href="https://github.com/ata381/BibMedEd/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=ata381/BibMedEd" alt="Avatars of BibMedEd contributors" />
+</a>
+
 ## License
 
 [MIT](LICENSE) — use it freely in academic and commercial projects.
