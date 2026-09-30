@@ -19,7 +19,7 @@ The screens below show the main steps of the workflow, from search to analysis.
 
 ### Dashboard analysis and search pipeline
 
-The search page builds and previews the query, the results page shows PRISMA flow counts and screening, and the dashboard visualizes bibliometric indicators. Screenshots use sample data.
+The search page builds and previews the query, the results page shows PRISMA flow counts and screening, and the dashboard visualizes bibliometric indicators. Every screenshot and the README walkthrough come from the bundled synthetic sample project (13 records, 1 duplicate removed, 1 excluded, 11 analysed), captured from the [local read-only demo](deploy.md#run-the-demo-locally) (`docker compose -f docker-compose.demo.yml up`), so you can reproduce them exactly.
 <p align="center">
   <img src="assets/dashboard.png" alt="BibMedEd analysis overview with publication trends, top authors, network preview and most cited publications" width="48%" loading="lazy" decoding="async">
   <img src="assets/results.png" alt="BibMedEd results review with PRISMA flow counts and a publication list" width="48%" loading="lazy" decoding="async">
