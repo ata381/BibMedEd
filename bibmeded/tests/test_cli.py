@@ -1,5 +1,5 @@
 import json
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 from unittest.mock import AsyncMock, Mock
 from types import SimpleNamespace
 
@@ -22,6 +22,57 @@ def test_version_flag_prints_installed_version(capsys):
     assert exc_info.value.code == 0
     assert captured.out == f"bibmeded {version('bibmeded')}\n"
     assert captured.err == ""
+
+
+def test_version_flag_follows_resolved_version(monkeypatch, capsys):
+    from app import cli
+
+    monkeypatch.setattr(cli, "version", lambda name: "9.9.9")
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main(["--version"])
+
+    assert exc_info.value.code == 0
+    assert capsys.readouterr().out == "bibmeded 9.9.9\n"
+
+
+def test_version_flag_falls_back_when_package_not_installed(monkeypatch, capsys):
+    from app import cli
+
+    def missing(name):
+        raise PackageNotFoundError(name)
+
+    monkeypatch.setattr(cli, "version", missing)
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main(["--version"])
+
+    assert exc_info.value.code == 0
+    assert capsys.readouterr().out == "bibmeded unknown\n"
+
+
+def test_sources_runs_when_package_not_installed(monkeypatch, capsys):
+    from app import cli
+
+    def missing(name):
+        raise PackageNotFoundError(name)
+
+    monkeypatch.setattr(cli, "version", missing)
+
+    assert cli.main(["sources", "--json"]) == 0
+    assert json.loads(capsys.readouterr().out)
+
+
+def test_required_setting_env_var_is_shared_with_configuration_error(monkeypatch):
+    from app.adapters.settings import adapter_configuration_error, required_setting_env_var
+
+    monkeypatch.setattr(settings, "lens_api_key", "")
+
+    env_var = required_setting_env_var("lens")
+
+    assert env_var == "BIBMEDED_LENS_API_KEY"
+    assert env_var in adapter_configuration_error("lens")
+    assert required_setting_env_var("pubmed") is None
 
 
 def test_search_dry_run_prints_estimated_count(monkeypatch, capsys):
@@ -506,19 +557,19 @@ def test_sources_json_output_returns_structured_list_without_leaking_keys(
     assert by_name["pubmed"] == {
         "name": "pubmed",
         "display_name": "PubMed",
-        "api_key": "optional",
+        "api_key_requirement": "optional",
         "status": "ready (key configured)",
     }
     assert by_name["openalex"] == {
         "name": "openalex",
         "display_name": "OpenAlex",
-        "api_key": "no",
+        "api_key_requirement": "no",
         "status": "ready",
     }
     assert by_name["lens"] == {
         "name": "lens",
         "display_name": "Lens.org",
-        "api_key": "required",
+        "api_key_requirement": "required",
         "status": "missing BIBMEDED_LENS_API_KEY",
     }
 
