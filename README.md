@@ -43,6 +43,12 @@
   <em><a href="https://ata381.github.io/BibMedEd/#user-interface-tour">Explore the full UI tour</a></em>
 </p>
 
+<p align="center">
+  <img src="docs/assets/tour.gif" alt="Animated walkthrough of BibMedEd: projects, PRISMA flow results, analysis dashboard with figures and a co-authorship network, and the export page" width="800">
+  <br>
+  <em>Synthetic sample data, running locally with <code>docker compose -f docker-compose.demo.yml up</code></em>
+</p>
+
 ## Features
 
 - **Multi-database search** — PubMed, OpenAlex, CrossRef, Semantic Scholar, and Lens.org built-in, extensible to any source via plug-and-play adapters
