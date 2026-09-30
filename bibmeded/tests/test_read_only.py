@@ -248,8 +248,10 @@ def test_default_mode_still_allows_mutations(default_client, db):
     created = default_client.post("/api/projects", json={"name": "Writable"})
     assert created.status_code == 201
     pid = created.json()["id"]
-    assert default_client.patch(f"/api/projects/{pid}", json={"name": "Renamed"}).json()["name"] == "Renamed"
-    assert default_client.delete(f"/api/projects/{pid}").status_code == 204
+    renamed = default_client.patch(f"/api/projects/{pid}", json={"name": "Renamed"})
+    assert renamed.json()["name"] == "Renamed"
+    deleted = default_client.delete(f"/api/projects/{pid}")
+    assert deleted.status_code == 204
 
 
 def test_guard_session_rejects_flush(db):

@@ -24,7 +24,6 @@ from app.read_only import (
     POSTGRES_READ_ONLY_OPTIONS,
     REASSERT_STATEMENTS,
     WEBSOCKET_POLICY_VIOLATION,
-    _reassert_on_checkout,
     create_read_only_engine,
     verify_read_only_engine,
 )
