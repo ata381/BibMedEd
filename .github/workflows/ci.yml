@@ -37,6 +37,9 @@ jobs:
       - name: Install dependencies
         run: pip install -e ".[dev]"
 
+      - name: Verify packaged LICENSE matches root LICENSE
+        run: diff ../LICENSE LICENSE
+
       - name: Run pytest
         run: pytest -q --cov=app --cov-report=term-missing
 
@@ -162,7 +165,7 @@ jobs:
           cache-dependency-path: bibmeded/pyproject.toml
 
       - name: Install dependencies
-        run: pip install -e .
+        run: pip install -e ".[server]"
 
       - name: Fresh-DB guard path (alembic upgrade head on empty Postgres)
         run: alembic upgrade head

@@ -1,17 +1,28 @@
 [project]
 name = "bibmeded"
 version = "0.3.0"
-description = "Bibliometric Analysis Platform for Medical Education"
+description = "Open-source bibliometric analysis platform and CLI for medical education research"
+readme = "README.md"
 requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Ata Akillioglu" }]
+keywords = [
+    "bibliometrics", "scientometrics", "medical education", "pubmed",
+    "openalex", "literature review", "citation analysis",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
 dependencies = [
-    "fastapi>=0.115.0",
-    "uvicorn[standard]>=0.30.0",
     "sqlalchemy>=2.0.0",
-    "alembic>=1.13.0",
-    "psycopg2-binary>=2.9.0",
     "pydantic-settings>=2.0.0",
-    "redis>=5.0.0",
-    "celery[redis]>=5.4.0",
     "httpx>=0.27.0",
     "lxml>=5.0.0",
     "networkx>=3.0.0",
@@ -21,11 +32,28 @@ dependencies = [
     "numpy>=1.26.0",
     "scipy>=1.11.0",
 ]
+
+[project.urls]
+Homepage = "https://ata381.github.io/BibMedEd/"
+Documentation = "https://ata381.github.io/BibMedEd/"
+Source = "https://github.com/ata381/BibMedEd"
+Issues = "https://github.com/ata381/BibMedEd/issues"
+Changelog = "https://github.com/ata381/BibMedEd/blob/master/CHANGELOG.md"
+
 [project.scripts]
 bibmeded = "app.cli:main"
 
 [project.optional-dependencies]
+server = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "alembic>=1.13.0",
+    "psycopg2-binary>=2.9.0",
+    "redis>=5.0.0",
+    "celery[redis]>=5.4.0",
+]
 dev = [
+    "bibmeded[server]",
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
     "httpx>=0.27.0",

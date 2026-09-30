@@ -19,6 +19,24 @@ Each JSON entry reports `api_key_requirement` as `required`, `optional`, or `no`
 {"name": "lens", "display_name": "Lens.org", "api_key_requirement": "required", "status": "missing BIBMEDED_LENS_API_KEY"}
 ```
 
+## Install from PyPI (CLI only)
+
+If you only want the command line tool (no Docker, no web UI), install it with `pipx install bibmeded` or into a dedicated virtual environment (the package currently ships a top-level module named `app`, so avoid shared environments):
+
+```bash
+python -m venv .venv && source .venv/bin/activate   # Python 3.12 or newer
+pip install bibmeded
+bibmeded search "medical education" --source openalex --dry-run
+```
+
+The base install is lightweight and supports `--dry-run` result estimates. Fetching and storing records
+(`bibmeded search` without `--dry-run`) goes through the Celery pipeline, so it additionally needs the
+`server` extra plus Redis and a database, or simply the Docker stack:
+
+```bash
+pip install "bibmeded[server]"
+```
+
 ## Estimate search results from the CLI
 
 Before fetching a large result set, use `--dry-run` to estimate how many records a query will return:

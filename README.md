@@ -5,6 +5,7 @@
 
 <p align="center">
   <a href="https://github.com/ata381/BibMedEd/actions/workflows/ci.yml"><img src="https://github.com/ata381/BibMedEd/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://pypi.org/project/bibmeded/"><img src="https://img.shields.io/pypi/v/bibmeded.svg" alt="PyPI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.12+-green.svg" alt="Python 3.12+"></a>
   <a href="https://docs.docker.com/compose/"><img src="https://img.shields.io/badge/Docker-Compose-2496ED.svg" alt="Docker"></a>
@@ -89,6 +90,8 @@ The sample behaves like a normal editable project: your changes persist, and del
 it before choosing **Explore sample project** again restores the bundled dataset.
 
 > **Optional:** Create a free [NCBI API key](https://www.ncbi.nlm.nih.gov/account/) and add it to `.env` as `BIBMEDED_PUBMED_API_KEY=your_key` for 10 req/s instead of 3 req/s. Lens.org searches require a Lens Scholarly API token in `BIBMEDED_LENS_API_KEY`.
+
+**CLI only, no Docker:** `pip install bibmeded` then `bibmeded search "medical education" --dry-run` to estimate result counts from a terminal or notebook. See [Scripting](https://ata381.github.io/BibMedEd/scripting/#install-from-pypi-cli-only).
 
 See the full [Self-Hosting Guide](https://ata381.github.io/BibMedEd/deploy/) for configuration, reset, and dev setup.
 

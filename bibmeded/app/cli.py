@@ -84,6 +84,19 @@ def _list_sources(as_json: bool = False) -> int:
 
     return 0
 
+SERVER_MODULES = frozenset({"celery", "kombu", "billiard", "redis", "psycopg2"})
+
+
+def _is_missing_server_module(exc: ModuleNotFoundError) -> bool:
+    return exc.name is not None and exc.name.split(".")[0] in SERVER_MODULES
+
+
+SERVER_EXTRA_HINT = (
+    "Fetching records needs the task worker stack. "
+    'Install it with: pip install "bibmeded[server]" (or use docker compose). '
+    "`--dry-run` works without it."
+)
+
 
 async def _dry_run_search(query: str, source: str) -> int:
     configuration_error = adapter_configuration_error(source)
@@ -132,12 +145,18 @@ def _run_search(
     year_end: str | None,
     max_results: int,
 ) -> int:
-    if not _validate_source(source):
+    # Deferred so the CLI works without the bibmeded[server] extra.
+    try:
+        from app.database import SessionLocal
+        from app.workers.tasks import run_search
+    except ModuleNotFoundError as exc:
+        if not _is_missing_server_module(exc):
+            raise
+        print(SERVER_EXTRA_HINT, file=sys.stderr)
         return 1
 
-    # Deferred so `bibmeded --version` works without database or Celery dependencies.
-    from app.database import SessionLocal
-    from app.workers.tasks import run_search
+    if not _validate_source(source):
+        return 1
 
     db = SessionLocal()
 
