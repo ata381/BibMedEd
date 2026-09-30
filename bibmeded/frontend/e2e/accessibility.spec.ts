@@ -15,6 +15,9 @@ for (const theme of ["light", "dark"] as const) {
   for (const route of routes) {
     test(`${route.path} has no WCAG A/AA violations or page overflow in ${theme} mode`, async ({ page }) => {
       await installMockApi(page);
+      // Controls become enabled once /api/config resolves; with transitions
+      // running, axe can sample a button mid-fade and report false contrast.
+      await page.emulateMedia({ reducedMotion: "reduce" });
       await page.addInitScript((themeChoice) => localStorage.setItem("bibmeded:theme", themeChoice), theme);
       await page.goto(route.path);
       await expect(page.locator("html")).toHaveClass(new RegExp(theme));
