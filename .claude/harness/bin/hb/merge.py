@@ -47,6 +47,11 @@ def evaluate(pr: dict, info: dict, review: dict, state: dict, now: datetime | No
 
     if cls == "agent-unverified":
         fails.append("class: claude/ branch without a valid marker (owner WIP or stale marker)")
+    if (info.get("title") or "").lower().startswith(config.NEEDS_OWNER_TITLE_PREFIX):
+        fails.append("title starts with needs-owner: the owner decides this PR")
+    manifests = paths.hits(files, config.DEPENDENCY_MANIFESTS)
+    if manifests and cls != "dependabot" and not (cls == "agent" and info["branch"].startswith("claude/release-")):
+        fails.append("changes a dependency manifest (" + ", ".join(sorted({p for p, _ in manifests})) + "); only dependabot or the owner may")
     if info["draft"]:
         fails.append("draft PR")
     if any((lbl.get("name") or "").lower() == "wip" for lbl in pr.get("labels") or []):

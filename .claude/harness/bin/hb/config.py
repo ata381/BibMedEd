@@ -108,6 +108,13 @@ RELEASE_PREP_ALLOWED = (
     "README.md",
 )
 DEPENDABOT_WORKFLOW_BUMP_PREFIX = "chore(ci)"
+NEEDS_OWNER_TITLE_PREFIX = "needs-owner:"
+# Dependency manifests: changed only by dependabot or, for the version line, the release-prep PR.
+DEPENDENCY_MANIFESTS = (
+    "bibmeded/pyproject.toml",
+    "bibmeded/frontend/package.json",
+    "bibmeded/frontend/package-lock.json",
+)
 
 # Worker PRs during the sprint may only touch these without a human approval.
 WORKER_ALLOWLIST = (

@@ -116,6 +116,19 @@ def test_external_needs_cleared_verdict_for_current_sha():
     assert gates(pr, st=st) == []
 
 
+def test_needs_owner_title_and_dependency_manifests_refused_even_after_october():
+    review = review_fixture(codex_review=True)
+    titled = agent_pr(title="needs-owner: date parsing needs a new package")
+    assert any("needs-owner" in g for g in gates(titled, review, today=NOVEMBER))
+    manifest = agent_pr(files=[{"path": "bibmeded/pyproject.toml"}, {"path": "bibmeded/tests/test_dates.py"}])
+    assert any("dependency manifest" in g for g in gates(manifest, review, today=NOVEMBER))
+    owner_manifest = pr_fixture(author={"login": "ata381"}, files=[{"path": "bibmeded/frontend/package.json"}])
+    assert any("dependency manifest" in g for g in gates(owner_manifest, review))
+    dependabot = pr_fixture(author={"login": "dependabot[bot]"}, createdAt="2026-09-20T00:00:00Z", title="chore(deps): bump httpx",
+                            files=[{"path": "bibmeded/pyproject.toml"}])
+    assert gates(dependabot, review) == []
+
+
 def test_worker_allowlist_until_end_of_october():
     pr = agent_pr(files=[{"path": "bibmeded/bibmeded/routers/search.py"}])
     review = review_fixture(codex_review=True)

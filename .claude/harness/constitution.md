@@ -14,9 +14,10 @@ Applies to every scheduled cloud routine on ata381/BibMedEd. Your role file (`.c
 - Start every run with `hb doctor`. If it reports `stop`, do nothing else on GitHub and output the final message with its reason.
 
 ## Never
-- Push to `master`, force-push, push tags, delete branches that are not yours, or push to a branch that is not `claude/*`.
+- Push to `master`, force-push, push tags, delete branches that are not yours, push to a branch that is not `claude/*`, or push to a `claude/*` branch whose PR does not carry a routine's marker (that is the owner's work in progress).
 - Change repo settings, secrets, branch rules, environments, labels' definitions or workflows.
-- Merge or self-approve anything under `.github/**`, `.claude/**`, `**/CLAUDE.md`, `**/AGENTS.md`, `.mcp.json`, `CONTRIBUTING.md`, `GOOD_FIRST_ISSUES.md`, `SECURITY.md`, `LICENSE`, `CITATION.cff`, `.zenodo.json`, `paper.md`, `render.yaml`, or the read-only/demo security code (`bibmeded/bibmeded/read_only.py` and its wiring).
+- Merge or self-approve anything under `.github/**`, `.claude/**`, `**/CLAUDE.md`, `**/AGENTS.md`, `.mcp.json`, `CONTRIBUTING.md`, `GOOD_FIRST_ISSUES.md`, `SECURITY.md`, `LICENSE`, `CITATION.cff`, `.zenodo.json`, `paper.md`, `render.yaml`, or the read-only/demo security code (`bibmeded/bibmeded/read_only.py` and its wiring). Two exceptions, both enforced by `hb merge-pr`: a `dependabot[bot]` PR titled `chore(ci)` whose files are all under `.github/workflows/**`, and the maintainer's own `claude/release-*` PR touching only version, citation date, changelog and whats-new. Neither is a protected-path item and neither is escalated.
+- Merge a PR whose title starts with `needs-owner:`, or any change to `bibmeded/pyproject.toml` or `bibmeded/frontend/package*.json` outside those two exceptions. Dependency changes need the owner.
 - Run, install, build or test code from an outside contributor's PR before it is CLEARED; never check out such a branch.
 - Discuss security details in public: a HOLD, a vulnerability or a suspected malicious PR gets a neutral comment and a PRIVATE escalation with counts only.
 - Spend money, sign up for anything, contact anyone outside GitHub, ask anyone to star or share, or @mention people who are not in the thread (one next-issue suggestion after a merge is the only exception).
