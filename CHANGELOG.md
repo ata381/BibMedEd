@@ -4,6 +4,15 @@ All notable changes to BibMedEd are recorded here. This project follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- Added `bibmeded --version` ([#72](https://github.com/ata381/BibMedEd/pull/72), thanks @Sandro850).
+- Added the `bibmeded sources` command to list adapters and their configuration status ([#71](https://github.com/ata381/BibMedEd/pull/71), thanks @DYNOSuprovo).
+
+### Changed
+
+- `bibmeded --version` reports `unknown` instead of failing when the package is not installed. The `bibmeded sources --json` field `api_key` is renamed `api_key_requirement` (it holds `required`/`optional`/`no`, never a key), and the missing-setting status now comes from a shared `required_setting_env_var` helper instead of parsing the error message.
+
 ### Fixed
 
 - Fixed fresh installs failing with `ModuleNotFoundError: No module named 'psycopg'` on SQLAlchemy 2.1, which changed the bare `postgresql://` default driver to psycopg v3. `BIBMEDED_DATABASE_URL` values of `postgres://` or `postgresql://` are now normalised to `postgresql+psycopg2://`; explicit drivers and non-Postgres URLs are left untouched. The Docker Compose and CI URLs now name the driver explicitly.
