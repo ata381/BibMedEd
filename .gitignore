@@ -1,5 +1,8 @@
 site/
-.claude/
+.claude/*
+!.claude/agents/
+!.claude/skills/
+!.claude/harness/
 .superpowers/
 *.pdf
 *.docx

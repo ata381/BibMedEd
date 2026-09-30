@@ -75,6 +75,10 @@ Well-done contributions are merged, not rewritten. If a PR needs changes of roug
 
 Codex Cloud handles automatic PR reviews on this repo (see e.g. PR #4). Do not duplicate that loop with a second AI reviewer workflow.
 
+## Maintainer agent harness
+
+`.claude/agents/`, `.claude/skills/` and `.claude/harness/` hold the maintainer's agent roles, workflows, verification matrix and report contract. They are shared by local Claude Code sessions and by the scheduled cloud maintainer agent, whose prompt is in `.claude/harness/cloud-manager-prompt.md`. `.claude/state/`, `settings.json` and hooks stay local and gitignored. Changes to these files, to this file or to `AGENTS.md` change what the maintainer's agents do. They need the maintainer's review and are never auto-merged.
+
 ## Security review before pulling external PRs
 
 For PRs from outside contributors (not `ata381`), do the security pass **from afar first** — read the diff via `gh pr diff <n>` / `gh pr view <n>` / `gh api` without checking out the branch. Fetching refs (`git fetch origin pull/<n>/head`) and reading blobs (`git show <ref>:<path>`) is fine since neither executes anything. Do not run `pytest`, install deps, `docker compose up`, pre-commit hooks, or anything else that executes the contributor's code (including their CI-invoked scripts) until the diff has been read and cleared. Flag anything that would run on checkout/build (setup.py/postinstall hooks, entrypoint scripts, CI workflow changes) as CRITICAL regardless of what else the PR does.
