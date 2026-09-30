@@ -108,7 +108,7 @@ One click provisions PostgreSQL, Redis, FastAPI, Celery, and the Next.js fronten
 Adding a bibliographic database starts with one focused Python module; richer APIs need more mapping and pagination code:
 
 ```python
-from app.adapters.base import BaseSourceAdapter, RawRecord, SearchResponse
+from bibmeded.adapters.base import BaseSourceAdapter, RawRecord, SearchResponse
 
 class ScopusAdapter(BaseSourceAdapter):
     name = "scopus"
@@ -124,7 +124,7 @@ class ScopusAdapter(BaseSourceAdapter):
         ...
 ```
 
-Drop it in `app/adapters/`, restart the worker, and it appears in the search UI automatically. The adapter registry handles discovery, and cross-database deduplication works via the `external_ids` field.
+Drop it in `bibmeded/adapters/`, restart the worker, and it appears in the search UI automatically. The adapter registry handles discovery, and cross-database deduplication works via the `external_ids` field.
 
 See the full [Writing Adapters](https://ata381.github.io/BibMedEd/adapters/) guide with `RawRecord` field reference and an annotated OpenAlex walkthrough.
 

@@ -60,7 +60,7 @@ From the project dashboard, click **Run all analyses**. BibMedEd executes:
 
 1. **Publications over time** — yearly counts, growth rates, cumulative curve. Expectation for this query: explosive growth post-2022 (ChatGPT release).
 2. **Author productivity** — top authors by publication count and h-index proxy (citation-weighted ranking on this subset).
-3. **Country distribution** — affiliations parsed with case-insensitive country extraction (the [analysis cleaning service](https://github.com/ata381/BibMedEd/blob/master/bibmeded/app/services/cleaning.py) handles variants like "USA" vs "United States" vs "U.S.").
+3. **Country distribution** — affiliations parsed with case-insensitive country extraction (the [analysis cleaning service](https://github.com/ata381/BibMedEd/blob/master/bibmeded/bibmeded/services/cleaning.py) handles variants like "USA" vs "United States" vs "U.S.").
 4. **Keyword co-occurrence** — MeSH terms and author keywords, case-normalised so "AI" and "ai" don't double-count. D3 network of the top-30.
 5. **Citation impact** — distribution of citation counts, highly-cited papers list, journal-weighted impact.
 6. **Journal ranking** — publication counts, normalised by quartile if available.

@@ -23,7 +23,3 @@ Maintainer checklist. This folder is excluded from the public MkDocs build (`exc
 4. Verify in a clean venv: `pip install bibmeded==X.Y.Z && bibmeded --help`.
 
 PyPI versions are immutable. If a release is bad, yank it and publish a new patch version.
-
-## Known packaging caveat
-
-**Collision risk.** The wheel installs a top-level Python package named `app` (the repository's existing layout). Any other distribution in the same environment that also ships a top-level `app` package will silently overwrite or be overwritten by BibMedEd, and `import app` may resolve to the wrong one. Until a rename lands, tell users to run `pipx install bibmeded` (or use a dedicated virtualenv), and do not advertise plain `pip install` into shared or system environments. Renaming the package to `bibmeded` is a breaking refactor and a maintainer decision; it is deliberately not part of this release pipeline.

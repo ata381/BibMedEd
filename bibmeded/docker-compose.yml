@@ -48,7 +48,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: sh -c "python -c 'from app.database import Base, get_engine; import app.models; Base.metadata.create_all(get_engine())' && echo 'DB ready' && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    command: sh -c "python -c 'from bibmeded.database import Base, get_engine; import bibmeded.models; Base.metadata.create_all(get_engine())' && echo 'DB ready' && uvicorn bibmeded.main:app --host 0.0.0.0 --port 8000"
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/live').status==200 else 1)\""]
       interval: 30s
@@ -72,7 +72,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: celery -A app.workers.celery_app worker --loglevel=info --concurrency=2 --pool=prefork --max-memory-per-child=200000
+    command: celery -A bibmeded.workers.celery_app worker --loglevel=info --concurrency=2 --pool=prefork --max-memory-per-child=200000
     deploy:
       resources:
         limits:

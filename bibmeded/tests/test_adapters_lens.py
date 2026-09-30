@@ -4,9 +4,9 @@ from unittest.mock import AsyncMock, patch
 import httpx
 import pytest
 
-from app.adapters.base import RawRecord, SearchResponse
-from app.adapters import lens as lens_module
-from app.adapters.lens import LensAdapter
+from bibmeded.adapters.base import RawRecord, SearchResponse
+from bibmeded.adapters import lens as lens_module
+from bibmeded.adapters.lens import LensAdapter
 
 
 SEARCH_PAGE_1 = {

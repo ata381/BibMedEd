@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, patch
 import httpx
 import pytest
 
-from app.adapters.base import RawRecord, SearchResponse
-from app.adapters.semantic_scholar import SemanticScholarAdapter
+from bibmeded.adapters.base import RawRecord, SearchResponse
+from bibmeded.adapters.semantic_scholar import SemanticScholarAdapter
 
 
 @pytest.fixture

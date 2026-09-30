@@ -10,4 +10,4 @@ COPY . .
 RUN chmod +x scripts/entrypoint.sh
 
 ENTRYPOINT ["scripts/entrypoint.sh"]
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "bibmeded.main:app", "--host", "0.0.0.0", "--port", "8000"]

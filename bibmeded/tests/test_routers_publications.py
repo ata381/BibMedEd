@@ -1,4 +1,4 @@
-from app.models import Author, Journal, Publication, SearchProject, SearchQuery
+from bibmeded.models import Author, Journal, Publication, SearchProject, SearchQuery
 
 def test_list_publications(client, db):
     project = SearchProject(name="Test")

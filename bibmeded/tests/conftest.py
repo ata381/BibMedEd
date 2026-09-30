@@ -2,7 +2,7 @@ import os
 
 # Set SQLite URL before any app imports to avoid needing psycopg2 during tests.
 # pydantic-settings reads env vars when Settings() is instantiated (at config import time),
-# so this must be set before app.config is first imported.
+# so this must be set before bibmeded.config is first imported.
 os.environ["BIBMEDED_DATABASE_URL"] = "sqlite://"
 
 import pytest
@@ -15,8 +15,8 @@ TestSession = sessionmaker(bind=engine)
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_db():
-    from app.database import Base
-    import app.models  # noqa: F401 – ensures all models are registered on Base.metadata
+    from bibmeded.database import Base
+    import bibmeded.models  # noqa: F401 – ensures all models are registered on Base.metadata
     Base.metadata.create_all(engine)
     yield
     Base.metadata.drop_all(engine)
@@ -58,8 +58,8 @@ def db():
 @pytest.fixture
 def client(db):
     from fastapi.testclient import TestClient
-    from app.database import get_db
-    from app.main import create_app
+    from bibmeded.database import get_db
+    from bibmeded.main import create_app
     app = create_app()
     app.dependency_overrides[get_db] = lambda: db
     return TestClient(app)

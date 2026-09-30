@@ -1,8 +1,8 @@
 import asyncio
 from unittest.mock import AsyncMock, patch
 import pytest
-from app.adapters.openalex import OpenAlexAdapter
-from app.adapters.base import RawRecord, SearchResponse
+from bibmeded.adapters.openalex import OpenAlexAdapter
+from bibmeded.adapters.base import RawRecord, SearchResponse
 
 
 @pytest.fixture

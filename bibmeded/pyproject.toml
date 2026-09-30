@@ -41,7 +41,7 @@ Issues = "https://github.com/ata381/BibMedEd/issues"
 Changelog = "https://github.com/ata381/BibMedEd/blob/master/CHANGELOG.md"
 
 [project.scripts]
-bibmeded = "app.cli:main"
+bibmeded = "bibmeded.cli:main"
 
 [project.optional-dependencies]
 server = [
@@ -69,7 +69,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["app*"]
+include = ["bibmeded*"]
 exclude = ["alembic*", "frontend*", "scripts*", "tests*"]
 
 [tool.pytest.ini_options]

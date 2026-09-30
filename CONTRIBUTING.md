@@ -14,14 +14,14 @@ Every new adapter immediately broadens the literature base every BibMedEd user c
 
 A good adapter PR includes:
 
-- A class in `bibmeded/app/adapters/<source>.py` subclassing `BaseSourceAdapter`. The registry auto-discovers any `BaseSourceAdapter` subclass dropped here — **you do NOT need to touch `__init__.py` or any registration file**. Drop the module, set `name` / `display_name` / `requires_api_key` on the class, and the `/api/adapters` route + the frontend source picker pick it up at the next request.
+- A class in `bibmeded/bibmeded/adapters/<source>.py` subclassing `BaseSourceAdapter`. The registry auto-discovers any `BaseSourceAdapter` subclass dropped here — **you do NOT need to touch `__init__.py` or any registration file**. Drop the module, set `name` / `display_name` / `requires_api_key` on the class, and the `/api/adapters` route + the frontend source picker pick it up at the next request.
 - A fixture-based test under `bibmeded/tests/test_adapters_<source>.py` that exercises `search` and `fetch` against captured JSON / XML payloads — no live API calls in CI.
 - A one-line mention in `README.md`'s feature list, plus source-specific credentials, caveats, or setup notes in `docs/adapters.md`. The guide is manually maintained, so update it when a new adapter ships.
 
 **Load-bearing invariants — easy to miss, hard to debug:**
 - Lowercase DOIs at the adapter boundary (`doi.lower()`). The cross-source dedup keys on DOI string equality and will silently miss duplicates across sources if cases differ.
 - Pass `mesh_terms=[]` explicitly when your source doesn't provide MeSH (every non-PubMed adapter does this). The `RawRecord` dataclass default would also work, but explicit empties signal intent and make the gap visible in code review.
-- See `bibmeded/app/adapters/base.py` — the `RawRecord` docstring spells out every invariant in one place.
+- See `bibmeded/bibmeded/adapters/base.py` — the `RawRecord` docstring spells out every invariant in one place.
 
 ### 2. Report a bug or request a feature
 

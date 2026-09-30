@@ -1,4 +1,4 @@
-from app.services.pubmed import PubMedClient
+from bibmeded.services.pubmed import PubMedClient
 
 def test_parse_missing_abstract():
     xml = '<?xml version="1.0"?><PubmedArticleSet><PubmedArticle><MedlineCitation Status="MEDLINE" Owner="NLM"><PMID Version="1">99999999</PMID><Article PubModel="Print"><Journal><Title>Test Journal</Title><JournalIssue CitedMedium="Print"><PubDate><Year>2023</Year></PubDate></JournalIssue></Journal><ArticleTitle>No Abstract Article</ArticleTitle></Article></MedlineCitation><PubmedData></PubmedData></PubmedArticle></PubmedArticleSet>'

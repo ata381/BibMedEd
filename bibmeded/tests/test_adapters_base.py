@@ -1,6 +1,6 @@
 import asyncio
 import pytest
-from app.adapters.base import RawAuthor, RawRecord, SearchResponse, BaseSourceAdapter
+from bibmeded.adapters.base import RawAuthor, RawRecord, SearchResponse, BaseSourceAdapter
 
 
 def test_raw_author_defaults():

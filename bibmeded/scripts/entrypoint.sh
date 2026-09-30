@@ -3,7 +3,7 @@ set -e
 
 echo "Running Alembic migrations..."
 
-DB_URL=$(python -c "from app.config import settings; print(settings.database_url)")
+DB_URL=$(python -c "from bibmeded.config import settings; print(settings.database_url)")
 
 case "$DB_URL" in
   sqlite*)
@@ -23,7 +23,7 @@ import sys
 
 from sqlalchemy import create_engine, text
 
-from app.config import settings
+from bibmeded.config import settings
 
 _MIGRATION_LOCK_KEY = 916234871  # arbitrary, fixed for every bibmeded deployment
 

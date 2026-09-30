@@ -119,7 +119,7 @@ def test_create_sample_project_can_be_deleted_and_reset(client):
 
 
 def test_sample_project_recovers_when_another_process_creates_it(monkeypatch):
-    from app.services import sample_project
+    from bibmeded.services import sample_project
 
     concurrent_project = Mock()
     db = Mock()

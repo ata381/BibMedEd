@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from sqlalchemy import text
 
-from app.database import get_engine
+from bibmeded.database import get_engine
 
 # publication id -> expected project_id, derived from the query_id ->
 # search_queries.project_id relationship seeded by seed_pre_0002_fixture.py.

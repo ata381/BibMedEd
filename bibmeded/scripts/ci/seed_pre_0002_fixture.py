@@ -22,12 +22,12 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# Ensure app is importable, matching scripts/reset_db.py.
+# Ensure the bibmeded package is importable, matching scripts/reset_db.py.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from sqlalchemy import text
 
-from app.database import get_engine
+from bibmeded.database import get_engine
 
 # Pre-0002 shape, per alembic/versions/0002_publication_project_scope.py's own
 # upgrade(): publications has no project_id column and pmid is globally unique

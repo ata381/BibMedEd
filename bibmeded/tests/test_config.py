@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy.engine import make_url
 
-from app.config import Settings
+from bibmeded.config import Settings
 
 
 def test_settings_reads_lens_api_key_from_environment(monkeypatch):

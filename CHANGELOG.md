@@ -13,6 +13,7 @@ All notable changes to BibMedEd are recorded here. This project follows [Keep a 
 
 ### Changed
 
+- **Breaking:** Python import package renamed `app` -> `bibmeded` (`bibmeded/app/` is now `bibmeded/bibmeded/`) so the wheel no longer installs a generic top-level `app` package. Run the server with `uvicorn bibmeded.main:app` and the worker with `celery -A bibmeded.workers.celery_app`; Celery task names are now `bibmeded.workers.tasks.*`, so drain queued tasks before upgrading.
 - `bibmeded --version` reports `unknown` instead of failing when the package is not installed. The `bibmeded sources --json` field `api_key` is renamed `api_key_requirement` (it holds `required`/`optional`/`no`, never a key), and the missing-setting status now comes from a shared `required_setting_env_var` helper instead of parsing the error message.
 
 ### Fixed

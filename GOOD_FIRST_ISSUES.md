@@ -13,7 +13,7 @@ How to claim:
 
 Open items have one active owner at a time. Maintainers aim to acknowledge claims within three working days; if a claim has no update for two weeks, it may be opened for someone else.
 
-Read the [adapter guide](https://ata381.github.io/BibMedEd/adapters/) first. Reference implementations: `bibmeded/app/adapters/pubmed.py`, `openalex.py`, `crossref.py`, `semantic_scholar.py`, and the API-keyed `lens.py`.
+Read the [adapter guide](https://ata381.github.io/BibMedEd/adapters/) first. Reference implementations: `bibmeded/bibmeded/adapters/pubmed.py`, `openalex.py`, `crossref.py`, `semantic_scholar.py`, and the API-keyed `lens.py`.
 
 ## Open-access sources (no API key needed)
 
@@ -51,7 +51,7 @@ Read the [adapter guide](https://ata381.github.io/BibMedEd/adapters/) first. Ref
 - **Web of Science plain-text export for VOSviewer / Bibliometrix** — [#68](https://github.com/ata381/BibMedEd/issues/68)
 - **Troubleshooting / FAQ docs page** — [#67](https://github.com/ata381/BibMedEd/issues/67)
 - **Example Jupyter notebook for the REST API** — [#66](https://github.com/ata381/BibMedEd/issues/66)
-- **Locale-aware date parsing** in `app/services/cleaning.py`: currently assumes ISO; some adapters emit `DD-MM-YYYY`.
+- **Locale-aware date parsing** in `bibmeded/services/cleaning.py`: currently assumes ISO; some adapters emit `DD-MM-YYYY`.
 
 For an untracked idea above, open a [feature request](https://github.com/ata381/BibMedEd/issues/new?template=feature_request.yml) before starting so the scope can be agreed.
 

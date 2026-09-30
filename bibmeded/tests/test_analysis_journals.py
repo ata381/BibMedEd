@@ -1,5 +1,5 @@
-from app.models import Journal, Publication, SearchProject, SearchQuery
-from app.analysis.journals import analyze_journals
+from bibmeded.models import Journal, Publication, SearchProject, SearchQuery
+from bibmeded.analysis.journals import analyze_journals
 
 
 def test_bradford_zones_report_per_zone_article_count_not_cumulative(db):

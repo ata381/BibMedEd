@@ -20,7 +20,7 @@ If GitHub advisories are unavailable to you, you may file a regular issue contai
 
 In scope:
 
-- The BibMedEd FastAPI backend (`bibmeded/app/`)
+- The BibMedEd FastAPI backend (`bibmeded/bibmeded/`)
 - The Celery worker pipeline
 - The Next.js frontend (`bibmeded/frontend/`)
 - The provided Docker images and `render.yaml` deployment blueprint

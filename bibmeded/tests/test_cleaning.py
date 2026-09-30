@@ -1,5 +1,5 @@
-from app.services.cleaning import normalize_name, deduplicate_records, extract_country
-from app.services.pubmed import PubMedRecord
+from bibmeded.services.cleaning import normalize_name, deduplicate_records, extract_country
+from bibmeded.services.pubmed import PubMedRecord
 
 def test_normalize_name():
     assert normalize_name("Smith, John A.") == "smith john a"
@@ -22,8 +22,8 @@ def test_deduplicate_by_pmid():
     assert {r.pmid for r in deduped} == {"111", "222"}
 
 
-from app.adapters.base import RawRecord
-from app.services.cleaning import deduplicate_cross_source
+from bibmeded.adapters.base import RawRecord
+from bibmeded.services.cleaning import deduplicate_cross_source
 
 
 def test_cross_source_dedup_by_doi():

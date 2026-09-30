@@ -7,12 +7,12 @@ import httpx
 import pytest
 from lxml import etree
 
-from app.adapters.base import SearchResponse
-from app.config import settings
+from bibmeded.adapters.base import SearchResponse
+from bibmeded.config import settings
 
 
 def test_version_flag_prints_installed_version(capsys):
-    from app import cli
+    from bibmeded import cli
 
     with pytest.raises(SystemExit) as exc_info:
         cli.main(["--version"])
@@ -25,7 +25,7 @@ def test_version_flag_prints_installed_version(capsys):
 
 
 def test_version_flag_follows_resolved_version(monkeypatch, capsys):
-    from app import cli
+    from bibmeded import cli
 
     monkeypatch.setattr(cli, "version", lambda name: "9.9.9")
 
@@ -37,7 +37,7 @@ def test_version_flag_follows_resolved_version(monkeypatch, capsys):
 
 
 def test_version_flag_falls_back_when_package_not_installed(monkeypatch, capsys):
-    from app import cli
+    from bibmeded import cli
 
     def missing(name):
         raise PackageNotFoundError(name)
@@ -52,7 +52,7 @@ def test_version_flag_falls_back_when_package_not_installed(monkeypatch, capsys)
 
 
 def test_sources_runs_when_package_not_installed(monkeypatch, capsys):
-    from app import cli
+    from bibmeded import cli
 
     def missing(name):
         raise PackageNotFoundError(name)
@@ -64,7 +64,7 @@ def test_sources_runs_when_package_not_installed(monkeypatch, capsys):
 
 
 def test_required_setting_env_var_is_shared_with_configuration_error(monkeypatch):
-    from app.adapters.settings import adapter_configuration_error, required_setting_env_var
+    from bibmeded.adapters.settings import adapter_configuration_error, required_setting_env_var
 
     monkeypatch.setattr(settings, "lens_api_key", "")
 
@@ -76,7 +76,7 @@ def test_required_setting_env_var_is_shared_with_configuration_error(monkeypatch
 
 
 def test_search_dry_run_prints_estimated_count(monkeypatch, capsys):
-    from app import cli
+    from bibmeded import cli
 
     adapter = AsyncMock()
     adapter.search.return_value = SearchResponse(
@@ -110,7 +110,7 @@ def test_search_dry_run_prints_estimated_count(monkeypatch, capsys):
 
 
 def test_search_dry_run_uses_pubmed_by_default(monkeypatch, capsys):
-    from app import cli
+    from bibmeded import cli
 
     adapter = AsyncMock()
     adapter.search.return_value = SearchResponse(
@@ -138,7 +138,7 @@ def test_search_dry_run_uses_pubmed_by_default(monkeypatch, capsys):
 
 
 def test_search_dry_run_wires_lens_api_key(monkeypatch, capsys):
-    from app import cli
+    from bibmeded import cli
 
     test_value = "lens-" + "test-token"
     adapter = AsyncMock()
@@ -156,7 +156,7 @@ def test_search_dry_run_wires_lens_api_key(monkeypatch, capsys):
 
 
 def test_search_dry_run_reports_missing_lens_key_without_api_call(monkeypatch, capsys):
-    from app import cli
+    from bibmeded import cli
 
     monkeypatch.setattr(settings, "lens_api_key", "")
     get_adapter_mock = Mock()
@@ -185,7 +185,7 @@ def test_search_dry_run_uses_configured_kwargs_for_every_source(
     source,
     expected_kwargs,
 ):
-    from app import cli
+    from bibmeded import cli
 
     configured_values = {
         "pubmed_api_key": "pm-key",
@@ -211,7 +211,7 @@ def test_search_dry_run_uses_configured_kwargs_for_every_source(
 
 
 def test_search_dry_run_reports_unknown_source_without_traceback(monkeypatch, capsys):
-    from app import cli
+    from bibmeded import cli
 
     error = "Unknown adapter: unknown. Available: ['pubmed']"
     monkeypatch.setattr(cli, "get_adapter", Mock(side_effect=ValueError(error)))
@@ -235,7 +235,7 @@ def test_search_dry_run_reports_unknown_source_without_traceback(monkeypatch, ca
 
 
 def test_search_dry_run_reports_network_failure_without_traceback(monkeypatch, capsys):
-    from app import cli
+    from bibmeded import cli
 
     adapter = AsyncMock()
     adapter.search.side_effect = httpx.ConnectError("connection failed")
@@ -271,7 +271,7 @@ def test_search_dry_run_reports_response_parse_failure_without_traceback(
     capsys,
     parse_error,
 ):
-    from app import cli
+    from bibmeded import cli
 
     adapter = AsyncMock()
     adapter.search.side_effect = parse_error
@@ -295,8 +295,8 @@ def test_search_dry_run_reports_response_parse_failure_without_traceback(
 
 
 def test_search_dispatches_full_pipeline_and_reports_completion(monkeypatch, capsys):
-    from app import cli, database
-    from app.workers import tasks
+    from bibmeded import cli, database
+    from bibmeded.workers import tasks
 
     project = SimpleNamespace(id=None)
     search_query = SimpleNamespace(
@@ -377,8 +377,8 @@ def test_search_dispatches_full_pipeline_and_reports_completion(monkeypatch, cap
 
 
 def test_search_returns_error_when_worker_marks_query_failed(monkeypatch, capsys):
-    from app import cli, database
-    from app.workers import tasks
+    from bibmeded import cli, database
+    from bibmeded.workers import tasks
 
     project = SimpleNamespace(id=None)
     search_query = SimpleNamespace(
@@ -439,7 +439,7 @@ def test_search_returns_error_when_worker_marks_query_failed(monkeypatch, capsys
     assert db.closed is True
 
 def test_full_search_invalid_source_fails_fast(monkeypatch, capsys):
-    from app import cli
+    from bibmeded import cli
 
     monkeypatch.setattr(
         cli,
@@ -463,7 +463,7 @@ def test_full_search_invalid_source_fails_fast(monkeypatch, capsys):
 
 
 def test_sources_prints_table_with_adapter_statuses(monkeypatch, capsys):
-    from app import cli
+    from bibmeded import cli
 
     monkeypatch.setattr(settings, "pubmed_api_key", "pm-secret-token-123")
     monkeypatch.setattr(settings, "semantic_scholar_api_key", "")
@@ -505,7 +505,7 @@ def test_sources_reports_lens_ready_when_key_configured_without_leaking_secrets(
     monkeypatch,
     capsys,
 ):
-    from app import cli
+    from bibmeded import cli
 
     monkeypatch.setattr(settings, "pubmed_api_key", "secret-pm-value")
     monkeypatch.setattr(settings, "semantic_scholar_api_key", "secret-s2-value")
@@ -537,7 +537,7 @@ def test_sources_json_output_returns_structured_list_without_leaking_keys(
     monkeypatch,
     capsys,
 ):
-    from app import cli
+    from bibmeded import cli
 
     monkeypatch.setattr(settings, "pubmed_api_key", "secret-pm-json")
     monkeypatch.setattr(settings, "semantic_scholar_api_key", "")
@@ -580,7 +580,7 @@ def _fail_worker_import(monkeypatch, error):
     real_import = builtins.__import__
 
     def fake_import(name, *args, **kwargs):
-        if name == "app.workers.tasks":
+        if name == "bibmeded.workers.tasks":
             raise error
         return real_import(name, *args, **kwargs)
 
@@ -588,7 +588,7 @@ def _fail_worker_import(monkeypatch, error):
 
 
 def test_search_without_server_extras_prints_install_hint(monkeypatch, capsys):
-    from app import cli
+    from bibmeded import cli
 
     monkeypatch.setattr(cli, "_validate_source", Mock(return_value=True))
     _fail_worker_import(monkeypatch, ModuleNotFoundError("No module named 'celery'", name="celery"))
@@ -602,16 +602,16 @@ def test_search_without_server_extras_prints_install_hint(monkeypatch, capsys):
 
 
 def test_missing_server_module_detection_is_limited_to_server_packages():
-    from app import cli
+    from bibmeded import cli
 
     assert cli._is_missing_server_module(ModuleNotFoundError(name="celery"))
     assert cli._is_missing_server_module(ModuleNotFoundError(name="redis.asyncio"))
-    assert not cli._is_missing_server_module(ModuleNotFoundError(name="app.models.typo"))
+    assert not cli._is_missing_server_module(ModuleNotFoundError(name="bibmeded.models.typo"))
     assert not cli._is_missing_server_module(ModuleNotFoundError())
 
 
 def test_unrelated_import_error_in_worker_chain_propagates(monkeypatch):
-    from app import cli
+    from bibmeded import cli
 
     monkeypatch.setattr(cli, "_validate_source", Mock(return_value=True))
     _fail_worker_import(monkeypatch, ModuleNotFoundError("No module named 'typo'", name="typo"))

@@ -1,5 +1,5 @@
 import pytest
-from app.adapters.registry import discover_adapters, get_adapter, list_adapters, _adapters
+from bibmeded.adapters.registry import discover_adapters, get_adapter, list_adapters, _adapters
 
 
 @pytest.fixture(autouse=True)

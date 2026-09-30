@@ -7,17 +7,17 @@ from sqlalchemy import event
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 
-from app.adapters.base import RawAuthor, RawRecord
-from app.adapters.registry import discover_adapters, get_adapter
-from app.config import settings
-from app.models import (
+from bibmeded.adapters.base import RawAuthor, RawRecord
+from bibmeded.adapters.registry import discover_adapters, get_adapter
+from bibmeded.config import settings
+from bibmeded.models import (
     MethodologyStep,
     Publication,
     QueryStatus,
     SearchProject,
     SearchQuery,
 )
-from app.workers import tasks
+from bibmeded.workers import tasks
 
 
 def _make_record(
@@ -650,7 +650,7 @@ def test_run_search_binds_request_id_into_log_records_and_methodology_steps(
         tasks, "ICiteClient", lambda: _FailingICiteClient(RuntimeError("iCite down"))
     )
 
-    with caplog.at_level(logging.INFO, logger="app.workers.tasks"):
+    with caplog.at_level(logging.INFO, logger="bibmeded.workers.tasks"):
         asyncio.run(
             tasks._run_search(
                 _StubTask(), query.id, "pubmed", None, None, tasks.DEFAULT_MAX_RESULTS,

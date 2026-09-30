@@ -69,7 +69,7 @@ We'd rather be honest about these gaps than oversell. If any of them are dealbre
 ## Where BibMedEd is structurally better
 
 - **The methodology log is novel.** No other tool on this list emits a citable text record of every pipeline step — search query, source, retrieval timestamp, dedup decisions, exclusion filters, analysis runs — that you paste straight into your [PRISMA 2020](https://doi.org/10.1136/bmj.n71) Methods section. This isn't a feature you can bolt onto the others.
-- **The adapter pattern is the entire extensibility story.** Every other tool above either accepts a fixed set of import formats or is single-source. BibMedEd ships five adapters (PubMed, OpenAlex, CrossRef, Semantic Scholar, Lens.org) at ~50-250 lines each; more are open issues with claim-it labels, and the registry auto-discovers any new `BaseSourceAdapter` dropped into `app/adapters/` — no registration step.
+- **The adapter pattern is the entire extensibility story.** Every other tool above either accepts a fixed set of import formats or is single-source. BibMedEd ships five adapters (PubMed, OpenAlex, CrossRef, Semantic Scholar, Lens.org) at ~50-250 lines each; more are open issues with claim-it labels, and the registry auto-discovers any new `BaseSourceAdapter` dropped into `bibmeded/adapters/` — no registration step.
 - **Cross-source deduplication is automatic, not "import then dedupe in Excel."** DOI and PMID matching happens at retrieval time and is logged.
 - **Web-native, multi-user-ready architecture.** VOSviewer and CiteSpace are desktop tools; Bibliometrix is R-bound; pyBibX is a Python library. BibMedEd is a FastAPI service designed to run on a lab server with shared access — a deployment shape none of the alternatives offer.
 

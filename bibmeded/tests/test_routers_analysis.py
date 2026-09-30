@@ -1,4 +1,4 @@
-from app.models import Publication, SearchProject, SearchQuery
+from bibmeded.models import Publication, SearchProject, SearchQuery
 
 def test_run_publication_analysis(client, db):
     project = SearchProject(name="Test")

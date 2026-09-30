@@ -1,5 +1,5 @@
-from app.models import Keyword, KeywordType, Publication, SearchProject, SearchQuery
-from app.analysis.keywords import analyze_keywords
+from bibmeded.models import Keyword, KeywordType, Publication, SearchProject, SearchQuery
+from bibmeded.analysis.keywords import analyze_keywords
 
 def test_keyword_analysis(db):
     project = SearchProject(name="Test")

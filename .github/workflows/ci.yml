@@ -41,7 +41,7 @@ jobs:
         run: diff ../LICENSE LICENSE
 
       - name: Run pytest
-        run: pytest -q --cov=app --cov-report=term-missing
+        run: pytest -q --cov=bibmeded --cov-report=term-missing
 
   frontend-build:
     name: Frontend build

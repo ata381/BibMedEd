@@ -1,5 +1,5 @@
-from app.models import Publication, SearchProject, SearchQuery
-from app.analysis.publications import analyze_publication_trends
+from bibmeded.models import Publication, SearchProject, SearchQuery
+from bibmeded.analysis.publications import analyze_publication_trends
 
 def test_publication_trends(db):
     project = SearchProject(name="Test")

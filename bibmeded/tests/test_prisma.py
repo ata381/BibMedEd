@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 
 import pytest
 
-from app.models.methodology import MethodologyStep
-from app.services.prisma import PrismaCounts, compute_counts, render_svg
+from bibmeded.models.methodology import MethodologyStep
+from bibmeded.services.prisma import PrismaCounts, compute_counts, render_svg
 
 
 def _step(**kwargs):
@@ -273,7 +273,7 @@ def test_render_svg_omits_side_box_when_no_exclusions():
 # ---------- endpoint ----------
 
 def test_export_prisma_endpoint_returns_svg(client, db):
-    from app.models import SearchProject, SearchQuery
+    from bibmeded.models import SearchProject, SearchQuery
 
     project = SearchProject(name="PRISMA Test")
     db.add(project)
@@ -307,7 +307,7 @@ def test_export_prisma_endpoint_404_for_unknown_project(client):
 
 
 def test_export_prisma_endpoint_handles_project_with_no_steps(client, db):
-    from app.models import SearchProject
+    from bibmeded.models import SearchProject
 
     project = SearchProject(name="Empty")
     db.add(project)

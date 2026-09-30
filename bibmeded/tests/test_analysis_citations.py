@@ -1,5 +1,5 @@
-from app.models import Publication, SearchProject, SearchQuery
-from app.analysis.citations import analyze_citations, _HUB_DEGREE_CAP
+from bibmeded.models import Publication, SearchProject, SearchQuery
+from bibmeded.analysis.citations import analyze_citations, _HUB_DEGREE_CAP
 
 
 def test_citation_analysis(db):

@@ -1,5 +1,5 @@
 from datetime import date
-from app.models import Author, Journal, Keyword, KeywordType, Publication, SearchProject, SearchQuery
+from bibmeded.models import Author, Journal, Keyword, KeywordType, Publication, SearchProject, SearchQuery
 
 
 def test_create_project(db):

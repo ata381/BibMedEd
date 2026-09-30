@@ -2,8 +2,8 @@ import asyncio
 from unittest.mock import AsyncMock, patch
 from pathlib import Path
 import pytest
-from app.adapters.pubmed import PubMedAdapter
-from app.adapters.base import RawRecord, SearchResponse
+from bibmeded.adapters.pubmed import PubMedAdapter
+from bibmeded.adapters.base import RawRecord, SearchResponse
 
 
 @pytest.fixture
@@ -133,7 +133,7 @@ def test_pubmed_fetch_returns_raw_records(adapter, sample_xml):
 
 def test_pubmed_fetch_no_doi():
     adapter = PubMedAdapter(api_key="", rate_limit=10.0)
-    from app.services.pubmed import PubMedRecord
+    from bibmeded.services.pubmed import PubMedRecord
     record = PubMedRecord(pmid="99999", title="No DOI Paper")
     raw = adapter._to_raw(record)
     assert raw.external_ids == {"pmid": "99999"}

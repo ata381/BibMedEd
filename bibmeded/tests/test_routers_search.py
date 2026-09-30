@@ -1,14 +1,14 @@
 from unittest.mock import patch
 
-from app.config import settings
-from app.models import SearchProject
+from bibmeded.config import settings
+from bibmeded.models import SearchProject
 
 def test_trigger_search(client, db):
     project = SearchProject(name="Test")
     db.add(project)
     db.commit()
     db.refresh(project)
-    with patch("app.routers.search.run_search") as mock_task:
+    with patch("bibmeded.routers.search.run_search") as mock_task:
         mock_task.delay.return_value = None
         response = client.post(f"/api/projects/{project.id}/search", json={"query_string": '"AI" AND "medical education"'})
     assert response.status_code == 202
@@ -24,7 +24,7 @@ def test_trigger_search_forwards_request_id_to_run_search_task(client, db):
     db.add(project)
     db.commit()
     db.refresh(project)
-    with patch("app.routers.search.run_search") as mock_task:
+    with patch("bibmeded.routers.search.run_search") as mock_task:
         mock_task.delay.return_value = None
         response = client.post(
             f"/api/projects/{project.id}/search",
@@ -44,7 +44,7 @@ def test_trigger_search_accepts_lens_source(client, db, monkeypatch):
     db.commit()
     db.refresh(project)
 
-    with patch("app.routers.search.run_search") as mock_task:
+    with patch("bibmeded.routers.search.run_search") as mock_task:
         response = client.post(
             f"/api/projects/{project.id}/search",
             json={"query_string": "medical education", "source": "lens"},
@@ -61,7 +61,7 @@ def test_trigger_search_rejects_lens_when_api_key_is_missing(client, db, monkeyp
     db.commit()
     db.refresh(project)
 
-    with patch("app.routers.search.run_search") as mock_task:
+    with patch("bibmeded.routers.search.run_search") as mock_task:
         response = client.post(
             f"/api/projects/{project.id}/search",
             json={"query_string": "medical education", "source": "lens"},
@@ -77,7 +77,7 @@ def test_get_search_status(client, db):
     db.add(project)
     db.commit()
     db.refresh(project)
-    with patch("app.routers.search.run_search") as mock_task:
+    with patch("bibmeded.routers.search.run_search") as mock_task:
         mock_task.delay.return_value = None
         create = client.post(f"/api/projects/{project.id}/search", json={"query_string": "test"})
     query_id = create.json()["query_id"]

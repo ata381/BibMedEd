@@ -11,11 +11,11 @@ WARNING: This destroys all data. Only use in development.
 import sys
 from pathlib import Path
 
-# Ensure app is importable
+# Ensure the bibmeded package is importable
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.database import Base, get_engine
-import app.models  # noqa: F401 — register all models
+from bibmeded.database import Base, get_engine
+import bibmeded.models  # noqa: F401 — register all models
 
 def main():
     engine = get_engine()

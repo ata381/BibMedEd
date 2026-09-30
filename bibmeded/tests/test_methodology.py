@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
-from app.models.methodology import MethodologyStep
+from bibmeded.models.methodology import MethodologyStep
 
 
 def test_create_methodology_step(db):
-    from app.models import SearchProject, SearchQuery
+    from bibmeded.models import SearchProject, SearchQuery
 
     project = SearchProject(name="Test Project")
     db.add(project)
@@ -36,7 +36,7 @@ def test_create_methodology_step(db):
 
 
 def test_query_methodology_steps_relationship(db):
-    from app.models import SearchProject, SearchQuery
+    from bibmeded.models import SearchProject, SearchQuery
 
     project = SearchProject(name="Test Project 2")
     db.add(project)
@@ -65,7 +65,7 @@ def test_query_methodology_steps_relationship(db):
 
 
 def test_export_methodology(client, db):
-    from app.models import SearchProject, SearchQuery
+    from bibmeded.models import SearchProject, SearchQuery
 
     project = SearchProject(name="Export Test")
     db.add(project)
@@ -107,7 +107,7 @@ def test_export_methodology(client, db):
 
 
 def test_export_methodology_no_steps(client, db):
-    from app.models import SearchProject
+    from bibmeded.models import SearchProject
 
     project = SearchProject(name="Empty Project")
     db.add(project)

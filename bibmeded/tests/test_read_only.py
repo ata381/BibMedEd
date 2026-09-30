@@ -13,18 +13,18 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import event, func, select
 
-from app.analysis import ANALYSIS_FUNCTIONS
-from app.config import Settings, settings
-from app.models import AnalysisRun, Publication, QueryStatus, SearchProject, SearchQuery
-from app.read_only import (
+from bibmeded.analysis import ANALYSIS_FUNCTIONS
+from bibmeded.config import Settings, settings
+from bibmeded.models import AnalysisRun, Publication, QueryStatus, SearchProject, SearchQuery
+from bibmeded.read_only import (
     READ_ONLY_DETAIL,
     SAFE_METHODS,
     ReadOnlyViolation,
     _reject_flush,
     guard_session,
 )
-from app.services.demo_seed import seed_demo_data
-from app.services.sample_project import SAMPLE_PROJECT_KEY
+from bibmeded.services.demo_seed import seed_demo_data
+from bibmeded.services.sample_project import SAMPLE_PROJECT_KEY
 
 EXPECTED_BLOCKED_ROUTES = {
     ("POST", "/api/projects"),
@@ -40,8 +40,8 @@ EXPORT_FORMATS = ("csv", "ris", "json", "prisma", "methodology", "bundle")
 
 
 def _build_app(db, read_only: bool, monkeypatch):
-    from app.database import get_db
-    from app.main import create_app
+    from bibmeded.database import get_db
+    from bibmeded.main import create_app
 
     monkeypatch.setattr(settings, "read_only", read_only)
     app = create_app()
@@ -111,7 +111,7 @@ def test_every_mutating_route_returns_403(read_only_client, db, demo_project):
     routes = _mutating_routes(read_only_client.app)
     assert routes
 
-    with patch("app.routers.search.run_search") as run_search:
+    with patch("bibmeded.routers.search.run_search") as run_search:
         for method, path in routes:
             url = _concrete_path(path, demo_project.id, publication_id)
             response = read_only_client.request(
@@ -287,11 +287,11 @@ def test_get_handler_that_writes_is_mapped_to_403(db, demo_project, monkeypatch)
 
 @pytest.mark.parametrize("read_only", [True, False])
 def test_get_db_guards_sessions_only_in_read_only_mode(monkeypatch, tmp_path, read_only):
-    from app.database import get_db
+    from bibmeded.database import get_db
 
     monkeypatch.setattr(settings, "read_only", read_only)
     monkeypatch.setattr(settings, "database_url", f"sqlite:///{tmp_path / 'guard.db'}")
-    monkeypatch.setattr("app.database._ReadOnlySessionLocal", None)
+    monkeypatch.setattr("bibmeded.database._ReadOnlySessionLocal", None)
     generator = get_db()
     session = next(generator)
     try:
@@ -343,8 +343,8 @@ def test_seed_backfills_missing_analyses(db):
 def test_startup_seeds_and_verifies_only_in_read_only_mode(db, monkeypatch, read_only, expected_calls):
     seed = MagicMock()
     verify = MagicMock()
-    monkeypatch.setattr("app.main._seed_read_only_demo", seed)
-    monkeypatch.setattr("app.main._verify_read_only_guard", verify)
+    monkeypatch.setattr("bibmeded.main._seed_read_only_demo", seed)
+    monkeypatch.setattr("bibmeded.main._verify_read_only_guard", verify)
     app = _build_app(db, read_only=read_only, monkeypatch=monkeypatch)
 
     with TestClient(app):
@@ -355,14 +355,14 @@ def test_startup_seeds_and_verifies_only_in_read_only_mode(db, monkeypatch, read
 
 
 def test_seed_helper_uses_and_closes_its_own_session(monkeypatch):
-    import app.database as database
-    from app.main import _seed_read_only_demo
+    import bibmeded.database as database
+    from bibmeded.main import _seed_read_only_demo
 
     session = MagicMock()
     seed = MagicMock()
     monkeypatch.setattr(database, "_engine", object())
     monkeypatch.setattr(database, "_SessionLocal", lambda: session)
-    monkeypatch.setattr("app.services.demo_seed.seed_demo_data", seed)
+    monkeypatch.setattr("bibmeded.services.demo_seed.seed_demo_data", seed)
 
     _seed_read_only_demo()
 

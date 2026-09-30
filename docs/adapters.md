@@ -7,7 +7,7 @@ BibMedEd uses a plug-and-play adapter pattern. Each data source (PubMed, OpenAle
 Every adapter must implement two methods and declare three class attributes:
 
 ```python
-from app.adapters.base import BaseSourceAdapter, RawRecord, SearchResponse
+from bibmeded.adapters.base import BaseSourceAdapter, RawRecord, SearchResponse
 
 class MyAdapter(BaseSourceAdapter):
     name = "mysource"              # unique identifier
@@ -23,7 +23,7 @@ class MyAdapter(BaseSourceAdapter):
         ...
 ```
 
-Drop the file into `app/adapters/` and restart the worker. The registry auto-discovers it.
+Drop the file into `bibmeded/adapters/` and restart the worker. The registry auto-discovers it.
 
 ## RawRecord Reference
 
@@ -93,7 +93,7 @@ def methodology_label(self) -> str:
 
 ## Walkthrough: OpenAlex Adapter
 
-The shipped OpenAlex adapter (`app/adapters/openalex.py`) is a complete real-world example. Key patterns:
+The shipped OpenAlex adapter (`bibmeded/adapters/openalex.py`) is a complete real-world example. Key patterns:
 
 1. **`search()`** hits `/works?search=...` and returns the first page of IDs + total count
 2. **`search_paginated()`** overrides the default to use OpenAlex cursor pagination
@@ -103,11 +103,11 @@ The shipped OpenAlex adapter (`app/adapters/openalex.py`) is a complete real-wor
    - Reconstructing abstracts from OpenAlex's inverted index format
    - Parsing author affiliations from nested institution objects
 
-Read the full source: [`app/adapters/openalex.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/app/adapters/openalex.py)
+Read the full source: [`bibmeded/adapters/openalex.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/bibmeded/adapters/openalex.py)
 
 ## Walkthrough: CrossRef Adapter
 
-The CrossRef adapter (`app/adapters/crossref.py`) shows the same pattern applied to a metadata-only source that's the canonical DOI resolver. CrossRef contributes huge cross-source dedup leverage because most other adapters carry a DOI but few normalise it consistently.
+The CrossRef adapter (`bibmeded/adapters/crossref.py`) shows the same pattern applied to a metadata-only source that's the canonical DOI resolver. CrossRef contributes huge cross-source dedup leverage because most other adapters carry a DOI but few normalise it consistently.
 
 Patterns worth noting:
 
@@ -117,11 +117,11 @@ Patterns worth noting:
 4. **Multi-fallback year extraction** — `published-print` → `published-online` → `issued` → `created`. CrossRef is inconsistent about which key is populated for a given record.
 5. **References get the same lowercase treatment** — `references` list is populated from `reference[].DOI` and lowercased, so downstream citation analyses can cross-link to other CrossRef records without case mismatches.
 
-Read the full source: [`app/adapters/crossref.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/app/adapters/crossref.py) — and the tests at [`tests/test_adapters_crossref.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/tests/test_adapters_crossref.py) demonstrate the fixture-driven testing convention every new adapter PR should follow.
+Read the full source: [`bibmeded/adapters/crossref.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/bibmeded/adapters/crossref.py) — and the tests at [`tests/test_adapters_crossref.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/tests/test_adapters_crossref.py) demonstrate the fixture-driven testing convention every new adapter PR should follow.
 
 ## Walkthrough: Semantic Scholar Adapter
 
-The Semantic Scholar adapter (`app/adapters/semantic_scholar.py`) shows the Graph API v1 pattern, including its citation graph and an optional-but-not-required API key.
+The Semantic Scholar adapter (`bibmeded/adapters/semantic_scholar.py`) shows the Graph API v1 pattern, including its citation graph and an optional-but-not-required API key.
 
 Patterns worth noting:
 
@@ -133,11 +133,11 @@ Patterns worth noting:
 6. **Journal metadata has two possible shapes** — S2 records carry journal info in either a free-text `journal` object or a canonical `publicationVenue` object depending on the paper; `_to_raw()` falls back from one to the other for both name and ISSN.
 7. **`fieldsOfStudy` doubles as keywords** — Semantic Scholar doesn't expose author keywords, so the adapter maps its `fieldsOfStudy` list into `RawRecord.keywords` as the closest available signal. `mesh_terms=[]` is passed explicitly, same as every non-PubMed adapter.
 
-Read the full source: [`app/adapters/semantic_scholar.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/app/adapters/semantic_scholar.py) — and the tests at [`tests/test_adapters_semantic_scholar.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/tests/test_adapters_semantic_scholar.py).
+Read the full source: [`bibmeded/adapters/semantic_scholar.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/bibmeded/adapters/semantic_scholar.py) — and the tests at [`tests/test_adapters_semantic_scholar.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/tests/test_adapters_semantic_scholar.py).
 
 ## Walkthrough: Lens.org Adapter
 
-The Lens.org adapter (`app/adapters/lens.py`) shows the pattern for an API-keyed scholarly-search source with offset pagination and Lens-native identifiers.
+The Lens.org adapter (`bibmeded/adapters/lens.py`) shows the pattern for an API-keyed scholarly-search source with offset pagination and Lens-native identifiers.
 
 Patterns worth noting:
 
@@ -148,11 +148,11 @@ Patterns worth noting:
 5. **Cross-source IDs are preserved** - Lens IDs, DOIs, PMIDs, PMCIDs, CORE IDs, OpenAlex IDs, and Microsoft Academic IDs are copied into `external_ids` when present, improving downstream deduplication.
 6. **References stay source-native** - Lens reference IDs are emitted as `references`, matching the adapter contract that references use each source's native identifiers.
 
-Read the [official Lens Scholarly API documentation](https://docs.api.lens.org/) and the full source: [`app/adapters/lens.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/app/adapters/lens.py) - with fixture-based tests at [`tests/test_adapters_lens.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/tests/test_adapters_lens.py).
+Read the [official Lens Scholarly API documentation](https://docs.api.lens.org/) and the full source: [`bibmeded/adapters/lens.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/bibmeded/adapters/lens.py) - with fixture-based tests at [`tests/test_adapters_lens.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/tests/test_adapters_lens.py).
 
 ## Step-by-Step: Adding a New Source
 
-1. Create `app/adapters/mysource.py`
+1. Create `bibmeded/adapters/mysource.py`
 2. Implement `search()` and `fetch()` mapping to `RawRecord`
 3. Populate `external_ids` with every cross-reference ID the API provides
 4. Restart the worker: `docker compose restart worker`

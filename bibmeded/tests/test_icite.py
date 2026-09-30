@@ -3,7 +3,7 @@ import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 import pytest
-from app.services.icite import ICiteClient
+from bibmeded.services.icite import ICiteClient
 
 @pytest.fixture
 def sample_response():

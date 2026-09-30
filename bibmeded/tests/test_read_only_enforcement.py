@@ -17,11 +17,11 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-import app.read_only as read_only_module
-from app.config import settings, unrecognised_env_vars
-from app.database import Base
-from app.models import SearchProject
-from app.read_only import (
+import bibmeded.read_only as read_only_module
+from bibmeded.config import settings, unrecognised_env_vars
+from bibmeded.database import Base
+from bibmeded.models import SearchProject
+from bibmeded.read_only import (
     POSTGRES_READ_ONLY_OPTIONS,
     REASSERT_STATEMENTS,
     WEBSOCKET_POLICY_VIOLATION,
@@ -92,11 +92,11 @@ def test_read_only_engine_still_serves_reads(read_only_session):
 
 
 def test_get_db_uses_read_only_engine_in_read_only_mode(monkeypatch, demo_db_url):
-    from app.database import get_db
+    from bibmeded.database import get_db
 
     monkeypatch.setattr(settings, "read_only", True)
     monkeypatch.setattr(settings, "database_url", demo_db_url)
-    monkeypatch.setattr("app.database._ReadOnlySessionLocal", None)
+    monkeypatch.setattr("bibmeded.database._ReadOnlySessionLocal", None)
     generator = get_db()
     session = next(generator)
     try:
@@ -198,14 +198,14 @@ def test_verify_checks_postgres_transaction_read_only(reported, ok):
 
 
 def test_startup_verification_uses_the_read_only_engine(monkeypatch, demo_db_url):
-    from app.main import _verify_read_only_guard
+    from bibmeded.main import _verify_read_only_guard
 
     monkeypatch.setattr(settings, "database_url", demo_db_url)
-    monkeypatch.setattr("app.database._ReadOnlySessionLocal", None)
+    monkeypatch.setattr("bibmeded.database._ReadOnlySessionLocal", None)
     try:
         _verify_read_only_guard()
     finally:
-        from app.database import get_read_only_engine
+        from bibmeded.database import get_read_only_engine
 
         get_read_only_engine().dispose()
 
@@ -216,8 +216,8 @@ def test_unsupported_database_fails_loudly():
 
 
 def _app_with_websocket(db, read_only: bool, monkeypatch):
-    from app.database import get_db
-    from app.main import create_app
+    from bibmeded.database import get_db
+    from bibmeded.main import create_app
 
     monkeypatch.setattr(settings, "read_only", read_only)
     app = create_app()
@@ -265,27 +265,27 @@ def test_unrecognised_env_vars_flags_typos_only():
 
 @pytest.mark.parametrize("read_only", [True, False])
 def test_startup_logs_mode_and_warns_on_unknown_env_vars(db, monkeypatch, caplog, read_only):
-    from app.database import get_db
-    from app.main import create_app
+    from bibmeded.database import get_db
+    from bibmeded.main import create_app
 
-    monkeypatch.setattr("app.main._seed_read_only_demo", lambda: None)
-    monkeypatch.setattr("app.main._verify_read_only_guard", lambda: None)
+    monkeypatch.setattr("bibmeded.main._seed_read_only_demo", lambda: None)
+    monkeypatch.setattr("bibmeded.main._verify_read_only_guard", lambda: None)
     monkeypatch.setattr(settings, "read_only", read_only)
     monkeypatch.setenv("BIBMEDED_READONLY", "true")
     app = create_app()
     app.dependency_overrides[get_db] = lambda: db
-    caplog.set_level(logging.INFO, logger="app.main")
+    caplog.set_level(logging.INFO, logger="bibmeded.main")
 
     with TestClient(app):
         pass
 
-    messages = [record.getMessage() for record in caplog.records if record.name == "app.main"]
+    messages = [record.getMessage() for record in caplog.records if record.name == "bibmeded.main"]
     assert f"BibMedEd mode: read_only={read_only}" in messages
     assert any("BIBMEDED_READONLY" in m and "unrecognised" in m for m in messages)
 
 
 def test_postgres_driver_validator_survives_alongside_read_only_settings():
-    from app.config import Settings
+    from bibmeded.config import Settings
 
     configured = Settings(_env_file=None, database_url="postgres://u:p@h/db", read_only=True)
 
@@ -296,7 +296,7 @@ def test_postgres_driver_validator_survives_alongside_read_only_settings():
 
 @pytest.mark.parametrize("raw", ["postgres://u:p@h/db", "postgresql://u:p@h/db", "postgresql+psycopg2://u:p@h/db"])
 def test_read_only_engine_accepts_the_normalised_psycopg2_url(raw):
-    from app.config import Settings
+    from bibmeded.config import Settings
 
     normalised = Settings(_env_file=None, database_url=raw).database_url
     engine = create_read_only_engine(normalised)

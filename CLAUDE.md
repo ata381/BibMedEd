@@ -6,7 +6,7 @@ Orients agents (Claude Code, Codex, Cursor, etc.) to the conventions used in thi
 
 ```
 bibmeded/
-  app/                # FastAPI backend
+  bibmeded/           # FastAPI backend (Python import package)
     adapters/         # Data-source adapters (base.py defines RawRecord + BaseSourceAdapter)
     analysis/         # Bibliometric modules (publications, authors, countries, ...)
     routers/          # HTTP routes

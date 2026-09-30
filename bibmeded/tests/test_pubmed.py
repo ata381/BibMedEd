@@ -2,7 +2,7 @@ import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 import pytest
-from app.services.pubmed import PubMedClient
+from bibmeded.services.pubmed import PubMedClient
 
 @pytest.fixture
 def sample_xml():

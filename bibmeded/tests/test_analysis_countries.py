@@ -1,5 +1,5 @@
-from app.models import Affiliation, Author, Publication, SearchProject, SearchQuery
-from app.analysis.countries import analyze_countries
+from bibmeded.models import Affiliation, Author, Publication, SearchProject, SearchQuery
+from bibmeded.analysis.countries import analyze_countries
 
 
 def test_country_analysis(db):

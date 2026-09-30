@@ -35,7 +35,7 @@ services:
     # scripts/entrypoint.sh still runs first (alembic upgrade head), then this
     # creates any missing tables; startup then seeds the sample and verifies
     # the read-only guard.
-    dockerCommand: sh -c "python -c 'from app.database import Base, get_engine; import app.models; Base.metadata.create_all(get_engine())' && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    dockerCommand: sh -c "python -c 'from bibmeded.database import Base, get_engine; import bibmeded.models; Base.metadata.create_all(get_engine())' && uvicorn bibmeded.main:app --host 0.0.0.0 --port $PORT"
 
   - type: web
     name: bibmeded-demo-frontend

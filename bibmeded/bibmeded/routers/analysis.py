@@ -1,0 +1,39 @@
+import json
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from bibmeded.database import get_db
+from bibmeded.models import SearchProject, AnalysisRun
+from bibmeded.analysis import ANALYSIS_FUNCTIONS, with_schema_version
+from bibmeded.schemas.analysis import AnalysisResponse
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/api/projects/{project_id}/analysis", tags=["analysis"])
+
+
+@router.post("/{analysis_type}", response_model=AnalysisResponse)
+def run_analysis(project_id: int, analysis_type: str, db: Session = Depends(get_db)):
+    if analysis_type not in ANALYSIS_FUNCTIONS:
+        # Sanitize: don't echo the user-controlled `analysis_type` back into a log
+        # line or response that a downstream log aggregator might index — use %r repr.
+        logger.warning("unknown analysis_type requested: %r", analysis_type)
+        raise HTTPException(status_code=400, detail="Unknown analysis type")
+    project = db.get(SearchProject, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    func = ANALYSIS_FUNCTIONS[analysis_type]
+    results = with_schema_version(func(db, project_id))
+    run = AnalysisRun(project_id=project_id, analysis_type=analysis_type, results=json.dumps(results))
+    db.add(run)
+    db.commit()
+    db.refresh(run)
+    return AnalysisResponse(id=run.id, project_id=run.project_id, analysis_type=run.analysis_type, results=results, created_at=run.created_at)
+
+@router.get("/{analysis_type}", response_model=AnalysisResponse)
+def get_analysis(project_id: int, analysis_type: str, db: Session = Depends(get_db)):
+    run = db.query(AnalysisRun).filter(AnalysisRun.project_id == project_id, AnalysisRun.analysis_type == analysis_type).order_by(AnalysisRun.created_at.desc()).first()
+    if not run:
+        raise HTTPException(status_code=404, detail="Analysis not found. Run it first.")
+    return AnalysisResponse(id=run.id, project_id=run.project_id, analysis_type=run.analysis_type, results=with_schema_version(json.loads(run.results)), created_at=run.created_at)

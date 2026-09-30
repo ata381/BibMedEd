@@ -1,4 +1,4 @@
-"""Unit tests for app.services.export_generators.
+"""Unit tests for bibmeded.services.export_generators.
 
 These build Publication / Author / Journal / Keyword / MethodologyStep instances
 purely in-memory (no DB session) since the generator functions only read
@@ -13,12 +13,12 @@ from datetime import datetime, timezone
 
 import pytest
 
-from app.models.author import Author
-from app.models.journal import Journal
-from app.models.keyword import Keyword, KeywordType
-from app.models.methodology import MethodologyStep
-from app.models.publication import Publication
-from app.services.export_generators import (
+from bibmeded.models.author import Author
+from bibmeded.models.journal import Journal
+from bibmeded.models.keyword import Keyword, KeywordType
+from bibmeded.models.methodology import MethodologyStep
+from bibmeded.models.publication import Publication
+from bibmeded.services.export_generators import (
     EXPORT_SCHEMA_VERSION,
     generate_bundle,
     generate_csv,

@@ -1,5 +1,5 @@
-from app.models import Author, Publication, SearchProject, SearchQuery
-from app.analysis.authors import analyze_authors
+from bibmeded.models import Author, Publication, SearchProject, SearchQuery
+from bibmeded.analysis.authors import analyze_authors
 
 def test_author_analysis(db):
     project = SearchProject(name="Test")
@@ -35,7 +35,7 @@ def test_compute_indices_classic_example():
     """[5,4,3,2,1] → h=3 (papers 1-3 each have >=3 citations), g=3
     (cumulative top-3 = 12 >= 9; cumulative top-4 = 14 < 16),
     e = sqrt(12 - 9) ≈ 1.73."""
-    from app.analysis.authors import _compute_indices
+    from bibmeded.analysis.authors import _compute_indices
     indices = _compute_indices([5, 4, 3, 2, 1], pub_count=5)
     assert indices["h_index"] == 3
     assert indices["g_index"] == 3
@@ -44,7 +44,7 @@ def test_compute_indices_classic_example():
 
 def test_compute_indices_g_index_rewards_outliers():
     """g-index promotes one highly-cited paper. [20,1,1] → h=1 but g=3 (1*20+1+1=22 >= 9)."""
-    from app.analysis.authors import _compute_indices
+    from bibmeded.analysis.authors import _compute_indices
     indices = _compute_indices([20, 1, 1], pub_count=3)
     assert indices["h_index"] == 1
     assert indices["g_index"] == 3
@@ -56,20 +56,20 @@ def test_compute_indices_g_index_borrowing_with_tail_outlier():
     For [10, 4, 4, 4, 4, 0]: cumulative=10,14,18,22,26 → g=5 (26 >= 25).
     Confirms the early-break is correct for sorted-descending lists (cumulative
     monotonic, i^2 grows quadratically, so once cumulative<i^2 it stays below)."""
-    from app.analysis.authors import _compute_indices
+    from bibmeded.analysis.authors import _compute_indices
     indices = _compute_indices([10, 4, 4, 4, 4, 0], pub_count=6)
     assert indices["h_index"] == 4  # [10,4,4,4] all >= 4; 5th is 4 not >=5
     assert indices["g_index"] == 5  # cumsum at top-5 is 26 >= 25
 
 
 def test_compute_indices_zero_citations():
-    from app.analysis.authors import _compute_indices
+    from bibmeded.analysis.authors import _compute_indices
     indices = _compute_indices([0, 0, 0], pub_count=3)
     assert indices == {"h_index": 0, "g_index": 0, "e_index": 0.0}
 
 
 def test_compute_indices_empty():
-    from app.analysis.authors import _compute_indices
+    from bibmeded.analysis.authors import _compute_indices
     indices = _compute_indices([], pub_count=0)
     assert indices == {"h_index": 0, "g_index": 0, "e_index": 0.0}
 

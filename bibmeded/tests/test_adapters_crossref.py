@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock, patch
 import httpx
 import pytest
 
-from app.adapters.crossref import CrossrefAdapter
-from app.adapters.base import RawRecord, SearchResponse
+from bibmeded.adapters.crossref import CrossrefAdapter
+from bibmeded.adapters.base import RawRecord, SearchResponse
 
 
 @pytest.fixture
