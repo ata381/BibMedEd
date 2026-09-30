@@ -41,6 +41,10 @@ def get_read_only_session_factory():
     return _ReadOnlySessionLocal
 
 
+def get_read_only_engine() -> Engine:
+    return get_read_only_session_factory().kw["bind"]
+
+
 # Module-level alias used by legacy code that does `from app.database import engine`
 # This is a property-like approach: access triggers lazy init.
 # For simple compatibility we expose a callable.

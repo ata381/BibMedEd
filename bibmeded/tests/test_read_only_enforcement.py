@@ -7,10 +7,11 @@ itself holds read-only. Each write path below must fail against that engine.
 
 import logging
 import uuid
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, delete, insert, select, text, update
+from sqlalchemy import create_engine, delete, insert, make_url, select, text, update
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -19,7 +20,14 @@ import app.read_only as read_only_module
 from app.config import settings, unrecognised_env_vars
 from app.database import Base
 from app.models import SearchProject
-from app.read_only import POSTGRES_READ_ONLY_OPTIONS, WEBSOCKET_POLICY_VIOLATION, create_read_only_engine
+from app.read_only import (
+    POSTGRES_READ_ONLY_OPTIONS,
+    REASSERT_STATEMENTS,
+    WEBSOCKET_POLICY_VIOLATION,
+    _reassert_on_checkout,
+    create_read_only_engine,
+    verify_read_only_engine,
+)
 
 
 @pytest.fixture
@@ -101,18 +109,105 @@ def test_get_db_uses_read_only_engine_in_read_only_mode(monkeypatch, demo_db_url
     assert _project_names(demo_db_url) == ["keep"]
 
 
-def test_postgres_engine_uses_read_only_default_transactions(monkeypatch):
+def _capture_postgres_engine(monkeypatch, url: str) -> dict:
     captured = {}
 
-    def fake_create_engine(url, **kwargs):
-        captured.update(url=url, **kwargs)
-        return object()
+    def fake_create_engine(engine_url, **kwargs):
+        captured.update(url=engine_url, **kwargs)
+        return MagicMock()
 
     monkeypatch.setattr(read_only_module, "create_engine", fake_create_engine)
+    monkeypatch.setattr(read_only_module.event, "listen", MagicMock())
+    create_read_only_engine(url)
+    return captured
 
-    create_read_only_engine("postgresql://u:p@db/bibmeded")
+
+@pytest.mark.parametrize(
+    "url",
+    ["postgresql://u:p@db/bibmeded", "postgresql+psycopg2://u:p@db/bibmeded", "postgresql+psycopg://u:p@db/bibmeded"],
+)
+def test_postgres_engine_uses_read_only_default_transactions(monkeypatch, url):
+    captured = _capture_postgres_engine(monkeypatch, url)
 
     assert captured["connect_args"] == {"options": POSTGRES_READ_ONLY_OPTIONS}
+    assert captured["url"].drivername == url.split(":")[0]
+
+
+def test_postgres_engine_merges_existing_options(monkeypatch):
+    captured = _capture_postgres_engine(
+        monkeypatch,
+        "postgresql+psycopg2://u:p@db/bibmeded?options=-c%20statement_timeout%3D5000&sslmode=require",
+    )
+
+    assert captured["connect_args"] == {"options": f"-c statement_timeout=5000 {POSTGRES_READ_ONLY_OPTIONS}"}
+    assert "options" not in captured["url"].query
+    assert captured["url"].query["sslmode"] == "require"
+
+
+def test_postgres_engine_reasserts_read_only_on_checkout(monkeypatch):
+    _capture_postgres_engine(monkeypatch, "postgresql+psycopg2://u:p@db/bibmeded")
+
+    (engine, identifier, listener), _ = read_only_module.event.listen.call_args
+    assert identifier == "checkout"
+    dbapi_connection = MagicMock()
+    listener(dbapi_connection, None, None)
+    dbapi_connection.cursor.return_value.execute.assert_called_once_with(REASSERT_STATEMENTS["postgresql"])
+    dbapi_connection.commit.assert_called_once()
+
+
+def test_lifted_sqlite_guard_does_not_survive_pool_checkin(read_only_session, demo_db_url):
+    engine = read_only_session.get_bind()
+    with engine.connect() as connection:
+        connection.exec_driver_sql("PRAGMA query_only = OFF")
+        assert connection.exec_driver_sql("PRAGMA query_only").scalar() == 0
+
+    with engine.connect() as connection:
+        assert connection.exec_driver_sql("PRAGMA query_only").scalar() == 1
+        with pytest.raises(OperationalError, match="readonly"):
+            connection.exec_driver_sql("DELETE FROM search_projects")
+
+    assert _project_names(demo_db_url) == ["keep"]
+
+
+def test_verify_accepts_guarded_sqlite_engine(read_only_session):
+    verify_read_only_engine(read_only_session.get_bind())
+
+
+def test_verify_rejects_unguarded_sqlite_engine(demo_db_url):
+    engine = create_engine(demo_db_url)
+    try:
+        with pytest.raises(RuntimeError, match="not active"):
+            verify_read_only_engine(engine)
+    finally:
+        engine.dispose()
+
+
+@pytest.mark.parametrize("reported, ok", [("on", True), ("off", False)])
+def test_verify_checks_postgres_transaction_read_only(reported, ok):
+    engine = MagicMock()
+    engine.url = make_url("postgresql+psycopg2://u:p@db/bibmeded")
+    connection = engine.connect.return_value.__enter__.return_value
+    connection.exec_driver_sql.return_value.scalar.return_value = reported
+
+    if ok:
+        verify_read_only_engine(engine)
+    else:
+        with pytest.raises(RuntimeError, match="not active"):
+            verify_read_only_engine(engine)
+    connection.exec_driver_sql.assert_called_once_with("SHOW transaction_read_only")
+
+
+def test_startup_verification_uses_the_read_only_engine(monkeypatch, demo_db_url):
+    from app.main import _verify_read_only_guard
+
+    monkeypatch.setattr(settings, "database_url", demo_db_url)
+    monkeypatch.setattr("app.database._ReadOnlySessionLocal", None)
+    try:
+        _verify_read_only_guard()
+    finally:
+        from app.database import get_read_only_engine
+
+        get_read_only_engine().dispose()
 
 
 def test_unsupported_database_fails_loudly():
@@ -174,6 +269,7 @@ def test_startup_logs_mode_and_warns_on_unknown_env_vars(db, monkeypatch, caplog
     from app.main import create_app
 
     monkeypatch.setattr("app.main._seed_read_only_demo", lambda: None)
+    monkeypatch.setattr("app.main._verify_read_only_guard", lambda: None)
     monkeypatch.setattr(settings, "read_only", read_only)
     monkeypatch.setenv("BIBMEDED_READONLY", "true")
     app = create_app()

@@ -337,15 +337,18 @@ def test_seed_backfills_missing_analyses(db):
 
 
 @pytest.mark.parametrize("read_only, expected_calls", [(True, 1), (False, 0)])
-def test_startup_seeds_only_in_read_only_mode(db, monkeypatch, read_only, expected_calls):
+def test_startup_seeds_and_verifies_only_in_read_only_mode(db, monkeypatch, read_only, expected_calls):
     seed = MagicMock()
+    verify = MagicMock()
     monkeypatch.setattr("app.main._seed_read_only_demo", seed)
+    monkeypatch.setattr("app.main._verify_read_only_guard", verify)
     app = _build_app(db, read_only=read_only, monkeypatch=monkeypatch)
 
     with TestClient(app):
         pass
 
     assert seed.call_count == expected_calls
+    assert verify.call_count == expected_calls
 
 
 def test_seed_helper_uses_and_closes_its_own_session(monkeypatch):

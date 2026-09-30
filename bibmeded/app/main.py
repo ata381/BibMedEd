@@ -55,6 +55,13 @@ def _seed_read_only_demo() -> None:
         session.close()
 
 
+def _verify_read_only_guard() -> None:
+    from app.database import get_read_only_engine
+    from app.read_only import verify_read_only_engine
+
+    verify_read_only_engine(get_read_only_engine())
+
+
 def _log_startup_configuration() -> None:
     logger.info("BibMedEd mode: read_only=%s", settings.read_only)
     for name in unrecognised_env_vars(os.environ):
@@ -66,6 +73,7 @@ async def lifespan(app: FastAPI):
     _log_startup_configuration()
     if settings.read_only:
         _seed_read_only_demo()
+        _verify_read_only_guard()
     yield
 
 
