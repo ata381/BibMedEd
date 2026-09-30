@@ -7,7 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from . import config, gh, issues
+from . import gh, issues
 
 PAUSE_FILE = Path(".claude/harness/PAUSE")
 PROBE_HOSTS = ("https://api.github.com", "https://pypi.org", "https://pypistats.org", "https://api.openalex.org")

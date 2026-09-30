@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 
 from conftest import pr_fixture, review_fixture
-from hb import classify, merge, state
+from hbtools import classify, merge, state
 
 NOW = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)  # every fixture PR is 36 h old
 SHA = "abcdef1234567890abcdef1234567890abcdef12"

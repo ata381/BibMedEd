@@ -9,7 +9,7 @@ Shared by the maintainer's local Claude Code sessions and by the scheduled cloud
 | `constitution.md` | every cloud routine | identity, trust, tools, never-list, state, caps. ≤ 60 lines by design |
 | `roles/maintainer.md` | the 6-hourly gatekeeper routine | phases, gates, recovery table |
 | `roles/worker.md` | the proposer routine (enabled after the 2026-10-12 retro) | build, front-door and scout modes |
-| `bin/hb.py`, `bin/hb/` | every cloud routine | the gated tools: `doctor`, `commands`, `state`, `classify-pr`, `screen-paths`, `merge-pr`, `close-issue`, `floodgate`, `heartbeat` |
+| `bin/hb.py`, `bin/hbtools/` | every cloud routine | the gated tools: `doctor`, `commands`, `state`, `classify-pr`, `screen-paths`, `merge-pr`, `close-issue`, `floodgate`, `heartbeat` |
 | `bin/tests/` | CI of the harness itself | gate tests against recorded `gh` shapes |
 | `evals/` | harness PR authors | replay cases with expected decisions |
 | `verify.md`, `report-contract.md` | local subagents and the cloud phases | verification matrix and the report block |

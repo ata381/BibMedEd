@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from conftest import pr_fixture
-from hb import classify, config, paths
+from hbtools import classify, config, paths
 
 NOW = datetime(2026, 10, 1, 12, 0, tzinfo=timezone.utc)
 

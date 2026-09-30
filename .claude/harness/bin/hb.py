@@ -14,7 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from hb import classify, config, doctor, gh, issues, merge, out, paths, state  # noqa: E402
+from hbtools import classify, config, doctor, gh, issues, merge, out, paths, state  # noqa: E402
 
 
 def cmd_doctor(a) -> int:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 
-from . import classify, config, gh, paths
+from . import config, gh, paths
 
 THREADS_QUERY = """
 query($owner:String!,$name:String!,$number:Int!){

@@ -1,8 +1,7 @@
-import json
 
 import pytest
 
-from hb import config, issues, state
+from hbtools import config, issues, state
 
 
 def comment(body, cid=1, updated="2026-10-01T00:00:00Z"):
