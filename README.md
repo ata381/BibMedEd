@@ -90,6 +90,8 @@ docker compose up
 
 Open [http://localhost:3000](http://localhost:3000). That's it.
 
+**Just want to look around?** Run the disposable, read-only local demo (SQLite, no Postgres or Redis) from `bibmeded/`: `docker compose -f docker-compose.demo.yml up --build`, then open [http://localhost:3100](http://localhost:3100).
+
 Choose **Explore sample project** on the empty workspace to open a fully populated,
 clearly labeled synthetic corpus without making any external API calls.
 The sample behaves like a normal editable project: your changes persist, and deleting
@@ -97,7 +99,7 @@ it before choosing **Explore sample project** again restores the bundled dataset
 
 > **Optional:** Create a free [NCBI API key](https://www.ncbi.nlm.nih.gov/account/) and add it to `.env` as `BIBMEDED_PUBMED_API_KEY=your_key` for 10 req/s instead of 3 req/s. Lens.org searches require a Lens Scholarly API token in `BIBMEDED_LENS_API_KEY`.
 
-**CLI only, no Docker:** `pip install bibmeded` then `bibmeded search "medical education" --dry-run` to estimate result counts from a terminal or notebook. See [Scripting](https://ata381.github.io/BibMedEd/scripting/#install-from-pypi-cli-only).
+**CLI only, no Docker:** `pip install bibmeded` (Python 3.12+, [PyPI](https://pypi.org/project/bibmeded/)), then `bibmeded search "medical education" --dry-run` to estimate result counts from a terminal or notebook. See [Scripting](https://ata381.github.io/BibMedEd/scripting/#install-from-pypi-cli-only).
 
 See the full [Self-Hosting Guide](https://ata381.github.io/BibMedEd/deploy/) for configuration, reset, and dev setup.
 

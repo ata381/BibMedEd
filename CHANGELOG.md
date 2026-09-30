@@ -4,15 +4,25 @@ All notable changes to BibMedEd are recorded here. This project follows [Keep a 
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-30
+
+BibMedEd 0.4.0 is the first release published to PyPI: `pip install bibmeded` installs a lightweight CLI ([#84](https://github.com/ata381/BibMedEd/pull/84)), and the Python import package was renamed `app` -> `bibmeded` ([#97](https://github.com/ata381/BibMedEd/pull/97), breaking). The frontend has a new journal-editorial redesign ([#75](https://github.com/ata381/BibMedEd/pull/75)), and a `BIBMEDED_READ_ONLY` mode ([#81](https://github.com/ata381/BibMedEd/pull/81)) plus a one-command local demo ([#86](https://github.com/ata381/BibMedEd/pull/86)) make it safe to explore a seeded sample without changing it. New CLI commands `--version` and `sources` come from first-time contributors @Sandro850 and @DYNOSuprovo. Also included are a fix for fresh installs on SQLAlchemy 2.1 ([#76](https://github.com/ata381/BibMedEd/pull/76)), a real-data README walkthrough GIF ([#96](https://github.com/ata381/BibMedEd/pull/96)), and the LICENSE holder correction ([#77](https://github.com/ata381/BibMedEd/pull/77)). A hosted public demo is deliberately deferred.
+
 ### Added
 
+- Added a `BIBMEDED_READ_ONLY` mode that rejects every mutating request with `403` and shows a read-only banner in the UI, for safely exposing a demo ([#81](https://github.com/ata381/BibMedEd/pull/81)).
 - PyPI packaging metadata, a `server` optional-dependency extra (FastAPI, Celery, Redis, Postgres driver, Alembic), and a Trusted Publishing release workflow. `pip install bibmeded` now installs a lightweight CLI; `bibmeded search --dry-run`, `sources` and `--version` work without server dependencies.
 - Added `bibmeded --version` ([#72](https://github.com/ata381/BibMedEd/pull/72), thanks @Sandro850).
 - Added the `bibmeded sources` command to list adapters and their configuration status ([#71](https://github.com/ata381/BibMedEd/pull/71), thanks @DYNOSuprovo).
-- Added a one-command local read-only demo (`bibmeded/docker-compose.demo.yml`, SQLite, no Postgres/Redis/worker) and a free-plan Render Blueprint for a public demo (`deploy/render-demo.yaml`).
+- Added a one-command local read-only demo (`bibmeded/docker-compose.demo.yml`, SQLite, no Postgres/Redis/worker) and a free-plan Render Blueprint for a public demo (`deploy/render-demo.yaml`), see [#86](https://github.com/ata381/BibMedEd/pull/86). The hosted public demo itself is not yet deployed.
 
 ### Changed
 
+- Redesigned the frontend with a journal-editorial look and WCAG 2.2 fixes ([#75](https://github.com/ata381/BibMedEd/pull/75)).
+- Aligned public documentation with the shipped feature set before launch ([#73](https://github.com/ata381/BibMedEd/pull/73)), refreshed the UI screenshots ([#80](https://github.com/ata381/BibMedEd/pull/80)), and added real-data tour screenshots and a README walkthrough GIF ([#96](https://github.com/ata381/BibMedEd/pull/96)).
+- Linked the Hacktoberfest 2026 issues from the good-first-issues guide ([#70](https://github.com/ata381/BibMedEd/pull/70)) and documented the agent merge policy in `CLAUDE.md` ([#83](https://github.com/ata381/BibMedEd/pull/83)).
+- Corrected the copyright holder name in `LICENSE` ([#77](https://github.com/ata381/BibMedEd/pull/77)).
+- Dependency updates: frontend minor and patch bumps ([#59](https://github.com/ata381/BibMedEd/pull/59), [#79](https://github.com/ata381/BibMedEd/pull/79)); Dependabot now ignores TypeScript and `@types/node` major versions ([#74](https://github.com/ata381/BibMedEd/pull/74)).
 - **Breaking:** Python import package renamed `app` -> `bibmeded` (`bibmeded/app/` is now `bibmeded/bibmeded/`) so the wheel no longer installs a generic top-level `app` package. Run the server with `uvicorn bibmeded.main:app` and the worker with `celery -A bibmeded.workers.celery_app`; Celery task names are now `bibmeded.workers.tasks.*`, so drain queued tasks before upgrading.
 - `bibmeded --version` reports `unknown` instead of failing when the package is not installed. The `bibmeded sources --json` field `api_key` is renamed `api_key_requirement` (it holds `required`/`optional`/`no`, never a key), and the missing-setting status now comes from a shared `required_setting_env_var` helper instead of parsing the error message.
 
@@ -21,6 +31,10 @@ All notable changes to BibMedEd are recorded here. This project follows [Keep a 
 - Fixed the frontend Docker image ignoring `NEXT_PUBLIC_API_URL`: Next.js inlines it at build time, but the Dockerfile never declared it, so deployed frontends called `http://localhost:8000` from the browser. The Dockerfile now takes it as a build argument (default `http://localhost:8000`).
 - Added `.gitattributes` forcing LF for `*.sh`, so `scripts/entrypoint.sh` no longer fails with "no such file or directory" in containers built from a Windows checkout with CRLF conversion.
 - Fixed fresh installs failing with `ModuleNotFoundError: No module named 'psycopg'` on SQLAlchemy 2.1, which changed the bare `postgresql://` default driver to psycopg v3. `BIBMEDED_DATABASE_URL` values of `postgres://` or `postgresql://` are now normalised to `postgresql+psycopg2://`; explicit drivers and non-Postgres URLs are left untouched. The Docker Compose and CI URLs now name the driver explicitly.
+
+### Community
+
+- Thank you to [@Sandro850](https://github.com/Sandro850) for `bibmeded --version` ([#72](https://github.com/ata381/BibMedEd/pull/72)) and [@DYNOSuprovo](https://github.com/DYNOSuprovo) for `bibmeded sources` ([#71](https://github.com/ata381/BibMedEd/pull/71)), both first contributions.
 
 ## [0.3.0] — 2026-08-23
 
@@ -216,7 +230,8 @@ First tagged public release.
 - Hardened the global error handler so exception types no longer leak in API responses.
 - Added `rel="noopener noreferrer"` to `window.open` in the export page (tabnabbing defence).
 
-[Unreleased]: https://github.com/ata381/BibMedEd/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/ata381/BibMedEd/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/ata381/BibMedEd/releases/tag/v0.4.0
 [0.3.0]: https://github.com/ata381/BibMedEd/releases/tag/v0.3.0
 [0.2.0]: https://github.com/ata381/BibMedEd/releases/tag/v0.2.0
 [0.1.2]: https://github.com/ata381/BibMedEd/releases/tag/v0.1.2

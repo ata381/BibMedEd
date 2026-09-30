@@ -149,4 +149,4 @@ def test_sample_project_openapi_documents_create_and_reuse_responses(client):
 
 
 def test_openapi_reports_current_release_version(client):
-    assert client.get("/openapi.json").json()["info"]["version"] == "0.3.0"
+    assert client.get("/openapi.json").json()["info"]["version"] == "0.4.0"
