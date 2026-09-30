@@ -31,6 +31,8 @@ const LARGE_GRAPH = 200;
 const KEEP_DENSEST = 100;
 const LABELLED_NODES = 8;
 const SETTLE_TICKS = 300;
+const DRAG_SETTLE_TICKS = 30;
+const DRAG_ALPHA = 0.3;
 const ZOOM_EXTENT: [number, number] = [0.3, 4];
 const FILL_STEPS = ["var(--color-chart-3)", "var(--color-chart-4)", "var(--color-chart-5)"];
 
@@ -41,8 +43,15 @@ function nodeRadius(size: number | undefined, maxSize: number) {
   return 4 + ((size ?? 1) / maxSize) * 10;
 }
 
+const LABEL_MAX_CHARS = 18;
+
 function shortLabel(node: GraphNode) {
-  return String(node.label || node.id).split(",")[0]?.slice(0, 18) ?? "";
+  const name = (String(node.label || node.id).split(",")[0] ?? "").trim();
+  if (name.length <= LABEL_MAX_CHARS) return name;
+  const cut = name.slice(0, LABEL_MAX_CHARS + 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  const head = lastSpace > 0 ? cut.slice(0, lastSpace) : name.slice(0, LABEL_MAX_CHARS);
+  return `${head.trimEnd()}…`;
 }
 
 export function ForceGraph({ nodes, links, width: fixedWidth, height: fixedHeight }: ForceGraphProps) {
@@ -82,6 +91,7 @@ export function ForceGraph({ nodes, links, width: fixedWidth, height: fixedHeigh
       .scaleExtent(ZOOM_EXTENT)
       .on("zoom", (event) => g.attr("transform", event.transform));
     svg.call(zoom);
+    svg.call(zoom.transform, d3.zoomTransform(svg.node()!));
     zoomRef.current = zoom;
 
     const simNodes: SimNode[] = filtered.nodes.map((n) => ({ ...n }));
@@ -94,6 +104,8 @@ export function ForceGraph({ nodes, links, width: fixedWidth, height: fixedHeigh
       (neighbours.get(l.source) ?? neighbours.set(l.source, new Set()).get(l.source))!.add(l.target);
       (neighbours.get(l.target) ?? neighbours.set(l.target, new Set()).get(l.target))!.add(l.source);
     }
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const simulation = d3
       .forceSimulation(simNodes)
@@ -125,16 +137,20 @@ export function ForceGraph({ nodes, links, width: fixedWidth, height: fixedHeigh
         d3
           .drag<SVGCircleElement, SimNode>()
           .on("start", (event, d) => {
-            if (!event.active) simulation.alphaTarget(0.3).restart();
+            if (!reducedMotion && !event.active) simulation.alphaTarget(DRAG_ALPHA).restart();
             d.fx = d.x;
             d.fy = d.y;
           })
           .on("drag", (event, d) => {
             d.fx = event.x;
             d.fy = event.y;
+            if (reducedMotion) {
+              simulation.alpha(DRAG_ALPHA).tick(DRAG_SETTLE_TICKS);
+              render();
+            }
           })
           .on("end", (event, d) => {
-            if (!event.active) simulation.alphaTarget(0);
+            if (!reducedMotion && !event.active) simulation.alphaTarget(0);
             d.fx = null;
             d.fy = null;
           })
@@ -145,6 +161,7 @@ export function ForceGraph({ nodes, links, width: fixedWidth, height: fixedHeigh
     const topIds = new Set(
       [...simNodes].sort((a, b) => (b.size ?? 0) - (a.size ?? 0)).slice(0, LABELLED_NODES).map((n) => n.id)
     );
+    node.filter((d) => topIds.has(d.id)).attr("tabindex", 0);
     const labels = g
       .append("g")
       .selectAll("text")
@@ -172,7 +189,9 @@ export function ForceGraph({ nodes, links, width: fixedWidth, height: fixedHeigh
         return s === focus.id || t === focus.id ? 0.9 : 0.08;
       });
     };
-    node.on("mouseenter", (_, d) => highlight(d)).on("mouseleave", () => highlight(null));
+    node
+      .on("mouseenter focus", (_, d) => highlight(d))
+      .on("mouseleave blur", () => highlight(null));
 
     const render = () => {
       link
@@ -184,7 +203,6 @@ export function ForceGraph({ nodes, links, width: fixedWidth, height: fixedHeigh
       labels.attr("x", (d) => d.x ?? 0).attr("y", (d) => d.y ?? 0);
     };
 
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reducedMotion) {
       simulation.stop();
       simulation.tick(SETTLE_TICKS);
