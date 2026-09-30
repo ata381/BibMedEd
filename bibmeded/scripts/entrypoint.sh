@@ -3,10 +3,7 @@ set -e
 
 echo "Running Alembic migrations..."
 
-DB_URL="${BIBMEDED_DATABASE_URL:-}"
-if [ -z "$DB_URL" ]; then
-  DB_URL=$(python -c "from app.config import settings; print(settings.database_url)")
-fi
+DB_URL=$(python -c "from app.config import settings; print(settings.database_url)")
 
 case "$DB_URL" in
   sqlite*)
