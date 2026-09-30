@@ -18,7 +18,14 @@ def adapter_kwargs(source: str) -> dict:
     return builder() if builder else {}
 
 
+_REQUIRED_SETTING_ENV_VARS = {"lens": "BIBMEDED_LENS_API_KEY"}
+
+
+def required_setting_env_var(source: str) -> str | None:
+    return _REQUIRED_SETTING_ENV_VARS.get(source)
+
+
 def adapter_configuration_error(source: str) -> str | None:
     if source == "lens" and not settings.lens_api_key.strip():
-        return "Lens searches require BIBMEDED_LENS_API_KEY"
+        return f"Lens searches require {required_setting_env_var(source)}"
     return None
