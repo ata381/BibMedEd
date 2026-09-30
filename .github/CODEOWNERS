@@ -1,11 +1,35 @@
-# Default owner for the whole repo.
-# Listed reviewers are auto-requested on every PR (subject to branch settings).
-*                       @ata381
+# Code owners for the paths that change what the maintainer's agents do, what runs in CI,
+# or the project's legal and academic identity. A PR touching these needs an approving
+# review from a code owner who is not its author. The agents act as @ata381, so in
+# practice @MugeBakiryol reviews harness and workflow changes.
+#
+# Everything else is reviewed by CI, Codex and the maintainer agent, and merges without
+# a required human review.
 
-# Citation and licensing files require explicit owner review — never let an
-# automated PR rewrite authorship or licensing terms.
-/CITATION.cff           @ata381
-/.zenodo.json           @ata381
-/LICENSE                @ata381
-/paper.md               @ata381
-/paper.bib              @ata381
+/.github/                       @ata381 @MugeBakiryol
+/.claude/                       @ata381 @MugeBakiryol
+CLAUDE.md                       @ata381 @MugeBakiryol
+AGENTS.md                       @ata381 @MugeBakiryol
+/.mcp.json                      @ata381 @MugeBakiryol
+/CONTRIBUTING.md                @ata381 @MugeBakiryol
+/GOOD_FIRST_ISSUES.md           @ata381 @MugeBakiryol
+/SECURITY.md                    @ata381 @MugeBakiryol
+/mkdocs.yml                     @ata381 @MugeBakiryol
+/docs/javascripts/              @ata381 @MugeBakiryol
+/bibmeded/alembic/              @ata381 @MugeBakiryol
+/bibmeded/alembic.ini           @ata381 @MugeBakiryol
+/bibmeded/pyproject.toml        @ata381 @MugeBakiryol
+/bibmeded/scripts/              @ata381 @MugeBakiryol
+/bibmeded/bibmeded/read_only.py @ata381 @MugeBakiryol
+/bibmeded/frontend/package.json @ata381 @MugeBakiryol
+/bibmeded/frontend/package-lock.json @ata381 @MugeBakiryol
+Dockerfile                      @ata381 @MugeBakiryol
+docker-compose*                 @ata381 @MugeBakiryol
+/render.yaml                    @ata381 @MugeBakiryol
+
+# Citation, licensing and the paper: authorship and terms are the owner's alone.
+/CITATION.cff                   @ata381
+/.zenodo.json                   @ata381
+/LICENSE                        @ata381
+/paper.md                       @ata381
+/paper.bib                      @ata381
