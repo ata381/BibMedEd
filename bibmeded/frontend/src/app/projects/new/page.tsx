@@ -23,7 +23,7 @@ export default function NewProject() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || readOnly !== false) return;
     if (dateStart && dateEnd && dateStart > dateEnd) {
       setDateError("Start date must be before end date.");
       return;

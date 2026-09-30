@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { searchApi, adaptersApi, AdapterInfo } from "@/lib/api";
-import { useReadOnly } from "@/lib/read-only";
+import { fetchReadOnly, useReadOnly } from "@/lib/read-only";
 import { Button, Icon, PageHeader } from "@/components/ui";
 
 const MAX_RESULTS = 2000;
@@ -76,6 +76,7 @@ export default function SearchConfig() {
   }, []);
 
   const handleSearch = useCallback(async () => {
+    if (await fetchReadOnly()) return;
     setLoading(true);
     setStatus("Submitting search...");
     try {

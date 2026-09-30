@@ -46,6 +46,7 @@ export default function Home() {
   };
 
   const handleCreateSample = async () => {
+    if (readOnly) return;
     setCreatingSample(true);
     try {
       const res = await projectsApi.createSample();
