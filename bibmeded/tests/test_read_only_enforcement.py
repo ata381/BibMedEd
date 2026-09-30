@@ -282,3 +282,26 @@ def test_startup_logs_mode_and_warns_on_unknown_env_vars(db, monkeypatch, caplog
     messages = [record.getMessage() for record in caplog.records if record.name == "app.main"]
     assert f"BibMedEd mode: read_only={read_only}" in messages
     assert any("BIBMEDED_READONLY" in m and "unrecognised" in m for m in messages)
+
+
+def test_postgres_driver_validator_survives_alongside_read_only_settings():
+    from app.config import Settings
+
+    configured = Settings(_env_file=None, database_url="postgres://u:p@h/db", read_only=True)
+
+    assert configured.database_url == "postgresql+psycopg2://u:p@h/db"
+    assert configured.read_only is True
+    assert "_pin_postgres_driver" in Settings.__pydantic_decorators__.field_validators
+
+
+@pytest.mark.parametrize("raw", ["postgres://u:p@h/db", "postgresql://u:p@h/db", "postgresql+psycopg2://u:p@h/db"])
+def test_read_only_engine_accepts_the_normalised_psycopg2_url(raw):
+    from app.config import Settings
+
+    normalised = Settings(_env_file=None, database_url=raw).database_url
+    engine = create_read_only_engine(normalised)
+    try:
+        assert engine.url.drivername == "postgresql+psycopg2"
+        assert engine.dialect.driver == "psycopg2"
+    finally:
+        engine.dispose()
