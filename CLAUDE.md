@@ -64,7 +64,12 @@ Style nits below the bar of correctness should be grouped or skipped.
 - ✅ Triage stale issues with a one-paragraph status note.
 - ❌ Modify `LICENSE`, `CITATION.cff` authorship, or `render.yaml` service plans without explicit human approval.
 - ❌ Add dependencies that aren't trivially replaceable (heavyweight ML stacks, paid SaaS SDKs) without flagging in the PR.
-- ❌ Auto-merge — leave merge to a human maintainer.
+- ❌ Merge your own PRs if you are a contributor's agent — merging is the maintainer's call.
+- ✅ The maintainer's own agents may merge (including `gh pr merge --auto`) once a PR has passed review, the external-PR security screen where applicable, and all required CI checks.
+
+## Contribution merge policy
+
+Well-done contributions are merged, not rewritten. If a PR needs changes of roughly 20+ lines or a design-level rework, ask the contributor in a review. Smaller non-blocking fixes are merged as-is and followed up by the maintainers in a separate PR that credits the contributor.
 
 ## Reviewer setup
 
