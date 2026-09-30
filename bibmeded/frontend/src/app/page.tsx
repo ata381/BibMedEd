@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { projectsApi, Project } from "@/lib/api";
+import { useReadOnly } from "@/lib/read-only";
 import { ANALYSIS_MODULES, DATA_SOURCES, WORKFLOW_STEPS } from "@/lib/sources";
 import { NetworkFigure } from "@/components/network-figure";
 import { Button, ButtonLink, Icon, LoadingState, PageHeader, Skeleton, Stat, StatRow } from "@/components/ui";
@@ -23,6 +24,7 @@ export default function Home() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [creatingSample, setCreatingSample] = useState(false);
+  const readOnly = useReadOnly() !== false;
 
   useEffect(() => {
     projectsApi
@@ -44,6 +46,7 @@ export default function Home() {
   };
 
   const handleCreateSample = async () => {
+    if (readOnly) return;
     setCreatingSample(true);
     try {
       const res = await projectsApi.createSample();
@@ -60,13 +63,13 @@ export default function Home() {
   return (
     <div className="space-y-12">
       {isEmpty ? (
-        <EmptyWorkspace creatingSample={creatingSample} onCreateSample={handleCreateSample} />
+        <EmptyWorkspace creatingSample={creatingSample} onCreateSample={handleCreateSample} readOnly={readOnly} />
       ) : (
         <PageHeader
           eyebrow="Workspace"
           title={HEADLINE}
           lede={LEDE}
-          aside={<ButtonLink href="/projects/new" leadingIcon="plus">New project</ButtonLink>}
+          aside={readOnly ? undefined : <ButtonLink href="/projects/new" leadingIcon="plus">New project</ButtonLink>}
         />
       )}
 
@@ -88,26 +91,26 @@ export default function Home() {
           ) : (
             <ol className="rule-t">
               {projects.map((project) => (
-                <ProjectRow key={project.id} project={project} onDelete={handleDelete} />
+                <ProjectRow key={project.id} project={project} onDelete={readOnly ? undefined : handleDelete} />
               ))}
             </ol>
           )}
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
+          {!readOnly && <div className="mt-6 flex flex-wrap items-center gap-3">
             <ButtonLink href="/projects/new" variant="outline" leadingIcon="plus">
               New project
             </ButtonLink>
             <Button variant="ghost" leadingIcon="flask" onClick={handleCreateSample} loading={creatingSample} disabled={creatingSample}>
               {creatingSample ? "Building sample project…" : "Explore sample project"}
             </Button>
-          </div>
+          </div>}
         </section>
       )}
     </div>
   );
 }
 
-function EmptyWorkspace({ creatingSample, onCreateSample }: { creatingSample: boolean; onCreateSample: () => void }) {
+function EmptyWorkspace({ creatingSample, onCreateSample, readOnly }: { creatingSample: boolean; onCreateSample: () => void; readOnly: boolean }) {
   return (
     <>
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center pt-2">
@@ -121,14 +124,14 @@ function EmptyWorkspace({ creatingSample, onCreateSample }: { creatingSample: bo
           <p className="mt-5 text-lg text-on-surface-muted leading-relaxed rise" style={{ "--rise-index": 2 } as React.CSSProperties}>
             {LEDE}
           </p>
-          <div className="mt-8 flex flex-col sm:flex-row sm:items-center gap-3 rise" style={{ "--rise-index": 3 } as React.CSSProperties}>
+          {!readOnly && <div className="mt-8 flex flex-col sm:flex-row sm:items-center gap-3 rise" style={{ "--rise-index": 3 } as React.CSSProperties}>
             <Button size="lg" leadingIcon="flask" onClick={onCreateSample} loading={creatingSample} disabled={creatingSample}>
               {creatingSample ? "Building sample project…" : "Explore sample project"}
             </Button>
             <ButtonLink href="/projects/new" size="lg" variant="outline" leadingIcon="plus">
               New project
             </ButtonLink>
-          </div>
+          </div>}
           <p className="mt-4 text-sm text-on-surface-subtle rise" style={{ "--rise-index": 4 } as React.CSSProperties}>
             The sample is a synthetic corpus of 12 records — no API key, no network request, fully editable.
           </p>
@@ -174,7 +177,7 @@ function yearOf(date: string | null) {
   return date ? new Date(date).getFullYear() : "—";
 }
 
-function ProjectRow({ project, onDelete }: { project: Project; onDelete: (p: Project) => void }) {
+function ProjectRow({ project, onDelete }: { project: Project; onDelete?: (p: Project) => void }) {
   return (
     <li className="group relative grid grid-cols-[1fr_3rem] md:grid-cols-[1fr_9rem_8rem_3rem] items-center gap-x-6 gap-y-3 py-5 rule-b transition-colors hover:bg-surface-raised/70 -mx-3 px-3 rounded-[var(--radius-sm)]">
       <div className="min-w-0">
@@ -191,7 +194,7 @@ function ProjectRow({ project, onDelete }: { project: Project; onDelete: (p: Pro
           {project.description || "No description provided"}
         </p>
       </div>
-      <button
+      {onDelete ? <button
         type="button"
         onClick={(e) => {
           e.preventDefault();
@@ -202,7 +205,7 @@ function ProjectRow({ project, onDelete }: { project: Project; onDelete: (p: Pro
         className="md:order-last relative z-10 justify-self-end self-start md:self-center inline-flex items-center justify-center w-10 h-10 rounded-[var(--radius-md)] text-on-surface-subtle hover:text-danger hover:bg-danger-container transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[color:var(--color-focus-ring)] focus-visible:outline-offset-2"
       >
         <Icon name="trash" size={17} />
-      </button>
+      </button> : <span aria-hidden="true" className="md:order-last" />}
       <div className="text-sm">
         <p className="eyebrow">Date range</p>
         <p className="mt-1 text-on-surface tabular-nums">

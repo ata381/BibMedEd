@@ -1,14 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { projectsApi } from "@/lib/api";
+import { useReadOnly } from "@/lib/read-only";
 import { WORKFLOW_STEPS } from "@/lib/sources";
 import { Button, Card, PageHeader } from "@/components/ui";
 
 export default function NewProject() {
   const router = useRouter();
+  const readOnly = useReadOnly();
+  useEffect(() => {
+    if (readOnly) router.replace("/");
+  }, [readOnly, router]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [dateStart, setDateStart] = useState("2022-01-01");
@@ -18,7 +23,7 @@ export default function NewProject() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || readOnly !== false) return;
     if (dateStart && dateEnd && dateStart > dateEnd) {
       setDateError("Start date must be before end date.");
       return;
@@ -121,7 +126,7 @@ export default function NewProject() {
                 fullWidth
                 loading={loading}
                 trailingIcon={loading ? undefined : "arrowRight"}
-                disabled={!name.trim()}
+                disabled={!name.trim() || readOnly !== false}
               >
                 {loading ? "Creating project…" : "Continue to search"}
               </Button>

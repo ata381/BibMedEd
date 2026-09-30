@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { publicationsApi, searchApi, Publication, SearchStatus, ExclusionReason } from "@/lib/api";
 import { Badge, Button, Card, EmptyState, Icon, LoadingState, PageHeader, Skeleton, Stat } from "@/components/ui";
 import { ExcludeButton } from "./exclude-button";
+import { useReadOnly } from "@/lib/read-only";
 
 const PAGE_SIZE = 20;
 const PAGE_WINDOW = 5;
@@ -30,6 +31,7 @@ export default function ResultsReview() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const projectId = Number(params.id);
+  const readOnly = useReadOnly() !== false;
   const [publications, setPublications] = useState<Publication[]>([]);
   const [total, setTotal] = useState(0);
   const [excludedCount, setExcludedCount] = useState(0);
@@ -181,9 +183,9 @@ export default function ResultsReview() {
               sorted by citations · page {page} of {totalPages}
             </span>
           </h2>
-          <Button variant="outline" size="sm" leadingIcon="filter" onClick={handleBulkExclude} disabled={total === 0 && !loading}>
+          {!readOnly && <Button variant="outline" size="sm" leadingIcon="filter" onClick={handleBulkExclude} disabled={total === 0 && !loading}>
             Exclude 0-citation papers
-          </Button>
+          </Button>}
         </div>
 
         <div className="min-h-[24rem]">

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { searchApi, adaptersApi, AdapterInfo } from "@/lib/api";
+import { fetchReadOnly, useReadOnly } from "@/lib/read-only";
 import { Button, Icon, PageHeader } from "@/components/ui";
 
 const MAX_RESULTS = 2000;
@@ -43,6 +44,7 @@ export default function SearchConfig() {
   const [status, setStatus] = useState<string | null>(null);
   const [progress, setProgress] = useState<{ found: number; fetched: number; total: number } | null>(null);
   const [advancedMode, setAdvancedMode] = useState(false);
+  const readOnly = useReadOnly() !== false;
   const [rawQuery, setRawQuery] = useState("");
   const [adapters, setAdapters] = useState<AdapterInfo[]>([]);
   const [source, setSource] = useState("pubmed");
@@ -74,6 +76,7 @@ export default function SearchConfig() {
   }, []);
 
   const handleSearch = useCallback(async () => {
+    if (await fetchReadOnly()) return;
     setLoading(true);
     setStatus("Submitting search...");
     try {
@@ -326,7 +329,7 @@ export default function SearchConfig() {
               fullWidth
               className="mt-6"
               onClick={handleSearch}
-              disabled={loading}
+              disabled={loading || readOnly}
               loading={loading}
               trailingIcon="arrowRight"
             >

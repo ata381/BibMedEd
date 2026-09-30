@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { publicationsApi, Publication, ExclusionReason, EXCLUSION_REASON_LABELS } from "@/lib/api";
 import { Icon } from "@/components/ui";
+import { useReadOnly } from "@/lib/read-only";
 
 const LABEL_TITLE_LENGTH = 60;
 const MENU_KEYS = ["ArrowDown", "ArrowUp", "Home", "End"];
@@ -16,6 +17,7 @@ interface ExcludeButtonProps {
 
 export function ExcludeButton({ pub, projectId, onToggle }: ExcludeButtonProps) {
   const [showMenu, setShowMenu] = useState(false);
+  const readOnly = useReadOnly() !== false;
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const firstItemRef = useRef<HTMLButtonElement>(null);
@@ -89,13 +91,15 @@ export function ExcludeButton({ pub, projectId, onToggle }: ExcludeButtonProps) 
         ref={triggerRef}
         type="button"
         onClick={handlePrimary}
-        aria-label={triggerLabel}
+        disabled={readOnly}
+        aria-label={readOnly ? `${pub.excluded ? "Excluded" : "Included"}: "${labelTitle}"` : triggerLabel}
         aria-haspopup={!pub.excluded ? "menu" : undefined}
         aria-expanded={!pub.excluded ? showMenu : undefined}
         className={[
           "inline-flex items-center gap-1.5 h-9 px-3 rounded-[var(--radius-md)] border text-xs font-bold uppercase tracking-[0.08em] cursor-pointer",
           "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)]",
           "focus-visible:outline-2 focus-visible:outline-[color:var(--color-focus-ring)] focus-visible:outline-offset-2",
+          "disabled:cursor-default disabled:hover:border-transparent",
           pub.excluded
             ? "bg-danger-container text-danger border-transparent hover:border-danger"
             : "bg-accent-container text-on-accent-container border-transparent hover:border-accent",

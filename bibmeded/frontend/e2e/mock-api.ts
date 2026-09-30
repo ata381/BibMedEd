@@ -86,11 +86,17 @@ const analysisResults: Record<string, Record<string, unknown>> = {
   journals: { top_journals: [{ name: "Medical Education Practice", pub_count: 4, avg_citations: 43.3 }] },
 };
 
-export async function installMockApi(
-  page: Page,
-  options: { emptyWorkspace?: boolean } = {},
-) {
+export interface MockApiOptions {
+  emptyWorkspace?: boolean;
+  readOnly?: boolean;
+  configUnavailable?: boolean;
+  missingAnalyses?: string[];
+}
+
+export async function installMockApi(page: Page, options: MockApiOptions = {}) {
   let emptyWorkspace = options.emptyWorkspace ?? false;
+  const readOnly = options.readOnly ?? false;
+  const writeRequests: string[] = [];
   let exclusionReason: string | null = null;
 
   // Keep E2E deterministic and offline: icon-font availability must not turn
@@ -104,6 +110,16 @@ export async function installMockApi(
     const url = new URL(request.url());
     const { pathname } = url;
     const method = request.method();
+
+    if (pathname === "/api/config" && method === "GET") {
+      return options.configUnavailable
+        ? json(route, { detail: "Internal server error" }, 500)
+        : json(route, { read_only: readOnly });
+    }
+    if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
+      writeRequests.push(`${method} ${pathname}`);
+      if (readOnly) return json(route, { detail: "read-only demo", read_only: true }, 403);
+    }
 
     if (pathname === "/api/projects" && method === "GET") {
       return json(route, emptyWorkspace ? [] : [project]);
@@ -160,6 +176,9 @@ export async function installMockApi(
     const analysisMatch = pathname.match(/^\/api\/projects\/1\/analysis\/([^/]+)$/);
     if (analysisMatch && (method === "GET" || method === "POST")) {
       const analysisType = analysisMatch[1];
+      if (method === "GET" && options.missingAnalyses?.includes(analysisType)) {
+        return json(route, { detail: "Analysis not found. Run it first." }, 404);
+      }
       return json(route, {
         id: 1,
         project_id: 1,
@@ -193,6 +212,8 @@ export async function installMockApi(
 
     return json(route, { detail: `Unhandled mock route: ${method} ${pathname}` }, 404);
   });
+
+  return { writeRequests };
 }
 
 function searchStatus(status: string) {

@@ -1,5 +1,11 @@
+from collections.abc import Mapping
+
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
+
+ENV_PREFIX = "BIBMEDED_"
+# Read directly from os.environ outside Settings (see app/main.py).
+NON_SETTINGS_ENV_VARS = frozenset({"BIBMEDED_LOG_LEVEL"})
 
 
 class Settings(BaseSettings):
@@ -15,8 +21,7 @@ class Settings(BaseSettings):
     icite_base_url: str = "https://icite.od.nih.gov/api"
     cors_origins: list[str] = ["http://localhost:3000"]
     debug: bool = False
-
-    model_config = {"env_prefix": "BIBMEDED_"}
+    read_only: bool = False
 
     @field_validator("database_url")
     @classmethod
@@ -28,6 +33,16 @@ class Settings(BaseSettings):
             if value.startswith(bare):
                 return "postgresql+psycopg2://" + value[len(bare):]
         return value
+
+    model_config = {"env_prefix": ENV_PREFIX}
+
+
+def unrecognised_env_vars(environ: Mapping[str, str]) -> list[str]:
+    known = {f"{ENV_PREFIX}{name}".upper() for name in Settings.model_fields} | NON_SETTINGS_ENV_VARS
+    return sorted(
+        name for name in environ
+        if name.upper().startswith(ENV_PREFIX) and name.upper() not in known
+    )
 
 
 settings = Settings()

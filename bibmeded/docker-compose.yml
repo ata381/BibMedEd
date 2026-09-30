@@ -42,6 +42,7 @@ services:
       BIBMEDED_REDIS_URL: redis://redis:6379/0
       BIBMEDED_PUBMED_API_KEY: ${BIBMEDED_PUBMED_API_KEY:-}
       BIBMEDED_LENS_API_KEY: ${BIBMEDED_LENS_API_KEY:-}
+      BIBMEDED_READ_ONLY: ${BIBMEDED_READ_ONLY:-false}
     depends_on:
       db:
         condition: service_healthy
