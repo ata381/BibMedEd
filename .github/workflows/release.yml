@@ -1,0 +1,91 @@
+name: Release to PyPI
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Backend tests on tagged commit
+    runs-on: ubuntu-latest
+    if: startsWith(github.event.release.tag_name, 'v')
+    defaults:
+      run:
+        working-directory: bibmeded
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: bibmeded/pyproject.toml
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run pytest
+        run: pytest -q
+
+  build:
+    name: Build distributions
+    needs: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bibmeded
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Verify tag matches pyproject version
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: |
+          python - <<'PY'
+          import os, sys, tomllib
+          with open("pyproject.toml", "rb") as f:
+              version = tomllib.load(f)["project"]["version"]
+          tag = os.environ["TAG_NAME"]
+          if tag != f"v{version}":
+              sys.exit(f"Tag {tag!r} does not match pyproject version 'v{version}'")
+          print(f"Tag {tag} matches pyproject version {version}")
+          PY
+
+      - name: Verify packaged LICENSE matches root LICENSE
+        run: diff ../LICENSE LICENSE
+
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install build twine
+          python -m build
+          twine check --strict dist/*
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: bibmeded/dist/
+          if-no-files-found: error
+
+  publish:
+    name: Publish to PyPI
+    needs: [test, build]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/bibmeded/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
