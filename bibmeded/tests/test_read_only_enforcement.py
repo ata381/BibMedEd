@@ -7,6 +7,7 @@ itself holds read-only. Each write path below must fail against that engine.
 
 import logging
 import uuid
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -304,3 +305,15 @@ def test_read_only_engine_accepts_the_normalised_psycopg2_url(raw):
         assert engine.dialect.driver == "psycopg2"
     finally:
         engine.dispose()
+
+
+@pytest.mark.parametrize("url", ["sqlite://", "sqlite:///:memory:"])
+def test_read_only_engine_rejects_private_in_memory_sqlite(url):
+    with pytest.raises(RuntimeError, match="in-memory"):
+        create_read_only_engine(url)
+
+
+def test_compose_forwards_read_only_flag_to_api():
+    compose = (Path(__file__).resolve().parents[1] / "docker-compose.yml").read_text(encoding="utf-8")
+    api_block = compose.split("\n  api:\n", 1)[1].split("\n  worker:\n", 1)[0]
+    assert "BIBMEDED_READ_ONLY: ${BIBMEDED_READ_ONLY:-false}" in api_block

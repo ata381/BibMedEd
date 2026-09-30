@@ -105,6 +105,13 @@ def create_read_only_engine(url: str) -> Engine:
         stripped, options = _merged_postgres_options(parsed)
         engine = create_engine(stripped, connect_args={"options": options})
     elif backend == "sqlite":
+        if parsed.database in (None, "", ":memory:"):
+            # A private in-memory database would be empty: the seeder writes to a
+            # different connection, so every request would fail with "no such table".
+            raise RuntimeError(
+                "BIBMEDED_READ_ONLY needs a file-backed or shared-cache SQLite database, "
+                "not a private in-memory one"
+            )
         engine = create_engine(parsed, connect_args={"check_same_thread": False})
     else:
         raise RuntimeError(f"BIBMEDED_READ_ONLY has no database-level guard for {backend!r} databases")

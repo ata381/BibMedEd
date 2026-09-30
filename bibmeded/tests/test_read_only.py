@@ -286,10 +286,11 @@ def test_get_handler_that_writes_is_mapped_to_403(db, demo_project, monkeypatch)
 
 
 @pytest.mark.parametrize("read_only", [True, False])
-def test_get_db_guards_sessions_only_in_read_only_mode(monkeypatch, read_only):
+def test_get_db_guards_sessions_only_in_read_only_mode(monkeypatch, tmp_path, read_only):
     from app.database import get_db
 
     monkeypatch.setattr(settings, "read_only", read_only)
+    monkeypatch.setattr(settings, "database_url", f"sqlite:///{tmp_path / 'guard.db'}")
     monkeypatch.setattr("app.database._ReadOnlySessionLocal", None)
     generator = get_db()
     session = next(generator)
