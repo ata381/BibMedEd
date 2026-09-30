@@ -50,7 +50,7 @@ Screen every PR not from @ata381, dependabot or your own `claude/` branches.
   - build or install hooks, conftest.py, scripts/
   - Dockerfile, docker-compose*
   - package.json scripts or deps, .npmrc, pre-commit config
-  - alembic/env.py, render.yaml
+  - bibmeded/alembic/** (CI runs `alembic upgrade head`, so revision files execute), render.yaml
 - **HIGH:**
   - network calls outside adapters
   - subprocess, eval, exec or pickle

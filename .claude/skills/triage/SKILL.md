@@ -5,7 +5,7 @@ description: Hacktoberfest / community triage pass for BibMedEd — new issues, 
 
 # Triage pass
 
-State file: `.claude/state/triage.json` → `{"last_run": "<ISO8601>", "seen": {"issue:<n>": "<updatedAt>", "pr:<n>": "<updatedAt>"}}`. Create it if missing with `last_run` = 7 days ago. Only report items whose `updatedAt` is newer than `seen`.
+State file: `.claude/state/triage.json` → `{"last_run": "<ISO8601>", "seen": {"issue:<n>": "<updatedAt>", "pr:<n>": "<updatedAt>"}}`. Create it if missing with `last_run` = 7 days ago. Report items whose `updatedAt` is newer than `seen`, AND on every pass re-evaluate the time-based rules for all open assigned issues and open PRs, whatever their `updatedAt`. Those rules are the 14-day stale claim, the 7-day follow-up and the 2-working-day URGENT. Crossing a time threshold doesn't change GitHub timestamps.
 
 Gather (read-only)
 - `gh issue list -R ata381/BibMedEd --state open --limit 100 --json number,title,labels,assignees,updatedAt,author,comments`
