@@ -24,9 +24,12 @@ class Result:
 
 
 def _subprocess_runner(args: Sequence[str], stdin: str | None) -> Result:
-    proc = subprocess.run(
-        ["gh", *args], input=stdin, capture_output=True, text=True, encoding="utf-8", errors="replace"
-    )
+    try:
+        proc = subprocess.run(
+            ["gh", *args], input=stdin, capture_output=True, text=True, encoding="utf-8", errors="replace"
+        )
+    except FileNotFoundError:
+        return Result(127, "", "gh: command not found (the gh CLI is not installed in this environment)")
     return Result(proc.returncode, proc.stdout, proc.stderr)
 
 
