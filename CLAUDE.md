@@ -77,7 +77,7 @@ Codex Cloud handles automatic PR reviews on this repo (see e.g. PR #4). Do not d
 
 ## Maintainer agent harness
 
-`.claude/agents/`, `.claude/skills/` and `.claude/harness/` hold the maintainer's agent roles, workflows, verification matrix and report contract. They are shared by local Claude Code sessions and by the scheduled cloud maintainer agent, whose prompt is in `.claude/harness/cloud-manager-prompt.md`. `.claude/state/`, `settings.json` and hooks stay local and gitignored. Changes to these files, to this file or to `AGENTS.md` change what the maintainer's agents do. They need the maintainer's review and are never auto-merged.
+`.claude/agents/`, `.claude/skills/` and `.claude/harness/` hold the maintainer's agent roles, workflows, verification matrix and report contract. They are shared by local Claude Code sessions and by the scheduled cloud routines. The cloud routines act under `.claude/harness/constitution.md` plus their role file in `.claude/harness/roles/`, and perform every gated action (merge, close, state, classification, path screen) through the tested tools in `.claude/harness/bin/`; see `.claude/harness/README.md`. `.claude/state/`, `settings.json` and hooks stay local and gitignored. Changes to these files, to this file or to `AGENTS.md` change what the maintainer's agents do. They need the maintainer's review and are never auto-merged.
 
 ## Trusted developers
 
