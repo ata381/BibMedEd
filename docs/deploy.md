@@ -55,6 +55,27 @@ When the flag is on:
 - `GET /api/config` returns `{"read_only": true}`; the web UI uses it to show a "Read-only demo" banner and hide or disable create, delete, search, exclusion and analysis-run controls. If the endpoint can't be reached, the UI assumes read-only.
 - Startup logs `BibMedEd mode: read_only=<true|false>` and warns about any `BIBMEDED_*` environment variable that matches no setting (for example `BIBMEDED_READONLY`).
 
+### Run the demo locally
+
+One command, no Postgres, Redis or worker:
+
+```bash
+cd bibmeded
+docker compose -f docker-compose.demo.yml up --build
+```
+
+Open <http://localhost:3100> (API docs at <http://localhost:8100/docs>). The API seeds the bundled synthetic sample into a disposable SQLite file inside the container on every start. The ports differ from the main `docker-compose.yml`, so both stacks can run side by side. Stop and discard everything with `docker compose -f docker-compose.demo.yml down -v`.
+
+### Host a free public demo on Render
+
+`deploy/render-demo.yaml` is a separate Blueprint (the root `render.yaml` is for self-hosting and does not create demo services). It defines two free web services and no database, Redis or worker.
+
+1. In the Render dashboard choose **New → Blueprint**, select your fork of the repository, and set **Blueprint Path** to `deploy/render-demo.yaml`.
+2. Apply it. If Render gives the services URLs other than `https://bibmeded-demo-api.onrender.com` and `https://bibmeded-demo-frontend.onrender.com` (a taken name gets a suffix), edit the two literal URLs in the file (`BIBMEDED_CORS_ORIGINS` and `NEXT_PUBLIC_API_URL`) and redeploy. The API URL is baked into the frontend at build time, so changing it needs a rebuild.
+3. Run the smoke check from the deploy checklist below.
+
+Free web services sleep when idle, so the first visit after a quiet period waits roughly a minute for a cold start, and the demo data is rebuilt each time. The data is the bundled synthetic sample, not real research data. SQLite needs no `SELECT`-only role because the file is disposable and rebuilt on boot.
+
 **Deploy checklist**
 
 1. Smoke-check every deploy: `curl -fsS https://<demo-api>/api/config` must print `{"read_only":true}`, and `curl -s -o /dev/null -w '%{http_code}' -X POST https://<demo-api>/api/projects` must print `403`. Fail the deploy otherwise.

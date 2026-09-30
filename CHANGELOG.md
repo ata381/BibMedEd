@@ -9,6 +9,7 @@ All notable changes to BibMedEd are recorded here. This project follows [Keep a 
 - PyPI packaging metadata, a `server` optional-dependency extra (FastAPI, Celery, Redis, Postgres driver, Alembic), and a Trusted Publishing release workflow. `pip install bibmeded` now installs a lightweight CLI; `bibmeded search --dry-run`, `sources` and `--version` work without server dependencies.
 - Added `bibmeded --version` ([#72](https://github.com/ata381/BibMedEd/pull/72), thanks @Sandro850).
 - Added the `bibmeded sources` command to list adapters and their configuration status ([#71](https://github.com/ata381/BibMedEd/pull/71), thanks @DYNOSuprovo).
+- Added a one-command local read-only demo (`bibmeded/docker-compose.demo.yml`, SQLite, no Postgres/Redis/worker) and a free-plan Render Blueprint for a public demo (`deploy/render-demo.yaml`).
 
 ### Changed
 
@@ -16,6 +17,8 @@ All notable changes to BibMedEd are recorded here. This project follows [Keep a 
 
 ### Fixed
 
+- Fixed the frontend Docker image ignoring `NEXT_PUBLIC_API_URL`: Next.js inlines it at build time, but the Dockerfile never declared it, so deployed frontends called `http://localhost:8000` from the browser. The Dockerfile now takes it as a build argument (default `http://localhost:8000`).
+- Added `.gitattributes` forcing LF for `*.sh`, so `scripts/entrypoint.sh` no longer fails with "no such file or directory" in containers built from a Windows checkout with CRLF conversion.
 - Fixed fresh installs failing with `ModuleNotFoundError: No module named 'psycopg'` on SQLAlchemy 2.1, which changed the bare `postgresql://` default driver to psycopg v3. `BIBMEDED_DATABASE_URL` values of `postgres://` or `postgresql://` are now normalised to `postgresql+psycopg2://`; explicit drivers and non-Postgres URLs are left untouched. The Docker Compose and CI URLs now name the driver explicitly.
 
 ## [0.3.0] — 2026-08-23

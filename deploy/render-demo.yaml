@@ -1,0 +1,49 @@
+# Render Blueprint for the free, public, read-only BibMedEd demo.
+#
+# Separate from the root render.yaml on purpose: that file backs the README's
+# "Deploy to Render" button for self-hosters, who must not get demo services.
+#
+# Create it: Render dashboard -> New -> Blueprint -> pick this repo -> set
+# "Blueprint Path" to deploy/render-demo.yaml.
+#
+# - Everything is on Render's free plan and needs no database service, Redis or
+#   worker: the API seeds the bundled synthetic sample project (not real data)
+#   into a SQLite file in /tmp on every boot.
+# - Free web services sleep after ~15 minutes idle; the first visit afterwards
+#   waits about a minute for a cold start, and the demo data is rebuilt.
+# - Render appends a suffix to a service's URL if its name is taken. If the
+#   URLs below differ from https://<name>.onrender.com, edit the two literal
+#   URLs and redeploy: the API URL is baked into the frontend at build time.
+
+services:
+  - type: web
+    name: bibmeded-demo-api
+    runtime: docker
+    plan: free
+    dockerfilePath: bibmeded/Dockerfile
+    dockerContext: bibmeded
+    healthCheckPath: /api/ready
+    envVars:
+      - key: BIBMEDED_READ_ONLY
+        value: "true"
+      - key: BIBMEDED_DATABASE_URL
+        value: sqlite:////tmp/bibmeded-demo.db
+      # A literal, not fromService: Render exposes only a bare hostname or the
+      # private-network host, but CORS needs a JSON list of full origins.
+      - key: BIBMEDED_CORS_ORIGINS
+        value: '["https://bibmeded-demo-frontend.onrender.com"]'
+    # scripts/entrypoint.sh still runs first (alembic upgrade head), then this
+    # creates any missing tables; startup then seeds the sample and verifies
+    # the read-only guard.
+    dockerCommand: sh -c "python -c 'from app.database import Base, get_engine; import app.models; Base.metadata.create_all(get_engine())' && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+
+  - type: web
+    name: bibmeded-demo-frontend
+    runtime: docker
+    plan: free
+    dockerfilePath: bibmeded/frontend/Dockerfile
+    dockerContext: bibmeded/frontend
+    envVars:
+      # Literal for the same reason; passed to the Docker build as a build arg.
+      - key: NEXT_PUBLIC_API_URL
+        value: https://bibmeded-demo-api.onrender.com

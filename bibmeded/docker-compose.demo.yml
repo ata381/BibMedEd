@@ -1,0 +1,35 @@
+# One-command local copy of the public read-only demo:
+#   docker compose -f docker-compose.demo.yml up --build
+# Frontend http://localhost:3100, API http://localhost:8100/docs
+# No Postgres, Redis or worker: the API seeds the bundled synthetic sample into
+# a disposable SQLite file on every start. Ports differ from docker-compose.yml
+# so both stacks can run side by side.
+name: bibmeded-demo
+
+services:
+  api:
+    build: .
+    ports:
+      - "8100:8000"
+    environment:
+      BIBMEDED_READ_ONLY: "true"
+      BIBMEDED_DATABASE_URL: sqlite:////tmp/bibmeded-demo.db
+      BIBMEDED_CORS_ORIGINS: '["http://localhost:3100"]'
+    command: sh -c "python -c 'from app.database import Base, get_engine; import app.models; Base.metadata.create_all(get_engine())' && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/ready').status==200 else 1)\""]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8100
+    ports:
+      - "3100:3000"
+    depends_on:
+      api:
+        condition: service_healthy
