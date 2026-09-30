@@ -40,7 +40,7 @@ body:
     id: version
     attributes:
       label: Version / commit
-      description: Output of `git rev-parse --short HEAD` or release tag.
+      description: Output of `bibmeded --version`, plus `git rev-parse --short HEAD` or release tag if running from source.
     validations:
       required: true
 

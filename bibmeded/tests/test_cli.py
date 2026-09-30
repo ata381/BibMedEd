@@ -1,4 +1,5 @@
 import json
+from importlib.metadata import version
 from unittest.mock import AsyncMock, Mock
 from types import SimpleNamespace
 
@@ -8,6 +9,19 @@ from lxml import etree
 
 from app.adapters.base import SearchResponse
 from app.config import settings
+
+
+def test_version_flag_prints_installed_version(capsys):
+    from app import cli
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main(["--version"])
+
+    captured = capsys.readouterr()
+
+    assert exc_info.value.code == 0
+    assert captured.out == f"bibmeded {version('bibmeded')}\n"
+    assert captured.err == ""
 
 
 def test_search_dry_run_prints_estimated_count(monkeypatch, capsys):
@@ -230,7 +244,8 @@ def test_search_dry_run_reports_response_parse_failure_without_traceback(
 
 
 def test_search_dispatches_full_pipeline_and_reports_completion(monkeypatch, capsys):
-    from app import cli
+    from app import cli, database
+    from app.workers import tasks
 
     project = SimpleNamespace(id=None)
     search_query = SimpleNamespace(
@@ -271,10 +286,10 @@ def test_search_dispatches_full_pipeline_and_reports_completion(monkeypatch, cap
 
     db = FakeDB()
 
-    monkeypatch.setattr(cli, "SessionLocal", Mock(return_value=db))
+    monkeypatch.setattr(tasks.run_search, "delay", Mock())
+    monkeypatch.setitem(database.__dict__, "SessionLocal", Mock(return_value=db))
     monkeypatch.setattr(cli, "SearchProject", Mock(return_value=project))
     monkeypatch.setattr(cli, "SearchQuery", Mock(return_value=search_query))
-    monkeypatch.setattr(cli.run_search, "delay", Mock())
     monkeypatch.setattr(cli.time, "sleep", Mock())
 
     exit_code = cli.main(
@@ -299,7 +314,7 @@ def test_search_dispatches_full_pipeline_and_reports_completion(monkeypatch, cap
     assert "Search started (query_id=20)" in captured.err
     assert "Waiting for completion..." in captured.err
 
-    cli.run_search.delay.assert_called_once_with(
+    tasks.run_search.delay.assert_called_once_with(
         20,
         "pubmed",
         "2020",
@@ -311,7 +326,8 @@ def test_search_dispatches_full_pipeline_and_reports_completion(monkeypatch, cap
 
 
 def test_search_returns_error_when_worker_marks_query_failed(monkeypatch, capsys):
-    from app import cli
+    from app import cli, database
+    from app.workers import tasks
 
     project = SimpleNamespace(id=None)
     search_query = SimpleNamespace(
@@ -349,10 +365,10 @@ def test_search_returns_error_when_worker_marks_query_failed(monkeypatch, capsys
 
     db = FakeDB()
 
-    monkeypatch.setattr(cli, "SessionLocal", Mock(return_value=db))
+    monkeypatch.setattr(tasks.run_search, "delay", Mock())
+    monkeypatch.setitem(database.__dict__, "SessionLocal", Mock(return_value=db))
     monkeypatch.setattr(cli, "SearchProject", Mock(return_value=project))
     monkeypatch.setattr(cli, "SearchQuery", Mock(return_value=search_query))
-    monkeypatch.setattr(cli.run_search, "delay", Mock())
     monkeypatch.setattr(cli.time, "sleep", Mock())
 
     exit_code = cli.main(
