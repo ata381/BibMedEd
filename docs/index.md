@@ -15,14 +15,7 @@ BibMedEd is an open-source tool that enables medical education researchers to se
 
 ## User Interface Tour
 
-The full workflow recording demonstrates project creation, search progress, analysis, and state preservation. It is loaded only when opened so the documentation stays fast on mobile connections:
-<p align="center">
-  <a href="assets/demo.webp">
-    <img src="assets/dashboard.png" alt="BibMedEd analysis overview (opens the workflow recording)" width="100%" loading="lazy" decoding="async">
-  </a>
-  <br>
-  <em><a href="assets/demo.webp">Open the full workflow recording (15 MB)</a></em>
-</p>
+The screens below show the main steps of the workflow, from search to analysis.
 
 ### Dashboard analysis and search pipeline
 
