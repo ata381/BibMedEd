@@ -44,7 +44,8 @@ interface Keyword {
 interface Named {
   name?: string;
   country?: string;
-  count: number;
+  count?: number;
+  pub_count?: number;
 }
 interface RawNetwork {
   nodes: Array<{ id: string | number; label?: string; size?: number; name?: string; pub_count?: number }>;
@@ -122,8 +123,8 @@ export default function Dashboard() {
   const topAuthors = (auth.top_authors as TopAuthor[]) || [];
   const mostCited = (cite.most_cited as CitedPublication[]) || [];
   const topKeywords = (kw.top_keywords as Keyword[]) || [];
-  const topJournals = ((analyses.journals?.top_journals as Named[]) || []).map((j) => ({ label: j.name ?? "Unknown", value: j.count }));
-  const countries = ((analyses.countries?.countries as Named[]) || []).map((c) => ({ label: c.country ?? "Unknown", value: c.count }));
+  const topJournals = ((analyses.journals?.top_journals as Named[]) || []).map((j) => ({ label: j.name ?? "Unknown", value: j.pub_count ?? j.count ?? 0 }));
+  const countries = ((analyses.countries?.country_counts as Named[]) || []).map((c) => ({ label: c.country ?? "Unknown", value: c.count ?? 0 }));
   const coauthorNetwork = normaliseNetwork(auth.coauthorship_network as RawNetwork | undefined);
   const totalPubs = (pub.total as number) || 0;
   const totalAuthors = (auth.total_authors as number) || 0;

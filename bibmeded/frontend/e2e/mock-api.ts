@@ -67,7 +67,7 @@ const analysisResults: Record<string, Record<string, unknown>> = {
       links: [{ source: 1, target: 2, weight: 2 }],
     },
   },
-  countries: { countries: [{ country: "Netherlands", count: 4 }] },
+  countries: { country_counts: [{ country: "Netherlands", count: 4 }] },
   keywords: {
     top_keywords: [
       { term: "artificial intelligence", count: 4 },
@@ -83,7 +83,7 @@ const analysisResults: Record<string, Record<string, unknown>> = {
       citation_count: publication.citation_count,
     })),
   },
-  journals: { top_journals: [{ name: "Medical Education Practice", count: 4 }] },
+  journals: { top_journals: [{ name: "Medical Education Practice", pub_count: 4, avg_citations: 43.3 }] },
 };
 
 export async function installMockApi(
