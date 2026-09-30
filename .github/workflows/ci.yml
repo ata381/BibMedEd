@@ -151,7 +151,7 @@ jobs:
       run:
         working-directory: bibmeded
     env:
-      BIBMEDED_DATABASE_URL: postgresql://bibmeded:bibmeded@localhost:5432/bibmeded
+      BIBMEDED_DATABASE_URL: postgresql+psycopg2://bibmeded:bibmeded@localhost:5432/bibmeded
     steps:
       - uses: actions/checkout@v7
 
