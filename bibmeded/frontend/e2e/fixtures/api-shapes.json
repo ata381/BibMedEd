@@ -1,0 +1,638 @@
+{
+  "authors": {
+    "properties": {
+      "analysis_type": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string"
+      },
+      "id": {
+        "type": "number"
+      },
+      "project_id": {
+        "type": "number"
+      },
+      "results": {
+        "properties": {
+          "coauthorship_network": {
+            "properties": {
+              "links": {
+                "items": {
+                  "properties": {
+                    "source": {
+                      "type": "number"
+                    },
+                    "target": {
+                      "type": "number"
+                    },
+                    "weight": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "nodes": {
+                "items": {
+                  "properties": {
+                    "id": {
+                      "type": "number"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "pub_count": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "schema_version": {
+            "type": "string"
+          },
+          "top_authors": {
+            "items": {
+              "properties": {
+                "citation_sum": {
+                  "type": "number"
+                },
+                "e_index": {
+                  "type": "number"
+                },
+                "g_index": {
+                  "type": "number"
+                },
+                "h_index": {
+                  "type": "number"
+                },
+                "id": {
+                  "type": "number"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "orcid": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "pub_count": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "total_authors": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "type": "object"
+  },
+  "citations": {
+    "properties": {
+      "analysis_type": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string"
+      },
+      "id": {
+        "type": "number"
+      },
+      "project_id": {
+        "type": "number"
+      },
+      "results": {
+        "properties": {
+          "citation_network": {
+            "properties": {
+              "links": {
+                "items": null,
+                "type": "array"
+              },
+              "nodes": {
+                "items": {
+                  "properties": {
+                    "citations": {
+                      "type": "number"
+                    },
+                    "id": {
+                      "type": "number"
+                    },
+                    "pmid": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "year": {
+                      "nullable": true,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "cocitation_network": {
+            "properties": {
+              "links": {
+                "items": {
+                  "properties": {
+                    "source": {
+                      "type": "number"
+                    },
+                    "target": {
+                      "type": "number"
+                    },
+                    "weight": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "nodes": {
+                "items": {
+                  "properties": {
+                    "citations": {
+                      "type": "number"
+                    },
+                    "id": {
+                      "type": "number"
+                    },
+                    "pmid": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "year": {
+                      "nullable": true,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "cocitation_truncated": {
+            "type": "boolean"
+          },
+          "coupling_network": {
+            "properties": {
+              "links": {
+                "items": {
+                  "properties": {
+                    "source": {
+                      "type": "number"
+                    },
+                    "target": {
+                      "type": "number"
+                    },
+                    "weight": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "nodes": {
+                "items": {
+                  "properties": {
+                    "citations": {
+                      "type": "number"
+                    },
+                    "id": {
+                      "type": "number"
+                    },
+                    "pmid": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "year": {
+                      "nullable": true,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "coupling_truncated": {
+            "type": "boolean"
+          },
+          "most_cited": {
+            "items": {
+              "properties": {
+                "citation_count": {
+                  "type": "number"
+                },
+                "pmid": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "year": {
+                  "nullable": true,
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "schema_version": {
+            "type": "string"
+          },
+          "total_citations": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "type": "object"
+  },
+  "countries": {
+    "properties": {
+      "analysis_type": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string"
+      },
+      "id": {
+        "type": "number"
+      },
+      "project_id": {
+        "type": "number"
+      },
+      "results": {
+        "properties": {
+          "collaboration_network": {
+            "properties": {
+              "links": {
+                "items": {
+                  "properties": {
+                    "source": {
+                      "type": "string"
+                    },
+                    "target": {
+                      "type": "string"
+                    },
+                    "weight": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "nodes": {
+                "items": {
+                  "properties": {
+                    "count": {
+                      "type": "number"
+                    },
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "country_counts": {
+            "items": {
+              "properties": {
+                "count": {
+                  "type": "number"
+                },
+                "country": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "institution_counts": {
+            "items": {
+              "properties": {
+                "count": {
+                  "type": "number"
+                },
+                "institution": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "schema_version": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "type": "object"
+  },
+  "journals": {
+    "properties": {
+      "analysis_type": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string"
+      },
+      "id": {
+        "type": "number"
+      },
+      "project_id": {
+        "type": "number"
+      },
+      "results": {
+        "properties": {
+          "bradford_zones": {
+            "items": {
+              "properties": {
+                "article_count": {
+                  "type": "number"
+                },
+                "journal_count": {
+                  "type": "number"
+                },
+                "zone": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "schema_version": {
+            "type": "string"
+          },
+          "top_journals": {
+            "items": {
+              "properties": {
+                "avg_citations": {
+                  "type": "number"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "pub_count": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "total_journals": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "type": "object"
+  },
+  "keywords": {
+    "properties": {
+      "analysis_type": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string"
+      },
+      "id": {
+        "type": "number"
+      },
+      "project_id": {
+        "type": "number"
+      },
+      "results": {
+        "properties": {
+          "burst_terms": {
+            "items": null,
+            "type": "array"
+          },
+          "cooccurrence_network": {
+            "properties": {
+              "links": {
+                "items": {
+                  "properties": {
+                    "source": {
+                      "type": "string"
+                    },
+                    "target": {
+                      "type": "string"
+                    },
+                    "weight": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "nodes": {
+                "items": {
+                  "properties": {
+                    "count": {
+                      "type": "number"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "keyword_trends": {
+            "items": {
+              "properties": {
+                "term": {
+                  "type": "string"
+                },
+                "trend": {
+                  "items": {
+                    "properties": {
+                      "count": {
+                        "type": "number"
+                      },
+                      "year": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "schema_version": {
+            "type": "string"
+          },
+          "top_keywords": {
+            "items": {
+              "properties": {
+                "count": {
+                  "type": "number"
+                },
+                "term": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "type": "object"
+  },
+  "publications": {
+    "properties": {
+      "analysis_type": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string"
+      },
+      "id": {
+        "type": "number"
+      },
+      "project_id": {
+        "type": "number"
+      },
+      "results": {
+        "properties": {
+          "cumulative": {
+            "items": {
+              "properties": {
+                "cumulative": {
+                  "type": "number"
+                },
+                "year": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "field_maturity": {
+            "nullable": true,
+            "properties": {
+              "carrying_capacity": {
+                "type": "number"
+              },
+              "fit_quality": {
+                "type": "number"
+              },
+              "growth_rate": {
+                "type": "number"
+              },
+              "method": {
+                "type": "string"
+              },
+              "midpoint_year": {
+                "type": "number"
+              },
+              "phase": {
+                "type": "string"
+              },
+              "progress": {
+                "type": "number"
+              }
+            },
+            "type": "object"
+          },
+          "growth_rates": {
+            "items": {
+              "properties": {
+                "rate": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "year": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "schema_version": {
+            "type": "string"
+          },
+          "total": {
+            "type": "number"
+          },
+          "yearly_counts": {
+            "items": {
+              "properties": {
+                "count": {
+                  "type": "number"
+                },
+                "year": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "type": "object"
+  }
+}
