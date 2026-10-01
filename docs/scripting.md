@@ -179,8 +179,15 @@ full-text assessment of *reports*. Every exclusion carries a `screening_stage`:
 | `title_abstract` | Records excluded (beside "Records screened") |
 | `full_text` | Reports excluded, or Reports not retrieved when the reason is `fulltext_unavailable` |
 
-Both exclude endpoints accept an optional `screening_stage`. When it is omitted the stage is
-`title_abstract`, so clients written before stages existed keep their old meaning.
+Both exclude endpoints accept an optional `screening_stage`. When it is omitted or `null`:
+
+- reason `fulltext_unavailable` is recorded at `full_text`, because PRISMA 2020 counts a
+  report that could not be retrieved under "Reports not retrieved", a full-text box;
+- every other reason is recorded at `title_abstract`, so clients written before stages
+  existed keep their old meaning.
+
+Sending `fulltext_unavailable` with an explicit `"screening_stage": "title_abstract"` is a
+contradiction and returns `422`. The API rejects it rather than silently changing the stage.
 
 ```python
 # Exclude a record at full-text assessment
@@ -196,13 +203,21 @@ c.post(f"/api/projects/{pid}/publications/bulk-exclude", json={"citation_thresho
 The endpoint is a toggle: calling it on an excluded record re-includes it and clears both
 `exclusion_reason` and `screening_stage`, whatever the body says. A record has one stage,
 the stage it was excluded at; to move an exclusion to the other stage, re-include it and
-exclude it again. `GET /api/projects/{id}/publications` and the JSON export return
-`screening_stage` on every publication (`null` while it is included).
+exclude it again. `GET /api/projects/{id}/publications` returns `screening_stage` on every
+publication (`null` while it is included). The data exports (CSV, RIS, JSON) contain only
+included records, so stages appear in exports through the methodology log and the PRISMA
+diagram counts.
 
 The flow diagram counts *reports sought for retrieval* as records screened minus
 title/abstract exclusions, and *reports assessed for eligibility* as reports sought minus
 reports not retrieved. The methodology log lists both stages with per-reason counts.
-Alembic revision `0004_screening_stage` migrates existing exclusions to `title_abstract`; if any excluded record still
+
+Alembic revision `0004_screening_stage` backfills exclusions that existed before stages:
+`fulltext_unavailable` exclusions become `full_text` (so they appear under "Reports not
+retrieved"), and every other exclusion becomes `title_abstract`. If any excluded record still
 has no stage, both exports count it at title/abstract and say how many there are.
+Downgrading the revision refuses to run while full-text exclusions exist, because it would
+erase their stage. Export the methodology log first, then set
+`BIBMEDED_ALLOW_LOSSY_DOWNGRADE=1` to proceed.
 
 These are additive response fields, so `schema_version` stays `"1.0"`.
