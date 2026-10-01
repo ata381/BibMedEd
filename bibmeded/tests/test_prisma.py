@@ -1,6 +1,9 @@
 """Tests for the PRISMA flow-diagram service and export endpoint."""
 
+import os
+import re
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 
@@ -319,3 +322,209 @@ def test_export_prisma_endpoint_handles_project_with_no_steps(client, db):
     assert "PRISMA 2020" in body
     # When there are no steps, identification box shows the fallback line.
     assert "no source-level counts available" in body
+
+
+# ---------- screening stages (issue #91) ----------
+
+def _two_stage_steps():
+    return [
+        _step(phase="search", source="pubmed", records_out=100),
+        _step(phase="dedup", source="all", records_in=100, records_out=90, records_affected=10, step_order=2),
+    ]
+
+
+def test_compute_counts_splits_exclusions_by_screening_stage():
+    summary = {
+        ("title_abstract", "non_english"): 5,
+        ("title_abstract", "wrong_population"): 15,
+        ("full_text", "wrong_outcome"): 4,
+        ("full_text", "fulltext_unavailable"): 3,
+    }
+    counts = compute_counts(_two_stage_steps(), exclusion_summary=summary, included_override=63)
+
+    assert counts.screened == 90
+    assert counts.excluded_in_screening == 20
+    assert counts.excluded_by_reason == {"non_english": 5, "wrong_population": 15}
+    assert counts.reports_sought == 70
+    assert counts.reports_not_retrieved == 3
+    assert counts.reports_assessed == 67
+    assert counts.excluded_full_text == 4
+    assert counts.excluded_full_text_by_reason == {"wrong_outcome": 4}
+    assert counts.unrecorded_stage == 0
+    assert counts.included == 63
+
+
+def test_compute_counts_reports_flow_matches_included_when_consistent():
+    summary = {("title_abstract", "other"): 10, ("full_text", "wrong_outcome"): 5}
+    counts = compute_counts(_two_stage_steps(), exclusion_summary=summary, included_override=75)
+    assert counts.reports_assessed - counts.excluded_full_text == counts.included
+
+
+def test_compute_counts_counts_stageless_exclusions_at_title_abstract_and_flags_them():
+    summary = {(None, "non_english"): 2, ("title_abstract", "non_english"): 1, ("full_text", "other"): 1}
+    counts = compute_counts(_two_stage_steps(), exclusion_summary=summary)
+    assert counts.excluded_in_screening == 3
+    assert counts.excluded_by_reason == {"non_english": 3}
+    assert counts.unrecorded_stage == 2
+    assert counts.excluded_full_text == 1
+
+
+def test_compute_counts_legacy_reason_only_summary_is_title_abstract():
+    counts = compute_counts(_two_stage_steps(), exclusion_summary={"non_english": 4})
+    assert counts.excluded_in_screening == 4
+    assert counts.excluded_full_text == 0
+    assert counts.unrecorded_stage == 4
+
+
+def test_screening_stage_literal_matches_model_constraint_values():
+    from typing import get_args
+
+    from bibmeded.models.publication import SCREENING_STAGES
+    from bibmeded.schemas.publication import ScreeningStage
+
+    assert get_args(ScreeningStage) == SCREENING_STAGES
+
+
+def test_compute_counts_rejects_unknown_screening_stage():
+    with pytest.raises(ValueError, match="screening stage"):
+        compute_counts([], exclusion_summary={("abstract_only", "other"): 1})
+
+
+def test_compute_counts_exclusion_step_honours_full_text_stage_parameter():
+    steps = _two_stage_steps() + [
+        _step(phase="exclusion", source="all", records_in=90, records_out=80, records_affected=10, step_order=3),
+        _step(
+            phase="exclusion", source="all", records_in=80, records_out=78, records_affected=2, step_order=4,
+            parameters={"screening_stage": "full_text"},
+        ),
+    ]
+    counts = compute_counts(steps)
+    assert counts.excluded_in_screening == 10
+    assert counts.excluded_full_text == 2
+    assert counts.reports_sought == 80
+    assert counts.reports_assessed == 80
+
+
+def test_compute_counts_reports_clamp_at_zero_on_inconsistent_input():
+    counts = compute_counts([], exclusion_summary={("title_abstract", "other"): 5})
+    assert counts.reports_sought == 0
+    assert counts.reports_assessed == 0
+
+
+def test_render_svg_shows_both_screening_stages():
+    summary = {
+        ("title_abstract", "non_english"): 5,
+        ("full_text", "wrong_outcome"): 4,
+        ("full_text", "fulltext_unavailable"): 3,
+    }
+    counts = compute_counts(_two_stage_steps(), exclusion_summary=summary, included_override=78)
+    svg = render_svg(counts, "P")
+    assert "Records screened (90)" in svg
+    assert "Records excluded (5)" in svg
+    assert "Reports sought for retrieval (85)" in svg
+    assert "Reports not retrieved (3)" in svg
+    assert "Reports assessed for eligibility (82)" in svg
+    assert "Reports excluded (4)" in svg
+    assert "Wrong outcome: 4" in svg
+    assert "Studies included in review (78)" in svg
+
+
+def test_render_svg_always_shows_full_text_boxes_even_without_full_text_exclusions():
+    counts = compute_counts(_two_stage_steps(), included_override=90)
+    svg = render_svg(counts, "P")
+    assert "Reports sought for retrieval (90)" in svg
+    assert "Reports assessed for eligibility (90)" in svg
+    assert "Reports excluded" not in svg
+    assert "Reports not retrieved" not in svg
+
+
+def test_render_svg_notes_exclusions_without_a_recorded_stage():
+    counts = compute_counts(_two_stage_steps(), exclusion_summary={(None, "other"): 2})
+    svg = render_svg(counts, "P")
+    assert "2 without a recorded stage" in svg
+
+
+def test_render_svg_keeps_every_box_inside_the_view_box():
+    summary = {("title_abstract", "other"): 1, ("full_text", "fulltext_unavailable"): 1, ("full_text", "other"): 1}
+    svg = render_svg(compute_counts(_two_stage_steps(), exclusion_summary=summary), "P")
+    view_w = int(re.search(r'viewBox="0 0 (\d+) \d+"', svg).group(1))
+    rects = [(int(x), int(w)) for x, w in re.findall(r'<rect x="(\d+)" y="\d+" width="(\d+)"', svg)]
+    assert len(rects) == 9
+    assert all(x + w <= view_w for x, w in rects)
+
+
+SNAPSHOT_PATH = Path(__file__).resolve().parent / "fixtures" / "prisma_two_stage.svg"
+
+
+def test_render_svg_two_stage_snapshot():
+    """Byte-for-byte snapshot of a two-stage diagram. Refresh after an intentional
+    layout change with ``UPDATE_PRISMA_SNAPSHOT=1 pytest tests/test_prisma.py``."""
+    summary = {
+        ("title_abstract", "non_english"): 5,
+        ("title_abstract", "wrong_population"): 15,
+        (None, "other"): 2,
+        ("full_text", "wrong_outcome"): 4,
+        ("full_text", "fulltext_unavailable"): 3,
+    }
+    steps = [
+        _step(phase="search", source="pubmed", records_out=80),
+        _step(phase="search", source="openalex", records_out=40, step_order=2),
+        _step(phase="dedup", source="all", records_in=120, records_out=100, records_affected=20, step_order=3),
+    ]
+    counts = compute_counts(steps, exclusion_summary=summary, included_override=71)
+    svg = render_svg(counts, "Snapshot project")
+    if os.environ.get("UPDATE_PRISMA_SNAPSHOT"):
+        SNAPSHOT_PATH.write_text(svg, encoding="utf-8", newline="")
+    assert svg == SNAPSHOT_PATH.read_text(encoding="utf-8")
+
+
+def _seed_project_with_staged_exclusions(db):
+    from bibmeded.models import Publication, SearchProject, SearchQuery
+
+    project = SearchProject(name="Two-stage")
+    db.add(project)
+    db.flush()
+    query = SearchQuery(project_id=project.id, query_string="q", database="pubmed")
+    db.add(query)
+    db.flush()
+    db.add_all([
+        _step(query_id=query.id, phase="search", source="pubmed", records_out=12),
+        _step(query_id=query.id, phase="dedup", source="all", records_in=12, records_out=10, records_affected=2, step_order=2),
+    ])
+    decisions = [
+        ("title_abstract", "non_english"),
+        ("title_abstract", "non_english"),
+        ("title_abstract", "wrong_population"),
+        ("full_text", "wrong_outcome"),
+        ("full_text", "fulltext_unavailable"),
+    ]
+    for i in range(10):
+        stage, reason = decisions[i] if i < len(decisions) else (None, None)
+        db.add(Publication(
+            pmid=f"ts{i}", title=f"P{i}", query_id=query.id, project_id=project.id,
+            excluded=stage is not None, exclusion_reason=reason, screening_stage=stage,
+        ))
+    db.commit()
+    return project
+
+
+def test_export_prisma_endpoint_reports_both_stages(client, db):
+    project = _seed_project_with_staged_exclusions(db)
+    body = client.get(f"/api/projects/{project.id}/export/prisma").text
+    assert "Records screened (10)" in body
+    assert "Records excluded (3)" in body
+    assert "Reports sought for retrieval (7)" in body
+    assert "Reports not retrieved (1)" in body
+    assert "Reports assessed for eligibility (6)" in body
+    assert "Reports excluded (1)" in body
+    assert "Studies included in review (5)" in body
+
+
+def test_export_methodology_endpoint_reports_both_stages(client, db):
+    project = _seed_project_with_staged_exclusions(db)
+    body = client.get(f"/api/projects/{project.id}/export/methodology").text
+    assert "Title/abstract screening: 3 records excluded" in body
+    assert "Non-English language: 2" in body
+    assert "Full-text retrieval: 1 report not retrieved" in body
+    assert "Full-text eligibility: 1 report excluded" in body
+    assert "Wrong outcome: 1" in body

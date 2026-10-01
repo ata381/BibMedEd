@@ -4,11 +4,17 @@ All notable changes to BibMedEd are recorded here. This project follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- Exclusions now record the PRISMA 2020 screening stage, `title_abstract` or `full_text` ([#91](https://github.com/ata381/BibMedEd/issues/91)). The PRISMA SVG shows records screened, reports sought for retrieval, reports not retrieved, reports assessed for eligibility and reports excluded, each with per-reason counts. The methodology log has a "Screening decisions by stage" section. On the results page, the exclusion menu has a keyboard and screen-reader accessible stage choice that carries over between records. The exclude and bulk-exclude endpoints take an optional `screening_stage` that defaults to `title_abstract`. The publication list, the exclude responses and the JSON export return it. These fields are additive, so `schema_version` stays `"1.0"`. Alembic revision `0004_screening_stage` adds the column with a CHECK constraint and backfills existing exclusions as `title_abstract`. Downgrading drops the column, so full-text stages are lost. See [Screening stages](https://ata381.github.io/BibMedEd/scripting/#screening-stages).
+
 ### Changed
 
 - Deleting a project, bulk-excluding 0-citation publications and discarding raw query edits now ask for confirmation in a styled, accessible dialog instead of the browser's `confirm()`. The new `ConfirmDialog` primitive is built on the native `<dialog>` element: it traps focus, cancels on Escape and returns focus to the button that opened it. The bulk-exclude dialog states how many publications will be excluded ([#90](https://github.com/ata381/BibMedEd/issues/90)).
 
 ### Fixed
+
+- The PRISMA SVG's side boxes (records excluded) extended past the right edge of the image and were cut off. The main column now sits left of centre so every box fits ([#91](https://github.com/ata381/BibMedEd/issues/91)).
 
 - Per-record savepoints in the search worker's persist loop are now always closed exactly once, and the test database fixture no longer stacks stray savepoints. This removes the `nested transaction already deassociated from connection` SAWarning ([#87](https://github.com/ata381/BibMedEd/issues/87)).
 - Records that fail to persist are no longer only written to the worker log. The fetch methodology step records them as `persist_failed` (true total) and `persist_failures` (first 100, with source id, source database and a truncated error). The text methodology export lists them under "Failed to persist: N record(s)" ([#87](https://github.com/ata381/BibMedEd/issues/87)).

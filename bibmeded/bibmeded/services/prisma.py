@@ -1,21 +1,91 @@
 """PRISMA 2020 flow-diagram generation from the methodology log.
 
-Produces an SVG that mirrors the four-tier PRISMA 2020 layout
-(Identification → Removed before screening → Screening → Included) using
-counts derived from the project's `MethodologyStep` records.
+Produces an SVG that mirrors the PRISMA 2020 layout (Identification →
+Removed before screening → Records screened → Reports sought for retrieval →
+Reports assessed for eligibility → Included) using counts derived from the
+project's `MethodologyStep` records and its per-stage exclusion summary.
 
-Pure-Python: no extra dependencies. Returns an `xml.etree.ElementTree`-built
-SVG as a string so the export router can stream it directly with
-`media_type="image/svg+xml"`.
+Pure-Python: no extra dependencies. Returns the SVG as a string so the export
+router can stream it directly with `media_type="image/svg+xml"`.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from html import escape
-from typing import Iterable
+from typing import Iterable, Mapping
 
 from bibmeded.models.methodology import MethodologyStep
+from bibmeded.models.publication import SCREENING_STAGES
+
+TITLE_ABSTRACT = "title_abstract"
+FULL_TEXT = "full_text"
+# PRISMA 2020 reports full-text exclusions for this reason in their own
+# "Reports not retrieved" box rather than among "Reports excluded".
+NOT_RETRIEVED_REASON = "fulltext_unavailable"
+
+# Keys are (screening_stage, exclusion_reason). A bare reason (or None) is the
+# pre-stage summary shape and is read as a stage-less exclusion.
+ExclusionSummary = Mapping[tuple[str | None, str | None] | str | None, int]
+
+
+@dataclass(frozen=True)
+class StagedExclusions:
+    """Manual exclusions split into the PRISMA 2020 screening stages."""
+
+    title_abstract_by_reason: dict[str, int]
+    not_retrieved: int
+    full_text_by_reason: dict[str, int]
+    unrecorded_stage: int
+
+    @property
+    def title_abstract_total(self) -> int:
+        return sum(self.title_abstract_by_reason.values())
+
+    @property
+    def full_text_total(self) -> int:
+        return sum(self.full_text_by_reason.values())
+
+
+def summarize_exclusions(summary: ExclusionSummary | None) -> StagedExclusions:
+    """Group an exclusion summary by screening stage and reason.
+
+    Exclusions without a recorded stage are counted at title/abstract, the same
+    rule the 0004 migration applied to exclusions made before stages existed;
+    ``unrecorded_stage`` keeps their number so reports can disclose it.
+    """
+    by_stage: dict[str, dict[str, int]] = {stage: {} for stage in SCREENING_STAGES}
+    unrecorded = 0
+    for key, n in (summary or {}).items():
+        if n <= 0:
+            continue
+        stage, reason = key if isinstance(key, tuple) else (None, key)
+        if stage is None:
+            unrecorded += n
+            stage = TITLE_ABSTRACT
+        if stage not in by_stage:
+            raise ValueError(f"Unknown screening stage {stage!r}; expected one of {SCREENING_STAGES}")
+        reason_key = reason or "other"
+        by_stage[stage][reason_key] = by_stage[stage].get(reason_key, 0) + n
+
+    full_text = by_stage[FULL_TEXT]
+    not_retrieved = full_text.pop(NOT_RETRIEVED_REASON, 0)
+    return StagedExclusions(
+        title_abstract_by_reason=by_stage[TITLE_ABSTRACT],
+        not_retrieved=not_retrieved,
+        full_text_by_reason=full_text,
+        unrecorded_stage=unrecorded,
+    )
+
+
+def _step_stage(step: MethodologyStep) -> str:
+    stage = (step.parameters or {}).get("screening_stage") or TITLE_ABSTRACT
+    if stage not in SCREENING_STAGES:
+        raise ValueError(
+            f"Methodology step {step.step_order} has unknown screening stage {stage!r}; "
+            f"expected one of {SCREENING_STAGES}"
+        )
+    return stage
 
 
 _EXCLUSION_REASON_LABELS = {
@@ -33,7 +103,12 @@ _EXCLUSION_REASON_LABELS = {
 
 @dataclass
 class PrismaCounts:
-    """Counts threaded through a PRISMA 2020 flow diagram."""
+    """Counts threaded through a PRISMA 2020 flow diagram.
+
+    ``excluded_in_screening`` / ``excluded_by_reason`` are the title/abstract
+    stage ("Records excluded"); the ``*_full_text`` fields and
+    ``reports_not_retrieved`` are the full-text stage.
+    """
 
     identified_by_source: dict[str, int] = field(default_factory=dict)
     duplicates_removed: int = 0
@@ -41,16 +116,28 @@ class PrismaCounts:
     screened: int = 0
     excluded_in_screening: int = 0
     excluded_by_reason: dict[str, int] = field(default_factory=dict)
+    reports_not_retrieved: int = 0
+    excluded_full_text: int = 0
+    excluded_full_text_by_reason: dict[str, int] = field(default_factory=dict)
+    unrecorded_stage: int = 0
     included: int = 0
 
     @property
     def total_identified(self) -> int:
         return sum(self.identified_by_source.values())
 
+    @property
+    def reports_sought(self) -> int:
+        return max(self.screened - self.excluded_in_screening, 0)
+
+    @property
+    def reports_assessed(self) -> int:
+        return max(self.reports_sought - self.reports_not_retrieved, 0)
+
 
 def compute_counts(
     steps: Iterable[MethodologyStep],
-    exclusion_summary: dict[str | None, int] | None = None,
+    exclusion_summary: ExclusionSummary | None = None,
     included_override: int | None = None,
 ) -> PrismaCounts:
     """Reduce a project's methodology steps to PRISMA flow-diagram counts.
@@ -74,7 +161,13 @@ def compute_counts(
         double-subtracting those, we only fold in the residual —
         ``fetch loss - dedup records_affected`` for the same ``query_id`` —
         clamped at zero.
-      - ``exclusion`` → "Records excluded in screening".
+      - ``exclusion`` → "Records excluded" (title/abstract), or "Reports
+        excluded" when ``parameters["screening_stage"] == "full_text"``.
+      - ``exclusion_summary`` (live per-stage, per-reason counts of excluded
+        publications) raises each stage's total to at least its row count.
+        Full-text exclusions for ``fulltext_unavailable`` become "Reports not
+        retrieved". Reports sought = records screened − records excluded;
+        reports assessed = reports sought − reports not retrieved.
       - ``included_override``, when provided by the caller, overrides the
         post-screening count (it's the live ``excluded == False`` count and
         reflects manual exclusions that happened after the worker wrote its
@@ -87,6 +180,7 @@ def compute_counts(
     # the dedup step that actually explains it (not an unrelated query's dedup).
     fetch_loss_by_query: dict[int, int] = {}
     dedup_affected_by_query: dict[int, int] = {}
+    full_text_from_steps = 0
 
     for step in steps:
         if step.phase == "search":
@@ -101,7 +195,10 @@ def compute_counts(
         elif step.phase == "enrichment":
             counts.other_removed_before_screening += step.records_affected
         elif step.phase == "exclusion":
-            counts.excluded_in_screening += step.records_affected
+            if _step_stage(step) == FULL_TEXT:
+                full_text_from_steps += step.records_affected
+            else:
+                counts.excluded_in_screening += step.records_affected
         elif step.phase == "fetch":
             loss = step.records_in - step.records_out
             if loss > 0:
@@ -115,20 +212,15 @@ def compute_counts(
         if residual > 0:
             counts.other_removed_before_screening += residual
 
-    if exclusion_summary:
-        # Surface PRISMA 2020 item 17 — per-reason breakdown of manual exclusions.
-        cleaned: dict[str, int] = {}
-        for reason, n in exclusion_summary.items():
-            if not n:
-                continue
-            key = reason or "other"
-            cleaned[key] = cleaned.get(key, 0) + n
-        counts.excluded_by_reason = cleaned
-        # If the methodology log didn't record an explicit `exclusion` step but rows in
-        # the DB are flagged excluded, surface them in the diagram anyway.
-        total_from_reasons = sum(cleaned.values())
-        if total_from_reasons > counts.excluded_in_screening:
-            counts.excluded_in_screening = total_from_reasons
+    # Manual exclusions happen in the UI after the worker wrote its steps, so the
+    # live row counts win whenever they exceed what the log recorded.
+    staged = summarize_exclusions(exclusion_summary)
+    counts.excluded_by_reason = staged.title_abstract_by_reason
+    counts.excluded_in_screening = max(counts.excluded_in_screening, staged.title_abstract_total)
+    counts.reports_not_retrieved = staged.not_retrieved
+    counts.excluded_full_text_by_reason = staged.full_text_by_reason
+    counts.excluded_full_text = max(full_text_from_steps - staged.not_retrieved, staged.full_text_total)
+    counts.unrecorded_stage = staged.unrecorded_stage
 
     pre_screening = (
         counts.total_identified
@@ -150,7 +242,7 @@ def compute_counts(
         if last_with_out is not None:
             counts.included = max(last_with_out.records_out, 0)
         else:
-            counts.included = counts.screened - counts.excluded_in_screening
+            counts.included = max(counts.reports_assessed - counts.excluded_full_text, 0)
     else:
         counts.included = 0
 
@@ -164,9 +256,10 @@ def render_svg(counts: PrismaCounts, project_name: str) -> str:
     width = 720
     box_w = 380
     box_h = 80
-    col_x = (width - box_w) // 2          # main column
-    right_col_x = col_x + box_w + 60      # right-side "excluded" callouts
-    right_box_w = 220
+    right_box_w = 240
+    # Main column sits left of centre so the side boxes fit inside the viewBox.
+    col_x = 30
+    right_col_x = col_x + box_w + 40
     gap = 36                              # vertical gap between boxes
     margin_top = 70                        # space for the title
 
@@ -287,36 +380,49 @@ def _layout(counts: PrismaCounts) -> list[_MainBox]:
         height=box_height(len(removed_lines)),
     )
 
-    side = None
-    if counts.excluded_in_screening:
-        if counts.excluded_by_reason:
-            # PRISMA 2020 item 17 — show per-reason breakdown.
-            reason_lines = [
-                f"{_EXCLUSION_REASON_LABELS.get(r, r)}: {n}"
-                for r, n in sorted(counts.excluded_by_reason.items(), key=lambda kv: -kv[1])
-                if n
-            ]
-        else:
-            reason_lines = ["Below citation threshold or", "manual exclusion"]
-        side = _SideBox(
-            title=f"Records excluded ({counts.excluded_in_screening})",
-            lines=reason_lines,
-            height=box_height(len(reason_lines)),
-        )
-    screened = _MainBox(
-        title=f"Records screened ({counts.screened})",
-        lines=[],
-        height=box_height(0),
-        side_box=side,
-    )
+    def side_box(title: str, n: int, lines: list[str]) -> _SideBox | None:
+        if not n:
+            return None
+        return _SideBox(title=f"{title} ({n})", lines=lines, height=box_height(len(lines)))
 
-    included = _MainBox(
-        title=f"Studies included in review ({counts.included})",
-        lines=[],
-        height=box_height(0),
-    )
+    def main_box(title: str, side: _SideBox | None = None) -> _MainBox:
+        # Grow the main box to its side box so stacked side boxes never overlap.
+        height = max(box_height(0), side.height if side else 0)
+        return _MainBox(title=title, lines=[], height=height, side_box=side)
 
-    return [identified, removed, screened, included]
+    title_abstract_lines = _reason_lines(counts.excluded_by_reason) or [
+        "Below citation threshold or",
+        "manual exclusion",
+    ]
+    if counts.unrecorded_stage:
+        title_abstract_lines.append(f"incl. {counts.unrecorded_stage} without a recorded stage")
+    full_text_lines = _reason_lines(counts.excluded_full_text_by_reason) or ["Reasons not recorded"]
+
+    return [
+        identified,
+        removed,
+        main_box(
+            f"Records screened ({counts.screened})",
+            side_box("Records excluded", counts.excluded_in_screening, title_abstract_lines),
+        ),
+        main_box(
+            f"Reports sought for retrieval ({counts.reports_sought})",
+            side_box("Reports not retrieved", counts.reports_not_retrieved, []),
+        ),
+        main_box(
+            f"Reports assessed for eligibility ({counts.reports_assessed})",
+            side_box("Reports excluded", counts.excluded_full_text, full_text_lines),
+        ),
+        main_box(f"Studies included in review ({counts.included})"),
+    ]
+
+
+def _reason_lines(by_reason: dict[str, int]) -> list[str]:
+    return [
+        f"{_EXCLUSION_REASON_LABELS.get(reason, reason)}: {n}"
+        for reason, n in sorted(by_reason.items(), key=lambda kv: (-kv[1], kv[0]))
+        if n
+    ]
 
 
 def _render_box(
