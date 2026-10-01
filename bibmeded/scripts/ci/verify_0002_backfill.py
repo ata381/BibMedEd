@@ -11,7 +11,8 @@ NULL, and that the column is now NOT NULL — i.e. that the real backfill /
 constraint-enforcement DDL in 0002_publication_project_scope.upgrade() ran
 against pre-existing data, not just the fresh-database no-op guard path.
 
-Also checks 0004_screening_stage: the seeded exclusion is backfilled to
+Also checks 0004_screening_stage: the seeded ``fulltext_unavailable``
+exclusion is backfilled to ``full_text``, the other exclusion to
 ``title_abstract``, included rows keep a NULL stage, and the CHECK constraint
 exists.
 
@@ -31,11 +32,12 @@ from bibmeded.database import get_engine
 
 # publication id -> expected project_id, derived from the query_id ->
 # search_queries.project_id relationship seeded by seed_pre_0002_fixture.py.
-EXPECTED_PROJECT_ID_BY_PUBLICATION_ID = {1: 1, 2: 1, 3: 2}
+EXPECTED_PROJECT_ID_BY_PUBLICATION_ID = {1: 1, 2: 1, 3: 2, 4: 2}
 
-# 0004_screening_stage backfills every pre-existing exclusion as title/abstract
-# and leaves included records without a stage.
-EXPECTED_SCREENING_STAGE_BY_PUBLICATION_ID = {1: None, 2: "title_abstract", 3: None}
+# 0004_screening_stage backfills pre-existing `fulltext_unavailable` exclusions
+# as full_text ("Reports not retrieved"), every other exclusion as
+# title_abstract, and leaves included records without a stage.
+EXPECTED_SCREENING_STAGE_BY_PUBLICATION_ID = {1: None, 2: "title_abstract", 3: None, 4: "full_text"}
 
 
 def _screening_stage_errors(conn) -> list[str]:
@@ -104,7 +106,7 @@ def main() -> None:
 
     print(
         f"Migration backfill verified: {len(rows)} publications correctly scoped "
-        "to project_id, NOT NULL enforced; exclusions backfilled to title_abstract."
+        "to project_id, NOT NULL enforced; exclusions backfilled to their PRISMA screening stage."
     )
 
 

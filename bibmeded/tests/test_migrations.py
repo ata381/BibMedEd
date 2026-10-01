@@ -14,6 +14,7 @@ from alembic.config import Config
 from bibmeded.config import settings
 
 ALEMBIC_DIR = Path(__file__).resolve().parents[1] / "alembic"
+LOSSY_DOWNGRADE_ENV_VAR = "BIBMEDED_ALLOW_LOSSY_DOWNGRADE"
 
 PRE_0004_DDL = [
     "CREATE TABLE search_projects (id INTEGER PRIMARY KEY, name VARCHAR(255) NOT NULL, sample_key VARCHAR(100))",
@@ -39,7 +40,8 @@ PRE_0004_DDL = [
     INSERT INTO publications (id, pmid, title, query_id, project_id, excluded, exclusion_reason) VALUES
         (1, 'a', 'Excluded with reason', 1, 1, 1, 'non_english'),
         (2, 'b', 'Excluded without reason', 1, 1, 1, NULL),
-        (3, 'c', 'Included', 1, 1, 0, NULL)
+        (3, 'c', 'Included', 1, 1, 0, NULL),
+        (4, 'd', 'Full text not retrievable', 1, 1, 1, 'fulltext_unavailable')
     """,
 ]
 
@@ -71,7 +73,7 @@ def _seed_pre_0004(engine) -> None:
             conn.execute(sa.text(statement))
 
 
-def test_0004_backfills_existing_exclusions_as_title_abstract(sqlite_db):
+def test_0004_backfills_existing_exclusions_by_prisma_stage(sqlite_db):
     _seed_pre_0004(sqlite_db)
     config = _alembic_config()
     command.stamp(config, "0003_sample_project_key")
@@ -87,6 +89,7 @@ def test_0004_backfills_existing_exclusions_as_title_abstract(sqlite_db):
         (1, 1, "non_english", "title_abstract"),
         (2, 1, None, "title_abstract"),
         (3, 0, None, None),
+        (4, 1, "fulltext_unavailable", "full_text"),
     ]
 
 
@@ -101,7 +104,23 @@ def test_0004_rejects_unknown_screening_stage(sqlite_db):
             conn.execute(sa.text("UPDATE publications SET screening_stage = 'abstract' WHERE id = 3"))
 
 
-def test_0004_downgrade_drops_column_and_keeps_rows(sqlite_db):
+def test_0004_downgrade_refuses_to_drop_full_text_stages(sqlite_db, monkeypatch):
+    monkeypatch.delenv(LOSSY_DOWNGRADE_ENV_VAR, raising=False)
+    _seed_pre_0004(sqlite_db)
+    config = _alembic_config()
+    command.stamp(config, "0003_sample_project_key")
+    command.upgrade(config, "0004_screening_stage")
+
+    with pytest.raises(RuntimeError, match="methodology log") as excinfo:
+        command.downgrade(config, "0003_sample_project_key")
+
+    assert LOSSY_DOWNGRADE_ENV_VAR in str(excinfo.value)
+    assert "1 publication(s)" in str(excinfo.value)
+    assert "screening_stage" in _columns(sqlite_db)
+
+
+def test_0004_downgrade_drops_column_and_keeps_rows_when_loss_is_allowed(sqlite_db, monkeypatch):
+    monkeypatch.setenv(LOSSY_DOWNGRADE_ENV_VAR, "1")
     _seed_pre_0004(sqlite_db)
     config = _alembic_config()
     command.stamp(config, "0003_sample_project_key")
@@ -112,7 +131,26 @@ def test_0004_downgrade_drops_column_and_keeps_rows(sqlite_db):
     assert "screening_stage" not in _columns(sqlite_db)
     with sqlite_db.connect() as conn:
         rows = conn.execute(sa.text("SELECT id, excluded, exclusion_reason FROM publications ORDER BY id")).fetchall()
-    assert [tuple(r) for r in rows] == [(1, 1, "non_english"), (2, 1, None), (3, 0, None)]
+    assert [tuple(r) for r in rows] == [
+        (1, 1, "non_english"),
+        (2, 1, None),
+        (3, 0, None),
+        (4, 1, "fulltext_unavailable"),
+    ]
+
+
+def test_0004_downgrade_without_full_text_stages_needs_no_override(sqlite_db, monkeypatch):
+    monkeypatch.delenv(LOSSY_DOWNGRADE_ENV_VAR, raising=False)
+    _seed_pre_0004(sqlite_db)
+    with sqlite_db.begin() as conn:
+        conn.execute(sa.text("DELETE FROM publications WHERE id = 4"))
+    config = _alembic_config()
+    command.stamp(config, "0003_sample_project_key")
+    command.upgrade(config, "0004_screening_stage")
+
+    command.downgrade(config, "0003_sample_project_key")
+
+    assert "screening_stage" not in _columns(sqlite_db)
 
 
 def test_0004_is_a_no_op_on_an_empty_database(sqlite_db):

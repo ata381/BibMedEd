@@ -2,12 +2,17 @@
 
 Adds ``publications.screening_stage`` (``title_abstract`` | ``full_text``,
 NULL while a record is included) with a CHECK constraint on the allowed
-values. Every exclusion that exists before this revision was made through the
-single-stage UI, which PRISMA 2020 reports as title/abstract screening, so the
-backfill stamps those rows ``title_abstract``.
+values, and backfills every exclusion that predates this revision:
 
-Downgrading drops the column: full-text exclusions stay excluded with their
-reason but lose their stage, so export the methodology log first.
+- reason ``fulltext_unavailable`` → ``full_text``: PRISMA 2020 reports a
+  report that could not be retrieved under "Reports not retrieved", which only
+  exists at the full-text stage;
+- every other exclusion → ``title_abstract``: it was made through the
+  single-stage UI, which PRISMA 2020 reports as title/abstract screening.
+
+Downgrading drops the column, which would erase the stage of every full-text
+exclusion. It refuses to do so while any exist unless
+``BIBMEDED_ALLOW_LOSSY_DOWNGRADE=1`` is set.
 
 Revision ID: 0004_screening_stage
 Revises: 0003_sample_project_key
@@ -15,6 +20,8 @@ Create Date: 2026-10-01
 """
 
 from __future__ import annotations
+
+import os
 
 from alembic import op
 import sqlalchemy as sa
@@ -28,6 +35,15 @@ depends_on: str | None = None
 COLUMN_NAME = "screening_stage"
 CONSTRAINT_NAME = "ck_publications_screening_stage"
 CONSTRAINT_SQL = "screening_stage IS NULL OR screening_stage IN ('title_abstract', 'full_text')"
+NOT_RETRIEVED_REASON = "fulltext_unavailable"
+LOSSY_DOWNGRADE_ENV_VAR = "BIBMEDED_ALLOW_LOSSY_DOWNGRADE"
+
+_publications = sa.table(
+    "publications",
+    sa.column("excluded", sa.Boolean()),
+    sa.column("exclusion_reason", sa.String(length=100)),
+    sa.column(COLUMN_NAME, sa.String(length=20)),
+)
 
 
 def _publications_state(bind) -> tuple[bool, set[str], set[str]]:
@@ -37,6 +53,16 @@ def _publications_state(bind) -> tuple[bool, set[str], set[str]]:
     columns = {column["name"] for column in inspector.get_columns("publications")}
     checks = {check["name"] for check in inspector.get_check_constraints("publications")}
     return True, columns, checks
+
+
+def _backfill_unstaged_exclusions(stage: str, *conditions) -> None:
+    op.execute(
+        _publications.update()
+        .where(_publications.c.excluded == sa.true())
+        .where(_publications.c[COLUMN_NAME].is_(None))
+        .where(*conditions)
+        .values({COLUMN_NAME: stage})
+    )
 
 
 def upgrade() -> None:
@@ -50,17 +76,9 @@ def upgrade() -> None:
         with op.batch_alter_table("publications") as batch_op:
             batch_op.add_column(sa.Column(COLUMN_NAME, sa.String(length=20), nullable=True))
 
-    publications = sa.table(
-        "publications",
-        sa.column("excluded", sa.Boolean()),
-        sa.column(COLUMN_NAME, sa.String(length=20)),
-    )
-    op.execute(
-        publications.update()
-        .where(publications.c.excluded == sa.true())
-        .where(publications.c[COLUMN_NAME].is_(None))
-        .values({COLUMN_NAME: "title_abstract"})
-    )
+    # Order matters: the catch-all below would otherwise claim these rows.
+    _backfill_unstaged_exclusions("full_text", _publications.c.exclusion_reason == NOT_RETRIEVED_REASON)
+    _backfill_unstaged_exclusions("title_abstract")
 
     if CONSTRAINT_NAME not in checks:
         with op.batch_alter_table("publications") as batch_op:
@@ -68,9 +86,24 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    has_table, columns, checks = _publications_state(op.get_bind())
+    bind = op.get_bind()
+    has_table, columns, checks = _publications_state(bind)
     if not has_table:
         return
+
+    if COLUMN_NAME in columns and os.environ.get(LOSSY_DOWNGRADE_ENV_VAR) != "1":
+        full_text_count = bind.execute(
+            sa.select(sa.func.count()).select_from(_publications).where(_publications.c[COLUMN_NAME] == "full_text")
+        ).scalar()
+        if full_text_count:
+            raise RuntimeError(
+                f"0004_screening_stage downgrade: {full_text_count} publication(s) were excluded at the "
+                "full-text stage, and dropping publications.screening_stage would erase that stage "
+                "(they would read as title/abstract exclusions after re-upgrading). Export the "
+                "methodology log and PRISMA diagram for every affected project first, then re-run "
+                f"with {LOSSY_DOWNGRADE_ENV_VAR}=1 to accept the loss. Refusing to silently drop "
+                "reproducibility-critical screening data."
+            )
 
     with op.batch_alter_table("publications") as batch_op:
         if CONSTRAINT_NAME in checks:
