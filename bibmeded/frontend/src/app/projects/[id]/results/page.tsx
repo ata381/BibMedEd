@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { publicationsApi, searchApi, Publication, SearchStatus, ExclusionReason } from "@/lib/api";
+import { publicationsApi, searchApi, Publication, SearchStatus, ScreeningStage } from "@/lib/api";
 import { Badge, Button, Card, EmptyState, Icon, LoadingState, PageHeader, Skeleton, Stat } from "@/components/ui";
-import { ExcludeButton } from "./exclude-button";
+import { ExcludeButton, type ExclusionToggleHandler } from "./exclude-button";
 import { BulkExcludeDialog } from "./bulk-exclude-dialog";
 import { useReadOnly } from "@/lib/read-only";
 
@@ -40,12 +40,16 @@ export default function ResultsReview() {
   const [page, setPage] = useState(1);
   const [searchStats, setSearchStats] = useState<SearchStatus | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
+  // Shared across rows so a reviewer in the full-text phase picks the stage once.
+  const [screeningStage, setScreeningStage] = useState<ScreeningStage>("title_abstract");
 
   const includedCount = total - excludedCount;
   const refresh = () => setRefreshTick((t) => t + 1);
 
-  const handleToggleExclude = (pubId: number, excluded: boolean, reason: ExclusionReason | null) => {
-    setPublications((prev) => prev.map((p) => (p.id === pubId ? { ...p, excluded, exclusion_reason: reason } : p)));
+  const handleToggleExclude: ExclusionToggleHandler = (pubId, excluded, reason, stage) => {
+    setPublications((prev) =>
+      prev.map((p) => (p.id === pubId ? { ...p, excluded, exclusion_reason: reason, screening_stage: stage } : p)),
+    );
     setExcludedCount((prev) => (excluded ? prev + 1 : prev - 1));
   };
 
@@ -199,7 +203,15 @@ export default function ResultsReview() {
           ) : (
             <ol className="rule-t">
               {publications.map((pub, i) => (
-                <PublicationRow key={pub.id} pub={pub} index={(page - 1) * PAGE_SIZE + i + 1} projectId={projectId} onToggle={handleToggleExclude} />
+                <PublicationRow
+                  key={pub.id}
+                  pub={pub}
+                  index={(page - 1) * PAGE_SIZE + i + 1}
+                  projectId={projectId}
+                  screeningStage={screeningStage}
+                  onScreeningStageChange={setScreeningStage}
+                  onToggle={handleToggleExclude}
+                />
               ))}
             </ol>
           )}
@@ -290,12 +302,16 @@ function PublicationRow({
   pub,
   index,
   projectId,
+  screeningStage,
+  onScreeningStageChange,
   onToggle,
 }: {
   pub: Publication;
   index: number;
   projectId: number;
-  onToggle: (id: number, excluded: boolean, reason: ExclusionReason | null) => void;
+  screeningStage: ScreeningStage;
+  onScreeningStageChange: (stage: ScreeningStage) => void;
+  onToggle: ExclusionToggleHandler;
 }) {
   const authors = pub.authors.slice(0, 3).map((a) => a.name).join(", ") + (pub.authors.length > 3 ? " et al." : "");
   return (
@@ -333,7 +349,13 @@ function PublicationRow({
             <span className="numeral text-2xl text-on-surface tabular-nums">{pub.citation_count ?? 0}</span>
             <span className="block eyebrow">citations</span>
           </p>
-          <ExcludeButton pub={pub} projectId={projectId} onToggle={onToggle} />
+          <ExcludeButton
+            pub={pub}
+            projectId={projectId}
+            screeningStage={screeningStage}
+            onScreeningStageChange={onScreeningStageChange}
+            onToggle={onToggle}
+          />
         </div>
       </article>
     </li>
