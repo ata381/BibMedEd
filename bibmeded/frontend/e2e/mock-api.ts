@@ -44,20 +44,68 @@ const publications = [
   },
 ];
 
-const analysisResults: Record<string, Record<string, unknown>> = {
+// Shapes are checked against the real backend by api-contract.spec.ts; refresh
+// fixtures/api-shapes.json as described in CONTRIBUTING.md when the API changes.
+export const analysisResults: Record<string, Record<string, unknown>> = {
   publications: {
+    schema_version: "1.0",
     total: 12,
     yearly_counts: [
       { year: 2018, count: 1 },
       { year: 2019, count: 2 },
       { year: 2020, count: 2 },
     ],
+    growth_rates: [
+      { year: 2019, rate: 100 },
+      { year: 2020, rate: 0 },
+    ],
+    cumulative: [
+      { year: 2018, cumulative: 1 },
+      { year: 2019, cumulative: 3 },
+      { year: 2020, cumulative: 5 },
+    ],
+    field_maturity: {
+      phase: "growing",
+      carrying_capacity: 14.2,
+      midpoint_year: 2021.4,
+      growth_rate: 0.512,
+      fit_quality: 0.981,
+      progress: 0.352,
+      method: "logistic-growth (Bettencourt & Kaur 2011)",
+    },
+    growth_summary: {
+      cagr: 41.42,
+      doubling_time_years: 2,
+      start_year: 2018,
+      end_year: 2020,
+      excluded_current_year: false,
+      reason: null,
+    },
   },
   authors: {
+    schema_version: "1.0",
     total_authors: 3,
     top_authors: [
-      { name: "Marcus Chen Sample", pub_count: 5, citation_sum: 174 },
-      { name: "Elena Garcia Sample", pub_count: 4, citation_sum: 159 },
+      {
+        id: 1,
+        name: "Marcus Chen Sample",
+        orcid: null,
+        pub_count: 5,
+        citation_sum: 174,
+        h_index: 5,
+        g_index: 5,
+        e_index: 12.2,
+      },
+      {
+        id: 2,
+        name: "Elena Garcia Sample",
+        orcid: null,
+        pub_count: 4,
+        citation_sum: 159,
+        h_index: 4,
+        g_index: 4,
+        e_index: 12.4,
+      },
     ],
     coauthorship_network: {
       nodes: [
@@ -67,14 +115,49 @@ const analysisResults: Record<string, Record<string, unknown>> = {
       links: [{ source: 1, target: 2, weight: 2 }],
     },
   },
-  countries: { country_counts: [{ country: "Netherlands", count: 4 }] },
+  countries: {
+    schema_version: "1.0",
+    country_counts: [
+      { country: "Netherlands", count: 4 },
+      { country: "Canada", count: 5 },
+    ],
+    institution_counts: [
+      { institution: "Sample Department of Medical Education, University of Toronto", count: 5 },
+    ],
+    collaboration_network: {
+      nodes: [
+        { id: "Netherlands", count: 4 },
+        { id: "Canada", count: 5 },
+      ],
+      links: [{ source: "Canada", target: "Netherlands", weight: 1 }],
+    },
+  },
   keywords: {
+    schema_version: "1.0",
     top_keywords: [
       { term: "artificial intelligence", count: 4 },
       { term: "simulation", count: 3 },
     ],
+    cooccurrence_network: {
+      nodes: [
+        { id: "artificial intelligence", count: 4, label: "artificial intelligence" },
+        { id: "simulation", count: 3, label: "simulation" },
+      ],
+      links: [{ source: "artificial intelligence", target: "simulation", weight: 1 }],
+    },
+    keyword_trends: [
+      {
+        term: "artificial intelligence",
+        trend: [
+          { year: 2019, count: 1 },
+          { year: 2021, count: 1 },
+        ],
+      },
+    ],
+    burst_terms: [{ term: "generative AI", year: 2024, count: 3, intensity: 2.4, baseline_share: 0.0625 }],
   },
   citations: {
+    schema_version: "1.0",
     total_citations: 115,
     most_cited: publications.map((publication) => ({
       title: publication.title,
@@ -82,9 +165,38 @@ const analysisResults: Record<string, Record<string, unknown>> = {
       year: publication.year,
       citation_count: publication.citation_count,
     })),
+    citation_network: {
+      nodes: publications.map((publication) => ({
+        id: publication.id,
+        pmid: publication.pmid,
+        title: publication.title,
+        year: publication.year,
+        citations: publication.citation_count,
+      })),
+      links: [{ source: 2, target: 1 }],
+    },
+    coupling_network: { nodes: [], links: [] },
+    coupling_truncated: false,
+    cocitation_network: { nodes: [], links: [] },
+    cocitation_truncated: false,
   },
-  journals: { top_journals: [{ name: "Medical Education Practice", pub_count: 4, avg_citations: 43.3 }] },
+  journals: {
+    schema_version: "1.0",
+    top_journals: [{ name: "Medical Education Practice", pub_count: 4, avg_citations: 43.3 }],
+    bradford_zones: [{ zone: 1, journal_count: 1, article_count: 4 }],
+    total_journals: 1,
+  },
 };
+
+export function analysisRunResponse(analysisType: string) {
+  return {
+    id: 1,
+    project_id: 1,
+    analysis_type: analysisType,
+    results: analysisResults[analysisType] ?? {},
+    created_at: "2026-08-23T12:00:00Z",
+  };
+}
 
 export interface MockApiOptions {
   emptyWorkspace?: boolean;
@@ -179,13 +291,7 @@ export async function installMockApi(page: Page, options: MockApiOptions = {}) {
       if (method === "GET" && options.missingAnalyses?.includes(analysisType)) {
         return json(route, { detail: "Analysis not found. Run it first." }, 404);
       }
-      return json(route, {
-        id: 1,
-        project_id: 1,
-        analysis_type: analysisType,
-        results: analysisResults[analysisType] ?? {},
-        created_at: "2026-08-23T12:00:00Z",
-      });
+      return json(route, analysisRunResponse(analysisType));
     }
     if (pathname === "/api/projects/1/export/methodology") {
       return route.fulfill({

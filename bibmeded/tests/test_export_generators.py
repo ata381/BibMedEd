@@ -384,6 +384,49 @@ class TestGenerateMethodologyStudiesIncluded:
         assert "Studies included: 90" in text
         assert "Studies included: 30" not in text
 
+    def test_fetch_step_lists_records_that_failed_to_persist(self):
+        steps = [
+            make_step(query_id=1, step_order=1, phase="search", records_in=0, records_out=3, records_affected=3),
+            make_step(
+                query_id=1, step_order=2, phase="fetch", records_in=3, records_out=2, records_affected=1,
+                parameters={
+                    "persist_failed": 1,
+                    "persist_failures": [
+                        {"source_id": "W2302", "source_database": "openalex", "error": "ValueError: boom"},
+                    ],
+                },
+            ),
+        ]
+        text = generate_methodology("Failure Project", steps)
+        assert "Failed to persist: 1 record(s)" in text
+        assert "W2302 (openalex): ValueError: boom" in text
+
+    def test_fetch_step_reports_total_and_omitted_count_when_failure_list_is_capped(self):
+        steps = [
+            make_step(
+                query_id=1, step_order=1, phase="fetch", records_in=150, records_out=0, records_affected=150,
+                parameters={
+                    "persist_failed": 150,
+                    "persist_failures": [
+                        {"source_id": f"W{i}", "source_database": "openalex", "error": "ValueError: boom"}
+                        for i in range(100)
+                    ],
+                },
+            ),
+        ]
+        text = generate_methodology("Capped Project", steps)
+        assert "Failed to persist: 150 record(s)" in text
+        assert "W99 (openalex)" in text
+        assert "... 50 more not listed" in text
+
+    def test_fetch_step_without_persist_failures_omits_failure_line(self):
+        steps = [
+            make_step(query_id=1, step_order=1, phase="fetch", records_in=3, records_out=3, records_affected=0,
+                      parameters={"persist_failed": 0, "persist_failures": []}),
+        ]
+        text = generate_methodology("Clean Project", steps)
+        assert "Failed to persist" not in text
+
     def test_no_steps_returns_placeholder_and_no_studies_line(self):
         text = generate_methodology("Empty Project", [])
         assert "No methodology steps recorded" in text

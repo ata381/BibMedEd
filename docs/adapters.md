@@ -155,5 +155,6 @@ Read the [official Lens Scholarly API documentation](https://docs.api.lens.org/)
 1. Create `bibmeded/adapters/mysource.py`
 2. Implement `search()` and `fetch()` mapping to `RawRecord`
 3. Populate `external_ids` with every cross-reference ID the API provides
-4. Restart the worker: `docker compose restart worker`
-5. The new source appears in the search page dropdown automatically
+4. If the source cannot search without a key, add a `BIBMEDED_<SOURCE>_API_KEY` setting to `bibmeded/config.py` and register it in `REQUIRED_SETTINGS` in `bibmeded/adapters/settings.py`, e.g. `"lens": RequiredSetting("lens_api_key", "BIBMEDED_LENS_API_KEY", "Lens")`. The API, worker, CLI and `bibmeded sources` then reject unconfigured searches with `"<label> searches require <ENV_VAR>"`; no per-source `if` is needed
+5. Restart the worker: `docker compose restart worker`
+6. The new source appears in the search page dropdown automatically

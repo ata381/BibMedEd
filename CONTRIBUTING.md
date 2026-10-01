@@ -57,6 +57,24 @@ docker compose up
 
 Tests use in-memory SQLite and require no external services. The full Docker stack provisions Postgres, Redis, the FastAPI API, a Celery worker, and the Next.js frontend.
 
+### Keeping the e2e mocks in sync with the API
+
+The Playwright suite runs against hand-written mocks in `bibmeded/frontend/e2e/mock-api.ts`. Two checks keep them honest:
+
+- `bibmeded/tests/test_api_shapes_contract.py` seeds the sample project, calls every analysis endpoint and compares the response shapes (keys and value types) with `bibmeded/frontend/e2e/fixtures/api-shapes.json`. It fails when the fixture is stale.
+- `bibmeded/frontend/e2e/api-contract.spec.ts` fails when a mocked analysis response is missing a field, has an extra one, or uses the wrong type, and names the field.
+
+If you change an analysis response on purpose, refresh the fixture and then fix the mocks:
+
+```bash
+cd bibmeded
+UPDATE_API_SHAPES=1 pytest tests/test_api_shapes_contract.py   # rewrites api-shapes.json
+cd frontend
+PLAYWRIGHT_SKIP_WEBSERVER=1 npx playwright test api-contract   # lists every drifted mock field
+```
+
+Commit the refreshed `api-shapes.json` together with the backend change. The sample data cannot show every shape, so the pytest file declares two kinds of gap. `KNOWN_NULLABLE` lists fields the code can return as `null`, typed even when the sample only produces `null`. `KNOWN_ITEMS` gives the element shape for lists the sample leaves empty. The test fails, naming the path, if a new gap appears undeclared.
+
 ## Code style
 
 - Python: ruff-compatible, type hints on public functions, `async` everywhere in the request path.

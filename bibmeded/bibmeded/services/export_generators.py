@@ -200,6 +200,18 @@ def generate_methodology(
                 f"    Retrieved: {step.records_out} of {step.records_in} "
                 f"({step.records_affected} unavailable)"
             )
+            persist_failures = step.parameters.get("persist_failures") or []
+            persist_failed = max(step.parameters.get("persist_failed") or 0, len(persist_failures))
+            if persist_failed:
+                lines.append(f"    Failed to persist: {persist_failed} record(s)")
+                for failure in persist_failures:
+                    lines.append(
+                        f"      - {failure.get('source_id')} "
+                        f"({failure.get('source_database')}): {failure.get('error')}"
+                    )
+                omitted = persist_failed - len(persist_failures)
+                if omitted:
+                    lines.append(f"      ... {omitted} more not listed")
         elif step.phase == "dedup":
             method = step.parameters.get("method", "unknown")
             fields = step.parameters.get("fields") or step.parameters.get("field") or ""
