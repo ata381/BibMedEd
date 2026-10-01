@@ -73,7 +73,7 @@ cd frontend
 PLAYWRIGHT_SKIP_WEBSERVER=1 npx playwright test api-contract   # lists every drifted mock field
 ```
 
-Commit the refreshed `api-shapes.json` together with the backend change. Fields that the sample data never sets to `null` but the code can return as `null` are declared in `KNOWN_NULLABLE` in the pytest file.
+Commit the refreshed `api-shapes.json` together with the backend change. The sample data cannot show every shape, so the pytest file declares two kinds of gap. `KNOWN_NULLABLE` lists fields the code can return as `null`, typed even when the sample only produces `null`. `KNOWN_ITEMS` gives the element shape for lists the sample leaves empty. The test fails, naming the path, if a new gap appears undeclared.
 
 ## Code style
 
