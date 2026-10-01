@@ -50,5 +50,10 @@ def test_new_keyed_source_gets_behaviour_from_table_entry(monkeypatch):
     assert adapter_configuration_error("fakesource") is None
 
 
+def test_every_required_setting_names_an_existing_settings_attribute():
+    for source, requirement in adapter_settings.REQUIRED_SETTINGS.items():
+        assert hasattr(settings, requirement.attribute), source
+
+
 def test_fake_source_does_not_leak_into_table():
     assert "fakesource" not in adapter_settings.REQUIRED_SETTINGS
