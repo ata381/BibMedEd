@@ -8,7 +8,7 @@ import { projectsApi, Project } from "@/lib/api";
 import { useReadOnly } from "@/lib/read-only";
 import { ANALYSIS_MODULES, DATA_SOURCES, WORKFLOW_STEPS } from "@/lib/sources";
 import { NetworkFigure } from "@/components/network-figure";
-import { Button, ButtonLink, Icon, LoadingState, PageHeader, Skeleton, Stat, StatRow } from "@/components/ui";
+import { Button, ButtonLink, ConfirmDialog, Icon, LoadingState, PageHeader, Skeleton, Stat, StatRow } from "@/components/ui";
 
 const HEADLINE = (
   <>
@@ -34,15 +34,20 @@ export default function Home() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleDelete = (project: Project) => {
-    if (!confirm(`Delete project "${project.name}"? This will permanently remove all searches, publications, and analyses.`)) return;
-    projectsApi
-      .delete(project.id)
-      .then(() => {
-        setProjects((prev) => prev.filter((p) => p.id !== project.id));
-        toast.success("Project deleted");
-      })
-      .catch(() => toast.error("Failed to delete project"));
+  const [pendingDelete, setPendingDelete] = useState<Project | null>(null);
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const { id } = pendingDelete;
+    try {
+      await projectsApi.delete(id);
+    } catch {
+      toast.error("Failed to delete project");
+      return;
+    }
+    setPendingDelete(null);
+    setProjects((prev) => prev.filter((p) => p.id !== id));
+    toast.success("Project deleted");
   };
 
   const handleCreateSample = async () => {
@@ -91,7 +96,7 @@ export default function Home() {
           ) : (
             <ol className="rule-t">
               {projects.map((project) => (
-                <ProjectRow key={project.id} project={project} onDelete={readOnly ? undefined : handleDelete} />
+                <ProjectRow key={project.id} project={project} onDelete={readOnly ? undefined : setPendingDelete} />
               ))}
             </ol>
           )}
@@ -106,6 +111,21 @@ export default function Home() {
           </div>}
         </section>
       )}
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        tone="danger"
+        title="Delete this project?"
+        description={
+          <p>
+            <strong className="font-semibold text-on-surface">{pendingDelete?.name}</strong> and all of its searches, publications,
+            screening decisions and analyses will be permanently removed. This cannot be undone.
+          </p>
+        }
+        confirmLabel="Delete project"
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

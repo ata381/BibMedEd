@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { publicationsApi, searchApi, Publication, SearchStatus, ExclusionReason } from "@/lib/api";
 import { Badge, Button, Card, EmptyState, Icon, LoadingState, PageHeader, Skeleton, Stat } from "@/components/ui";
 import { ExcludeButton } from "./exclude-button";
+import { BulkExcludeDialog } from "./bulk-exclude-dialog";
 import { useReadOnly } from "@/lib/read-only";
 
 const PAGE_SIZE = 20;
@@ -75,16 +76,7 @@ export default function ResultsReview() {
     return () => ctrl.abort();
   }, [projectId, page, refreshTick]);
 
-  const handleBulkExclude = async () => {
-    if (!confirm("Exclude all publications with 0 citations? This helps focus analysis on impactful papers.")) return;
-    try {
-      const res = await publicationsApi.bulkExclude(projectId, 0);
-      toast.success(`${res.data.excluded_count} publications excluded.`);
-      refresh();
-    } catch {
-      toast.error("Bulk exclude failed.");
-    }
-  };
+  const [bulkExcludeOpen, setBulkExcludeOpen] = useState(false);
 
   const goToAnalysis = () => {
     if (includedCount > 0) router.push(`/projects/${projectId}/dashboard`);
@@ -183,7 +175,7 @@ export default function ResultsReview() {
               sorted by citations · page {page} of {totalPages}
             </span>
           </h2>
-          {!readOnly && <Button variant="outline" size="sm" leadingIcon="filter" onClick={handleBulkExclude} disabled={total === 0 && !loading}>
+          {!readOnly && <Button variant="outline" size="sm" leadingIcon="filter" onClick={() => setBulkExcludeOpen(true)} disabled={total === 0 && !loading}>
             Exclude 0-citation papers
           </Button>}
         </div>
@@ -212,6 +204,17 @@ export default function ResultsReview() {
             </ol>
           )}
         </div>
+        <BulkExcludeDialog
+          open={bulkExcludeOpen}
+          projectId={projectId}
+          total={total}
+          loaded={publications}
+          onCancel={() => setBulkExcludeOpen(false)}
+          onExcluded={() => {
+            setBulkExcludeOpen(false);
+            refresh();
+          }}
+        />
       </section>
 
       {totalPages > 1 && (

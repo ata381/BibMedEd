@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { searchApi, adaptersApi, AdapterInfo } from "@/lib/api";
 import { fetchReadOnly, useReadOnly } from "@/lib/read-only";
-import { Button, Icon, PageHeader } from "@/components/ui";
+import { Button, ConfirmDialog, Icon, PageHeader } from "@/components/ui";
 
 const MAX_RESULTS = 2000;
 const POLL_INTERVAL_MS = 2000;
@@ -134,9 +134,12 @@ export default function SearchConfig() {
     }
   }, [projectId, queryString, source, yearStart, yearEnd, router]);
 
+  const [confirmDiscardRaw, setConfirmDiscardRaw] = useState(false);
+
   const switchToBuilder = () => {
     if (advancedMode && rawQuery && rawQuery !== builtQuery) {
-      if (!confirm("Switching to Query Builder will discard your raw query edits. Continue?")) return;
+      setConfirmDiscardRaw(true);
+      return;
     }
     setAdvancedMode(false);
   };
@@ -165,6 +168,25 @@ export default function SearchConfig() {
           Advanced Query (Raw)
         </button>
       </div>
+
+      <ConfirmDialog
+        open={confirmDiscardRaw}
+        tone="danger"
+        title="Discard raw query edits?"
+        description={
+          <p>
+            The Query Builder regenerates the query from its fields, so your hand-edited raw query will be lost. Copy it first if you
+            want to keep it.
+          </p>
+        }
+        confirmLabel="Discard edits"
+        cancelLabel="Keep editing"
+        onConfirm={() => {
+          setConfirmDiscardRaw(false);
+          setAdvancedMode(false);
+        }}
+        onCancel={() => setConfirmDiscardRaw(false)}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         <div className="lg:col-span-7 space-y-10">

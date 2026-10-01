@@ -4,6 +4,10 @@ All notable changes to BibMedEd are recorded here. This project follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+
+- Deleting a project, bulk-excluding 0-citation publications and discarding raw query edits now ask for confirmation in a styled, accessible dialog instead of the browser's `confirm()`. The new `ConfirmDialog` primitive is built on the native `<dialog>` element: it traps focus, cancels on Escape and returns focus to the button that opened it. The bulk-exclude dialog states how many publications will be excluded ([#90](https://github.com/ata381/BibMedEd/issues/90)).
+
 ### Fixed
 
 - Per-record savepoints in the search worker's persist loop are now always closed exactly once, and the test database fixture no longer stacks stray savepoints. This removes the `nested transaction already deassociated from connection` SAWarning ([#87](https://github.com/ata381/BibMedEd/issues/87)).

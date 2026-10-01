@@ -1,5 +1,6 @@
 export { Button, ButtonLink, buttonClasses } from "./button";
 export { Card, CardHeader } from "./card";
+export { ConfirmDialog } from "./confirm-dialog";
 export { Tabs, type TabItem } from "./tabs";
 export { Badge } from "./badge";
 export { Skeleton, LoadingState } from "./skeleton";

@@ -44,6 +44,23 @@ const publications = [
   },
 ];
 
+// Listed by the publications route only, so the analysis mocks keep their
+// contract-checked shapes; gives bulk-exclude something to count.
+const uncitedPublication = {
+  id: 3,
+  pmid: "sample-003",
+  doi: null,
+  title: "A pilot curriculum for prompt engineering in residency",
+  abstract: "Synthetic demonstration record.",
+  year: 2025,
+  publication_type: "Article",
+  citation_count: 0,
+  excluded: false,
+  exclusion_reason: null,
+  journal_name: "Digital Health Education",
+  authors: [{ id: 4, name: "Noor Haddad Sample", orcid: null }],
+};
+
 // Shapes are checked against the real backend by api-contract.spec.ts; refresh
 // fixtures/api-shapes.json as described in CONTRIBUTING.md when the API changes.
 export const analysisResults: Record<string, Record<string, unknown>> = {
@@ -210,6 +227,7 @@ export async function installMockApi(page: Page, options: MockApiOptions = {}) {
   const readOnly = options.readOnly ?? false;
   const writeRequests: string[] = [];
   let exclusionReason: string | null = null;
+  let uncitedExcluded = false;
 
   // Keep E2E deterministic and offline: icon-font availability must not turn
   // an application-flow test into a third-party network test.
@@ -268,13 +286,16 @@ export async function installMockApi(page: Page, options: MockApiOptions = {}) {
     }
     if (pathname === "/api/projects/1/publications" && method === "GET") {
       return json(route, {
-        total: publications.length,
-        excluded_count: exclusionReason ? 1 : 0,
-        items: publications.map((publication) =>
-          publication.id === 1
-            ? { ...publication, excluded: Boolean(exclusionReason), exclusion_reason: exclusionReason }
-            : publication,
-        ),
+        total: publications.length + 1,
+        excluded_count: (exclusionReason ? 1 : 0) + (uncitedExcluded ? 1 : 0),
+        items: [
+          ...publications.map((publication) =>
+            publication.id === 1
+              ? { ...publication, excluded: Boolean(exclusionReason), exclusion_reason: exclusionReason }
+              : publication,
+          ),
+          uncitedExcluded ? { ...uncitedPublication, excluded: true, exclusion_reason: "other" } : uncitedPublication,
+        ],
       });
     }
     if (/^\/api\/projects\/1\/publications\/\d+\/exclude$/.test(pathname) && method === "PATCH") {
@@ -283,7 +304,9 @@ export async function installMockApi(page: Page, options: MockApiOptions = {}) {
       return json(route, { id: 1, excluded: Boolean(exclusionReason), exclusion_reason: exclusionReason });
     }
     if (pathname === "/api/projects/1/publications/bulk-exclude" && method === "POST") {
-      return json(route, { excluded_count: 1, reason: "other" });
+      const newlyExcluded = uncitedExcluded ? 0 : 1;
+      uncitedExcluded = true;
+      return json(route, { excluded_count: newlyExcluded, reason: "other" });
     }
     const analysisMatch = pathname.match(/^\/api\/projects\/1\/analysis\/([^/]+)$/);
     if (analysisMatch && (method === "GET" || method === "POST")) {
