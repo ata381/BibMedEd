@@ -118,7 +118,17 @@
           "citation_network": {
             "properties": {
               "links": {
-                "items": null,
+                "items": {
+                  "properties": {
+                    "source": {
+                      "type": "number"
+                    },
+                    "target": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
                 "type": "array"
               },
               "nodes": {
@@ -447,7 +457,26 @@
       "results": {
         "properties": {
           "burst_terms": {
-            "items": null,
+            "items": {
+              "properties": {
+                "baseline_share": {
+                  "type": "number"
+                },
+                "count": {
+                  "type": "number"
+                },
+                "intensity": {
+                  "type": "number"
+                },
+                "term": {
+                  "type": "string"
+                },
+                "year": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
             "type": "array"
           },
           "cooccurrence_network": {
@@ -608,6 +637,34 @@
               "type": "object"
             },
             "type": "array"
+          },
+          "growth_summary": {
+            "properties": {
+              "cagr": {
+                "nullable": true,
+                "type": "number"
+              },
+              "doubling_time_years": {
+                "nullable": true,
+                "type": "number"
+              },
+              "end_year": {
+                "nullable": true,
+                "type": "number"
+              },
+              "excluded_current_year": {
+                "type": "boolean"
+              },
+              "reason": {
+                "nullable": true,
+                "type": "string"
+              },
+              "start_year": {
+                "nullable": true,
+                "type": "number"
+              }
+            },
+            "type": "object"
           },
           "schema_version": {
             "type": "string"

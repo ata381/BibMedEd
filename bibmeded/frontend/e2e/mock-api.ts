@@ -73,6 +73,14 @@ export const analysisResults: Record<string, Record<string, unknown>> = {
       progress: 0.352,
       method: "logistic-growth (Bettencourt & Kaur 2011)",
     },
+    growth_summary: {
+      cagr: 41.42,
+      doubling_time_years: 2,
+      start_year: 2018,
+      end_year: 2020,
+      excluded_current_year: false,
+      reason: null,
+    },
   },
   authors: {
     schema_version: "1.0",
@@ -146,7 +154,7 @@ export const analysisResults: Record<string, Record<string, unknown>> = {
         ],
       },
     ],
-    burst_terms: [],
+    burst_terms: [{ term: "generative AI", year: 2024, count: 3, intensity: 2.4, baseline_share: 0.0625 }],
   },
   citations: {
     schema_version: "1.0",
@@ -165,7 +173,7 @@ export const analysisResults: Record<string, Record<string, unknown>> = {
         year: publication.year,
         citations: publication.citation_count,
       })),
-      links: [],
+      links: [{ source: 2, target: 1 }],
     },
     coupling_network: { nodes: [], links: [] },
     coupling_truncated: false,
