@@ -1,6 +1,8 @@
 import asyncio
 import logging
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import NamedTuple
 
 from celery.exceptions import SoftTimeLimitExceeded
 from sqlalchemy.exc import DisconnectionError, OperationalError
@@ -106,6 +108,181 @@ def _get_or_create_keyword(
     return kw
 
 
+MAX_FAILURE_ERROR_CHARS = 300
+
+
+class PersistResult(NamedTuple):
+    persisted: int
+    persisted_pmids: list[str]
+    # One {"source_id", "source_database", "error"} dict per record whose savepoint
+    # was rolled back, so callers can write it into the methodology log.
+    failures: list[dict[str, str]]
+
+
+class _BatchCaches(NamedTuple):
+    norm: dict[str, str]
+    authors: dict[str, Author]
+    affiliations: dict[str, Affiliation]
+    keywords: dict[tuple[str, KeywordType], Keyword]
+    journals: dict[str, Journal]
+
+
+@dataclass
+class _SavepointCacheAdditions:
+    """Cache keys added inside one record's savepoint, evicted if it rolls back."""
+
+    authors: list[str] = field(default_factory=list)
+    affiliations: list[str] = field(default_factory=list)
+    keywords: list[tuple[str, KeywordType]] = field(default_factory=list)
+    journal: str | None = None
+
+    def evict_from(self, caches: _BatchCaches) -> None:
+        for k in self.authors:
+            caches.authors.pop(k, None)
+        for k in self.affiliations:
+            caches.affiliations.pop(k, None)
+        for k in self.keywords:
+            caches.keywords.pop(k, None)
+        if self.journal is not None:
+            caches.journals.pop(self.journal, None)
+
+
+def _describe_failure(record: RawRecord, exc: Exception) -> dict[str, str]:
+    # DB driver messages embed the full statement and bound parameters; truncate so
+    # one bad row cannot bloat the methodology log.
+    return {
+        "source_id": record.source_id,
+        "source_database": record.source_database,
+        "error": f"{type(exc).__name__}: {exc}"[:MAX_FAILURE_ERROR_CHARS],
+    }
+
+
+def _find_existing_publication(
+    db, record: RawRecord, normalized_doi: str | None, project_id: int,
+) -> Publication | None:
+    # `Publication.pmid` stores source_id (the source-native primary id), but a
+    # non-PubMed record's real PMID lives in external_ids["pmid"]. Check both so
+    # a PubMed-first-persisted paper (Publication.pmid == its PMID, often no DOI)
+    # is deduped when the same paper re-arrives via OpenAlex/CrossRef.
+    pmid_candidates = {record.source_id}
+    real_pmid = record.external_ids.get("pmid")
+    if real_pmid:
+        pmid_candidates.add(real_pmid)
+    id_match = Publication.pmid.in_(pmid_candidates)
+    if normalized_doi:
+        id_match = id_match | (Publication.doi == normalized_doi)
+    return (
+        db.query(Publication)
+        .filter(Publication.project_id == project_id, id_match)
+        .first()
+    )
+
+
+def _get_or_create_journal(
+    db, record: RawRecord, caches: _BatchCaches, additions: _SavepointCacheAdditions,
+) -> Journal | None:
+    if not record.journal_name:
+        return None
+    # Case-insensitive lookup via name_normalized so "JAMA"/"Jama" don't produce
+    # duplicate Journal rows. Prefetched per-batch (see _prefetch_lookup_caches) to
+    # avoid an N+1 SELECT per record.
+    j_norm = _norm_cache(caches.norm, record.journal_name)
+    journal = caches.journals.get(j_norm)
+    if journal is None:
+        journal = Journal(name=record.journal_name, issn=record.journal_issn, name_normalized=j_norm)
+        db.add(journal)
+        db.flush()
+        caches.journals[j_norm] = journal
+        additions.journal = j_norm
+    return journal
+
+
+def _attach_authors(
+    db, pub: Publication, record: RawRecord, caches: _BatchCaches,
+    additions: _SavepointCacheAdditions, pub_authors_tbl,
+) -> None:
+    for pos, author_data in enumerate(record.authors):
+        a_norm = _norm_cache(caches.norm, author_data.name)
+        author = caches.authors.get(a_norm)
+        if author is None:
+            author = Author(name=author_data.name, orcid=author_data.orcid, name_normalized=a_norm)
+            db.add(author)
+            db.flush()
+            caches.authors[a_norm] = author
+            additions.authors.append(a_norm)
+        db.execute(
+            pub_authors_tbl.insert().values(
+                publication_id=pub.id, author_id=author.id, author_position=pos
+            )
+        )
+
+        if author_data.affiliation:
+            af_norm = _norm_cache(caches.norm, author_data.affiliation)
+            aff = caches.affiliations.get(af_norm)
+            if aff is None:
+                aff = Affiliation(
+                    name=author_data.affiliation,
+                    country=extract_country(author_data.affiliation),
+                    name_normalized=af_norm,
+                )
+                db.add(aff)
+                db.flush()
+                caches.affiliations[af_norm] = aff
+                additions.affiliations.append(af_norm)
+            if aff not in author.affiliations:
+                author.affiliations.append(aff)
+
+
+def _attach_keywords(
+    db, pub: Publication, record: RawRecord, caches: _BatchCaches,
+    additions: _SavepointCacheAdditions,
+) -> None:
+    for terms, type_ in (
+        (record.mesh_terms, KeywordType.mesh_term),
+        (record.keywords, KeywordType.author_keyword),
+    ):
+        for term in terms:
+            k_norm = _norm_cache(caches.norm, term)
+            key = (k_norm, type_)
+            pre_existed = key in caches.keywords
+            kw = _get_or_create_keyword(db, caches.keywords, term, k_norm, type_)
+            if not pre_existed:
+                additions.keywords.append(key)
+            pub.keywords.append(kw)
+
+
+def _persist_one(
+    db, record: RawRecord, query_id: int, project_id: int, caches: _BatchCaches,
+    additions: _SavepointCacheAdditions, pub_authors_tbl,
+) -> Publication | None:
+    """Write one record inside the caller's savepoint. Returns None if the project
+    already holds this paper; the existence check runs before any INSERT so that an
+    empty savepoint, not an orphan Journal row, is what gets released."""
+    normalized_doi = _normalize_doi(record.external_ids.get("doi") or record.doi)
+    if _find_existing_publication(db, record, normalized_doi, project_id) is not None:
+        return None
+
+    journal = _get_or_create_journal(db, record, caches, additions)
+    pub = Publication(
+        pmid=record.source_id,
+        doi=normalized_doi,
+        title=record.title,
+        abstract=record.abstract,
+        year=record.year,
+        source_database=record.source_database,
+        citation_count=None,
+        journal_id=journal.id if journal else None,
+        query_id=query_id,
+        project_id=project_id,
+        external_references=list(record.references) if record.references else None,
+    )
+    db.add(pub)
+    db.flush()
+    _attach_authors(db, pub, record, caches, additions, pub_authors_tbl)
+    _attach_keywords(db, pub, record, caches, additions)
+    return pub
+
+
 def _persist_records(
     db,
     records: list[RawRecord],
@@ -113,179 +290,61 @@ def _persist_records(
     project_id: int,
     *,
     commit: bool = True,
-) -> tuple[int, list[str]]:
-    """Persist a batch of RawRecords. Returns (count_persisted, persisted_pmids).
+) -> PersistResult:
+    """Persist a batch of RawRecords.
 
     Each record is wrapped in a SAVEPOINT so a single bad row does not roll back its
-    siblings. Authors, affiliations, and keywords are bulk-prefetched per batch to avoid
-    N+1 SELECTs. Cache entries added during a record that ultimately rolls back are
-    evicted so subsequent records do not reuse phantom ORM objects whose underlying rows
-    no longer exist. Set ``commit=False`` when a caller needs to add related rows and
-    commit the complete operation atomically; the persisted records are flushed instead.
+    siblings; the failed record is reported in ``PersistResult.failures`` rather than
+    dropped silently. Authors, affiliations, keywords, and journals are bulk-prefetched
+    per batch to avoid N+1 SELECTs. Cache entries added during a record that ultimately
+    rolls back are evicted so subsequent records do not reuse phantom ORM objects whose
+    underlying rows no longer exist. Set ``commit=False`` when a caller needs to add
+    related rows and commit the complete operation atomically; the persisted records
+    are flushed instead.
 
     The pre-existence check is scoped to ``project_id``: each project owns its own copy
     of a shared paper, so a PMID/DOI claimed by another project must not starve this one.
     """
-    norm, authors_by_norm, affils_by_norm, keywords_by_key, journals_by_norm = _prefetch_lookup_caches(db, records)
-
-    persisted = 0
-    persisted_pmids: list[str] = []
+    caches = _BatchCaches(*_prefetch_lookup_caches(db, records))
     pub_authors_tbl = Publication.__table__.metadata.tables["publication_authors"]
+
+    persisted_pmids: list[str] = []
+    failures: list[dict[str, str]] = []
     for record in records:
-        sp = db.begin_nested()
-        # Track keys we add to caches in this record so we can evict on rollback.
-        added_author_keys: list[str] = []
-        added_affil_keys: list[str] = []
-        added_keyword_keys: list[tuple[str, KeywordType]] = []
-        added_journal_key: str | None = None
-        new_journal_in_savepoint: Journal | None = None
+        additions = _SavepointCacheAdditions()
         try:
-            journal = None
-            if record.journal_name:
-                # Case-insensitive lookup via name_normalized so "JAMA"/"Jama" don't
-                # produce duplicate Journal rows. Prefetched per-batch (see
-                # _prefetch_lookup_caches) to avoid an N+1 SELECT per record.
-                j_norm = _norm_cache(norm, record.journal_name)
-                journal = journals_by_norm.get(j_norm)
-                if journal is None:
-                    journal = Journal(
-                        name=record.journal_name,
-                        issn=record.journal_issn,
-                        name_normalized=j_norm,
-                    )
-                    db.add(journal)
-                    db.flush()
-                    journals_by_norm[j_norm] = journal
-                    added_journal_key = j_norm
-                    new_journal_in_savepoint = journal
-
-            normalized_doi = _normalize_doi(record.external_ids.get("doi") or record.doi)
-            # `Publication.pmid` stores source_id (the source-native primary id), but a
-            # non-PubMed record's real PMID lives in external_ids["pmid"]. Check both so
-            # a PubMed-first-persisted paper (Publication.pmid == its PMID, often no DOI)
-            # is deduped when the same paper re-arrives via OpenAlex/CrossRef.
-            pmid_candidates = {record.source_id}
-            real_pmid = record.external_ids.get("pmid")
-            if real_pmid:
-                pmid_candidates.add(real_pmid)
-            id_match = Publication.pmid.in_(pmid_candidates)
-            if normalized_doi:
-                id_match = id_match | (Publication.doi == normalized_doi)
-            existing = (
-                db.query(Publication)
-                .filter(Publication.project_id == project_id, id_match)
-                .first()
-            )
-            if existing:
-                sp.rollback()
-                continue
-
-            pub = Publication(
-                pmid=record.source_id,
-                doi=normalized_doi,
-                title=record.title,
-                abstract=record.abstract,
-                year=record.year,
-                source_database=record.source_database,
-                citation_count=None,
-                journal_id=journal.id if journal else None,
-                query_id=query_id,
-                project_id=project_id,
-                external_references=list(record.references) if record.references else None,
-            )
-            db.add(pub)
-            db.flush()
-
-            for pos, author_data in enumerate(record.authors):
-                a_norm = _norm_cache(norm, author_data.name)
-                author = authors_by_norm.get(a_norm)
-                if author is None:
-                    author = Author(name=author_data.name, orcid=author_data.orcid, name_normalized=a_norm)
-                    db.add(author)
-                    db.flush()
-                    authors_by_norm[a_norm] = author
-                    added_author_keys.append(a_norm)
-                db.execute(
-                    pub_authors_tbl.insert().values(
-                        publication_id=pub.id, author_id=author.id, author_position=pos
-                    )
+            # The context manager is the only thing that ends this savepoint: it
+            # releases it on success and rolls it back exactly once on any exception
+            # (including the re-raised ones below), so it never outlives the record.
+            with db.begin_nested():
+                pub = _persist_one(
+                    db, record, query_id, project_id, caches, additions, pub_authors_tbl
                 )
-
-                if author_data.affiliation:
-                    af_norm = _norm_cache(norm, author_data.affiliation)
-                    aff = affils_by_norm.get(af_norm)
-                    if aff is None:
-                        aff = Affiliation(
-                            name=author_data.affiliation,
-                            country=extract_country(author_data.affiliation),
-                            name_normalized=af_norm,
-                        )
-                        db.add(aff)
-                        db.flush()
-                        affils_by_norm[af_norm] = aff
-                        added_affil_keys.append(af_norm)
-                    if aff not in author.affiliations:
-                        author.affiliations.append(aff)
-
-            for term in record.mesh_terms:
-                k_norm = _norm_cache(norm, term)
-                key = (k_norm, KeywordType.mesh_term)
-                pre_existed = key in keywords_by_key
-                kw = _get_or_create_keyword(db, keywords_by_key, term, k_norm, KeywordType.mesh_term)
-                if not pre_existed:
-                    added_keyword_keys.append(key)
-                pub.keywords.append(kw)
-
-            for term in record.keywords:
-                k_norm = _norm_cache(norm, term)
-                key = (k_norm, KeywordType.author_keyword)
-                pre_existed = key in keywords_by_key
-                kw = _get_or_create_keyword(db, keywords_by_key, term, k_norm, KeywordType.author_keyword)
-                if not pre_existed:
-                    added_keyword_keys.append(key)
-                pub.keywords.append(kw)
-
-            sp.commit()
-            persisted += 1
-            persisted_pmids.append(pub.pmid)
         except SoftTimeLimitExceeded:
             # Celery's cooperative soft-timeout signal is a plain Exception
             # subclass (billiard/celery.exceptions) — it must propagate so the
             # task can shut down gracefully instead of being treated as an
             # ordinary bad record and swallowed.
-            sp.rollback()
             raise
         except _FATAL_DB_EXCEPTIONS:
             # Connection drop / DB unavailability is a batch-level failure — don't
             # swallow it per-record and silently undercount the methodology log.
-            sp.rollback()
             raise
         except Exception as exc:
             logger.warning("Skipping record %s: %s", record.source_id, exc)
-            sp.rollback()
-            # Evict phantom cache entries — their underlying rows were rolled back.
-            for k in added_author_keys:
-                authors_by_norm.pop(k, None)
-            for k in added_affil_keys:
-                affils_by_norm.pop(k, None)
-            for k in added_keyword_keys:
-                keywords_by_key.pop(k, None)
-            if added_journal_key is not None:
-                journals_by_norm.pop(added_journal_key, None)
-            if new_journal_in_savepoint is not None:
-                # Same eviction reason — the row was rolled back but the identity
-                # map would otherwise still hold a stale reference.
-                try:
-                    db.expunge(new_journal_in_savepoint)
-                except Exception:
-                    pass
+            # Rows created in the savepoint are gone and SQLAlchemy has already
+            # expunged their ORM objects; the batch caches still point at them.
+            additions.evict_from(caches)
+            failures.append(_describe_failure(record, exc))
             continue
+        if pub is not None:
+            persisted_pmids.append(pub.pmid)
 
     if commit:
         db.commit()
     else:
         db.flush()
-    return persisted, persisted_pmids
+    return PersistResult(len(persisted_pmids), persisted_pmids, failures)
 
 
 def _next_step_order(db, query_id: int) -> int:
@@ -397,15 +456,17 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
         track_pmids = source == "pubmed"  # only PubMed source needs iCite enrichment
         cross_source_removed = 0
         dedup_breakdown: dict[str, int] = {"doi": 0, "pmid": 0}
+        persist_failures: list[dict[str, str]] = []
         async for records in adapter.fetch_stream(all_ids, batch_size=FETCH_BATCH_SIZE):
             deduped, batch_removed, batch_breakdown = deduplicate_cross_source(records)
             cross_source_removed += batch_removed
             for k, v in batch_breakdown.items():
                 dedup_breakdown[k] = dedup_breakdown.get(k, 0) + v
-            count, batch_pmids = _persist_records(db, deduped, query_id, query.project_id)
-            persisted += count
+            batch = _persist_records(db, deduped, query_id, query.project_id)
+            persisted += batch.persisted
+            persist_failures.extend(batch.failures)
             if track_pmids:
-                all_persisted_pmids.extend(batch_pmids)
+                all_persisted_pmids.extend(batch.persisted_pmids)
             task.update_state(
                 state="PROGRESS",
                 meta={"phase": "fetch", "current": persisted, "total": len(all_ids)},
@@ -414,7 +475,9 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
         _log_step(db, query_id, step_order=None, phase="fetch", source=source,
                   action=f"Batch fetch via {adapter.methodology_label()}",
                   records_in=len(all_ids), records_out=persisted,
-                  parameters={"batch_size": FETCH_BATCH_SIZE, "request_id": request_id})
+                  parameters={"batch_size": FETCH_BATCH_SIZE, "request_id": request_id,
+                              "persist_failed": len(persist_failures),
+                              "persist_failures": persist_failures})
 
         if cross_source_removed:
             _log_step(db, query_id, step_order=None, phase="dedup", source=source,

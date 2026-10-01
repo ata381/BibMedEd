@@ -6,7 +6,7 @@ import os
 os.environ["BIBMEDED_DATABASE_URL"] = "sqlite://"
 
 import pytest
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 engine = create_engine("sqlite://", connect_args={"check_same_thread": False})
@@ -26,26 +26,25 @@ def setup_db():
 def db():
     """Provide a transactional database session that rolls back after each test.
 
-    Uses the nested transaction (savepoint) pattern so that even when
-    application code calls session.commit(), the data is committed only
-    to the savepoint and the outer transaction is rolled back at teardown.
+    ``join_transaction_mode="create_savepoint"`` makes the session wrap each of
+    its own transactions in a SAVEPOINT, so application-level commit()/rollback()
+    never touch the outer transaction that teardown rolls back.
+
+    The SQLAlchemy 1.3-era recipe (a Core ``begin_nested()`` restarted from an
+    ``after_transaction_end`` listener) must not come back: that listener also
+    fires for every application ``Session.begin_nested()``, stacks stray Core
+    savepoints above the session's own, and makes the next commit() emit
+    "nested transaction already deassociated from connection" (issue #87).
+
+    The anchor savepoint is pysqlite-specific: its legacy transaction mode never
+    emits BEGIN for ``connection.begin()``, so without an enclosing SAVEPOINT the
+    session's own SAVEPOINT would be the outermost one and SQLite would treat its
+    RELEASE as a real COMMIT, leaking rows into later tests.
     """
     connection = engine.connect()
     transaction = connection.begin()
-    session = TestSession(bind=connection)
-
-    # Begin a nested (savepoint) transaction.
-    nested = connection.begin_nested()
-
-    # When the application code calls session.commit(), SQLAlchemy ends the
-    # savepoint. We listen for that event and start a new savepoint so that
-    # subsequent commits within the same test also stay inside the outer
-    # transaction.
-    @event.listens_for(session, "after_transaction_end")
-    def restart_savepoint(session, trans):
-        nonlocal nested
-        if trans.nested and not trans._parent.nested:
-            nested = connection.begin_nested()
+    connection.begin_nested()
+    session = TestSession(bind=connection, join_transaction_mode="create_savepoint")
 
     try:
         yield session

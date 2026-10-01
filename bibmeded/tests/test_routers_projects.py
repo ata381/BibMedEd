@@ -1,6 +1,22 @@
 from unittest.mock import Mock
 
+import pytest
 from sqlalchemy.exc import IntegrityError
+
+from bibmeded.models import Publication, SearchProject
+
+
+@pytest.mark.filterwarnings("error::sqlalchemy.exc.SAWarning")
+def test_create_sample_project_closes_every_record_savepoint(client, db):
+    """Issue #87: seeding runs _persist_records(commit=False) then commits; every
+    per-record savepoint must already be closed when that commit runs."""
+    response = client.post("/api/projects/sample")
+
+    assert response.status_code == 201
+    assert not db.in_nested_transaction()
+    project_id = response.json()["id"]
+    assert db.get(SearchProject, project_id) is not None
+    assert db.query(Publication).filter(Publication.project_id == project_id).count() == 12
 
 
 def test_create_project(client):

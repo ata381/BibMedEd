@@ -101,16 +101,17 @@ def _create_sample_project(db: Session) -> SearchProject:
         db.add(query)
         db.flush()
 
-        persisted, _ = _persist_records(
+        result = _persist_records(
             db,
             records,
             query.id,
             project.id,
             commit=False,
         )
-        if persisted != len(records):
+        if result.persisted != len(records):
             raise RuntimeError(
-                f"Sample project expected {len(records)} records but persisted {persisted}"
+                f"Sample project expected {len(records)} records but persisted "
+                f"{result.persisted}; failures: {result.failures}"
             )
 
         publications = {

@@ -19,6 +19,10 @@ from bibmeded.models import (
 )
 from bibmeded.workers import tasks
 
+# Issue #87: a savepoint closed twice, or one still open at commit time, surfaces as
+# an SAWarning; fail on it here so CI catches lifecycle regressions without -W flags.
+pytestmark = pytest.mark.filterwarnings("error::sqlalchemy.exc.SAWarning")
+
 
 def _make_record(
     pmid: str,
@@ -137,7 +141,7 @@ def test_persist_records_persists_valid_records_with_relations(db):
     query = _make_query(db)
     records = [_make_record("1001"), _make_record("1002")]
 
-    count, pmids = tasks._persist_records(db, records, query.id, query.project_id)
+    count, pmids, _failures = tasks._persist_records(db, records, query.id, query.project_id)
 
     assert count == 2
     assert sorted(pmids) == ["1001", "1002"]
@@ -152,7 +156,7 @@ def test_persist_records_persists_valid_records_with_relations(db):
 def test_persist_records_returns_zero_for_empty_batch(db):
     query = _make_query(db)
 
-    count, pmids = tasks._persist_records(db, [], query.id, query.project_id)
+    count, pmids, _failures = tasks._persist_records(db, [], query.id, query.project_id)
 
     assert count == 0
     assert pmids == []
@@ -175,13 +179,124 @@ def test_persist_records_rolls_back_single_bad_record_others_still_persist(db, m
 
     monkeypatch.setattr(tasks, "extract_country", flaky_extract_country)
 
-    count, pmids = tasks._persist_records(db, records, query.id, query.project_id)
+    count, pmids, _failures = tasks._persist_records(db, records, query.id, query.project_id)
 
     assert count == 2
     assert sorted(pmids) == ["2001", "2003"]
     pubs = db.query(Publication).filter(Publication.query_id == query.id).all()
     assert sorted(p.pmid for p in pubs) == ["2001", "2003"]
     assert db.query(Publication).filter(Publication.pmid == "2002").first() is None
+
+
+def _fail_on_affiliation(monkeypatch, trigger: str = "TRIGGER_FAIL") -> None:
+    real_extract_country = tasks.extract_country
+
+    def flaky_extract_country(affiliation):
+        if affiliation == trigger:
+            raise ValueError("simulated per-record failure")
+        return real_extract_country(affiliation)
+
+    monkeypatch.setattr(tasks, "extract_country", flaky_extract_country)
+
+
+def test_persist_records_reports_mid_batch_failure_instead_of_dropping_it(db, monkeypatch):
+    query = _make_query(db)
+    records = [
+        _make_record("2101", affiliation="Good Hospital, USA"),
+        _make_record("2102", affiliation="TRIGGER_FAIL"),
+        _make_record("2103", affiliation="Another Hospital, USA"),
+    ]
+    _fail_on_affiliation(monkeypatch)
+
+    result = tasks._persist_records(db, records, query.id, query.project_id)
+
+    assert result.persisted == 2
+    assert sorted(result.persisted_pmids) == ["2101", "2103"]
+    assert [f["source_id"] for f in result.failures] == ["2102"]
+    failure = result.failures[0]
+    assert failure["source_database"] == "pubmed"
+    assert failure["error"] == "ValueError: simulated per-record failure"
+
+
+def test_persist_records_session_usable_after_mid_batch_failure(db, monkeypatch):
+    """The failed record's savepoint must be closed exactly once, leaving the
+    session's outer transaction active for the commit and for later batches."""
+    query = _make_query(db)
+    _fail_on_affiliation(monkeypatch)
+
+    tasks._persist_records(
+        db, [_make_record("2201", affiliation="TRIGGER_FAIL")], query.id, query.project_id
+    )
+    second = tasks._persist_records(db, [_make_record("2202")], query.id, query.project_id)
+
+    assert second.persisted == 1
+    assert not db.in_nested_transaction()
+    pmids = sorted(p.pmid for p in db.query(Publication).filter(Publication.query_id == query.id))
+    assert pmids == ["2202"]
+
+
+def test_run_search_logs_mid_batch_persist_failure_in_methodology(
+    db, monkeypatch, task_session_factory
+):
+    query = _make_query(db)
+    query.database = "openalex"
+    db.commit()
+    records = [
+        _make_record("W2301", affiliation="Good Hospital, USA"),
+        _make_record("W2302", affiliation="TRIGGER_FAIL"),
+        _make_record("W2303", affiliation="Another Hospital, USA"),
+    ]
+    stub_adapter = _StubAdapter(ids=["W2301", "W2302", "W2303"], records=records)
+    monkeypatch.setattr(tasks, "get_adapter", lambda source, **kwargs: stub_adapter)
+    monkeypatch.setattr(tasks, "SessionLocal", task_session_factory)
+    _fail_on_affiliation(monkeypatch)
+
+    asyncio.run(
+        tasks._run_search(_StubTask(), query.id, "openalex", None, None, tasks.DEFAULT_MAX_RESULTS)
+    )
+
+    db.expire_all()
+    pmids = sorted(p.pmid for p in db.query(Publication).filter(Publication.query_id == query.id))
+    assert pmids == ["W2301", "W2303"]
+    fetch_step = (
+        db.query(MethodologyStep)
+        .filter(MethodologyStep.query_id == query.id, MethodologyStep.phase == "fetch")
+        .one()
+    )
+    assert fetch_step.records_in == 3
+    assert fetch_step.records_out == 2
+    assert fetch_step.parameters["persist_failed"] == 1
+    assert fetch_step.parameters["persist_failures"] == [
+        {
+            "source_id": "W2302",
+            "source_database": "pubmed",
+            "error": "ValueError: simulated per-record failure",
+        }
+    ]
+
+
+def test_run_search_fetch_step_records_zero_persist_failures_on_clean_run(
+    db, monkeypatch, task_session_factory
+):
+    query = _make_query(db)
+    query.database = "openalex"
+    db.commit()
+    stub_adapter = _StubAdapter(ids=["W2401"], records=[_make_record("W2401")])
+    monkeypatch.setattr(tasks, "get_adapter", lambda source, **kwargs: stub_adapter)
+    monkeypatch.setattr(tasks, "SessionLocal", task_session_factory)
+
+    asyncio.run(
+        tasks._run_search(_StubTask(), query.id, "openalex", None, None, tasks.DEFAULT_MAX_RESULTS)
+    )
+
+    db.expire_all()
+    fetch_step = (
+        db.query(MethodologyStep)
+        .filter(MethodologyStep.query_id == query.id, MethodologyStep.phase == "fetch")
+        .one()
+    )
+    assert fetch_step.parameters["persist_failed"] == 0
+    assert fetch_step.parameters["persist_failures"] == []
 
 
 # ---------------------------------------------------------------------------
@@ -507,8 +622,8 @@ def test_persist_records_same_pmid_persists_independently_per_project(db):
 
     record = _make_record("12345", doi="10.1/shared")
 
-    count_a, pmids_a = tasks._persist_records(db, [record], query_a.id, query_a.project_id)
-    count_b, pmids_b = tasks._persist_records(db, [record], query_b.id, query_b.project_id)
+    count_a, pmids_a, _failures_a = tasks._persist_records(db, [record], query_a.id, query_a.project_id)
+    count_b, pmids_b, _failures_b = tasks._persist_records(db, [record], query_b.id, query_b.project_id)
 
     assert count_a == 1
     assert count_b == 1  # not starved by Project A's prior claim
@@ -530,8 +645,8 @@ def test_persist_records_intra_project_dedup_uses_external_ids_pmid(db):
     pubmed_record = _make_record("777", doi=None)  # source_id == pmid, no DOI
     openalex_record = _make_openalex_record("W777", pmid="777", doi=None)
 
-    count_first, _ = tasks._persist_records(db, [pubmed_record], query.id, query.project_id)
-    count_second, _ = tasks._persist_records(db, [openalex_record], query.id, query.project_id)
+    count_first, _, _ = tasks._persist_records(db, [pubmed_record], query.id, query.project_id)
+    count_second, _, _ = tasks._persist_records(db, [openalex_record], query.id, query.project_id)
 
     assert count_first == 1
     assert count_second == 0  # same paper, matched via external_ids['pmid']
@@ -594,7 +709,7 @@ def test_persist_records_prefetches_journals_avoiding_n_plus_one(db):
     bind = db.get_bind()
     event.listen(bind, "before_cursor_execute", before_cursor_execute)
     try:
-        count, pmids = tasks._persist_records(db, records, query.id, query.project_id)
+        count, pmids, _failures = tasks._persist_records(db, records, query.id, query.project_id)
     finally:
         event.remove(bind, "before_cursor_execute", before_cursor_execute)
 
@@ -623,7 +738,7 @@ def test_persist_records_evicts_phantom_journal_on_savepoint_rollback(db, monkey
 
     monkeypatch.setattr(tasks, "extract_country", flaky_extract_country)
 
-    count, pmids = tasks._persist_records(db, records, query.id, query.project_id)
+    count, pmids, _failures = tasks._persist_records(db, records, query.id, query.project_id)
 
     assert count == 1
     assert pmids == ["9102"]
