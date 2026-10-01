@@ -16,13 +16,10 @@ from html import escape
 from typing import Iterable, Mapping
 
 from bibmeded.models.methodology import MethodologyStep
-from bibmeded.models.publication import SCREENING_STAGES
+from bibmeded.models.publication import NOT_RETRIEVED_REASON, SCREENING_STAGES
 
 TITLE_ABSTRACT = "title_abstract"
 FULL_TEXT = "full_text"
-# PRISMA 2020 reports full-text exclusions for this reason in their own
-# "Reports not retrieved" box rather than among "Reports excluded".
-NOT_RETRIEVED_REASON = "fulltext_unavailable"
 
 # Keys are (screening_stage, exclusion_reason). A bare reason (or None) is the
 # pre-stage summary shape and is read as a stage-less exclusion.
