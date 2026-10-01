@@ -94,6 +94,43 @@ test("results can be screened with the keyboard", async ({ page }) => {
   await expect(page.getByRole("button", { name: /Re-include "Simulation-based feedback/ })).toBeVisible();
 });
 
+test("results exclusion records the PRISMA screening stage with the keyboard", async ({ page }) => {
+  await installMockApi(page);
+  await page.goto("/projects/1/results");
+
+  await page.getByRole("button", { name: /Exclude "Simulation-based feedback/ }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("menu", { name: /title \/ abstract stage/i })).toBeVisible();
+  const titleAbstract = page.getByRole("menuitemradio", { name: "Title / abstract" });
+  const fullText = page.getByRole("menuitemradio", { name: "Full text" });
+  const firstReason = page.getByRole("menuitem", { name: "Wrong study design" });
+  await expect(titleAbstract).toHaveAttribute("aria-checked", "true");
+  await expect(fullText).toHaveAttribute("aria-checked", "false");
+  await expect(firstReason).toBeFocused();
+
+  await page.keyboard.press("ArrowUp");
+  await expect(fullText).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect(fullText).toHaveAttribute("aria-checked", "true");
+  await expect(titleAbstract).toHaveAttribute("aria-checked", "false");
+  await expect(page.getByRole("menu", { name: /full text stage/i })).toBeVisible();
+
+  await page.keyboard.press("ArrowDown");
+  await expect(firstReason).toBeFocused();
+  const patch = page.waitForRequest((r) => r.method() === "PATCH" && r.url().endsWith("/publications/1/exclude"));
+  await page.keyboard.press("Enter");
+  expect((await patch).postDataJSON()).toEqual({ reason: "wrong_study_design", screening_stage: "full_text" });
+  await expect(page.getByRole("button", { name: /Re-include "Simulation-based feedback/ })).toBeVisible();
+  await expect(page.getByText("Full text stage")).toBeVisible();
+
+  // The chosen stage carries over to the next record's picker.
+  await page.getByRole("button", { name: /Exclude "Learning analytics/ }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("menuitemradio", { name: "Full text" })).toHaveAttribute("aria-checked", "true");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("menu")).toBeHidden();
+});
+
 test("dashboard tabs change the visible analysis section", async ({ page }) => {
   await installMockApi(page);
   await page.goto("/projects/1/dashboard");

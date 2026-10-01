@@ -47,6 +47,13 @@ export const EXCLUSION_REASON_LABELS: Record<ExclusionReason, string> = {
   other: "Other / unspecified",
 };
 
+export type ScreeningStage = "title_abstract" | "full_text";
+
+export const SCREENING_STAGE_LABELS: Record<ScreeningStage, string> = {
+  title_abstract: "Title / abstract",
+  full_text: "Full text",
+};
+
 export interface Publication {
   id: number;
   pmid: string;
@@ -58,6 +65,7 @@ export interface Publication {
   citation_count: number | null;
   excluded: boolean;
   exclusion_reason: ExclusionReason | null;
+  screening_stage: ScreeningStage | null;
   journal_name: string | null;
   authors: { id: number; name: string; orcid: string | null }[];
 }
@@ -110,13 +118,21 @@ export const searchApi = {
 export const publicationsApi = {
   list: (projectId: number, params?: { sort_by?: string; order?: string; limit?: number; offset?: number }) =>
     api.get<{ total: number; excluded_count: number; items: Publication[] }>(`/api/projects/${projectId}/publications`, { params }),
-  toggleExclude: (projectId: number, publicationId: number, reason?: ExclusionReason) =>
-    api.patch<{ id: number; excluded: boolean; exclusion_reason: ExclusionReason | null }>(
+  toggleExclude: (projectId: number, publicationId: number, reason?: ExclusionReason, screeningStage?: ScreeningStage) =>
+    api.patch<{
+      id: number;
+      excluded: boolean;
+      exclusion_reason: ExclusionReason | null;
+      screening_stage: ScreeningStage | null;
+    }>(
       `/api/projects/${projectId}/publications/${publicationId}/exclude`,
-      reason ? { reason } : {},
+      {
+        ...(reason ? { reason } : {}),
+        ...(screeningStage ? { screening_stage: screeningStage } : {}),
+      },
     ),
   bulkExclude: (projectId: number, citationThreshold: number, reason: ExclusionReason = "other") =>
-    api.post<{ excluded_count: number; reason: ExclusionReason }>(
+    api.post<{ excluded_count: number; reason: ExclusionReason; screening_stage: ScreeningStage }>(
       `/api/projects/${projectId}/publications/bulk-exclude`,
       { citation_threshold: citationThreshold, reason },
     ),
