@@ -103,7 +103,8 @@ FIXTURE_STATEMENTS = [
     INSERT INTO publications (id, pmid, title, query_id, excluded, exclusion_reason) VALUES
         (1, '10000001', 'Project A paper 1', 1, false, NULL),
         (2, '10000002', 'Project A paper 2', 1, true, 'non_english'),
-        (3, '10000003', 'Project B paper 1', 2, false, NULL)
+        (3, '10000003', 'Project B paper 1', 2, false, NULL),
+        (4, '10000004', 'Project B paper 2', 2, true, 'fulltext_unavailable')
     """,
 ]
 
@@ -115,7 +116,7 @@ def main() -> None:
         for statement in DDL_STATEMENTS + FIXTURE_STATEMENTS:
             conn.execute(text(statement))
     engine.dispose()
-    print("Seeded pre-0002 schema: 2 search_projects, 2 search_queries, 3 publications.")
+    print("Seeded pre-0002 schema: 2 search_projects, 2 search_queries, 4 publications.")
 
 
 if __name__ == "__main__":
