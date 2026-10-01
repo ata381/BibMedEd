@@ -54,6 +54,14 @@ export const SCREENING_STAGE_LABELS: Record<ScreeningStage, string> = {
   full_text: "Full text",
 };
 
+// PRISMA 2020 reports this reason as "Reports not retrieved", which exists only
+// at the full-text stage; the API rejects it at title/abstract.
+export const NOT_RETRIEVED_REASON: ExclusionReason = "fulltext_unavailable";
+
+export function stageForReason(reason: ExclusionReason, selected: ScreeningStage): ScreeningStage {
+  return reason === NOT_RETRIEVED_REASON ? "full_text" : selected;
+}
+
 export interface Publication {
   id: number;
   pmid: string;

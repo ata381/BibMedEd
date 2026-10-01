@@ -131,6 +131,22 @@ test("results exclusion records the PRISMA screening stage with the keyboard", a
   await expect(page.getByRole("menu")).toBeHidden();
 });
 
+test("full-text-unavailable exclusions are always recorded at the full-text stage", async ({ page }) => {
+  await installMockApi(page);
+  await page.goto("/projects/1/results");
+
+  await page.getByRole("button", { name: /Exclude "Simulation-based feedback/ }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("menuitemradio", { name: "Title / abstract" })).toHaveAttribute("aria-checked", "true");
+  const unavailable = page.getByRole("menuitem", { name: /Full-text not retrievable.*Always recorded at the full-text stage/ });
+  await expect(unavailable).toBeVisible();
+
+  const patch = page.waitForRequest((r) => r.method() === "PATCH" && r.url().endsWith("/publications/1/exclude"));
+  await unavailable.click();
+  expect((await patch).postDataJSON()).toEqual({ reason: "fulltext_unavailable", screening_stage: "full_text" });
+  await expect(page.getByText("Full text stage")).toBeVisible();
+});
+
 test("dashboard tabs change the visible analysis section", async ({ page }) => {
   await installMockApi(page);
   await page.goto("/projects/1/dashboard");

@@ -7,8 +7,10 @@ import {
   Publication,
   ExclusionReason,
   EXCLUSION_REASON_LABELS,
+  NOT_RETRIEVED_REASON,
   ScreeningStage,
   SCREENING_STAGE_LABELS,
+  stageForReason,
 } from "@/lib/api";
 import { Icon } from "@/components/ui";
 import { useReadOnly } from "@/lib/read-only";
@@ -182,11 +184,14 @@ export function ExcludeButton({ pub, projectId, screeningStage, onScreeningStage
               role="menuitem"
               onClick={(e) => {
                 e.stopPropagation();
-                doToggle(code, screeningStage);
+                doToggle(code, stageForReason(code, screeningStage));
               }}
               className={MENU_ITEM_CLASS}
             >
               {EXCLUSION_REASON_LABELS[code]}
+              {code === NOT_RETRIEVED_REASON && (
+                <span className="block text-xs text-on-surface-muted">Always recorded at the full-text stage</span>
+              )}
             </button>
           ))}
         </div>
