@@ -6,9 +6,11 @@ from bibmeded.database import get_db
 from bibmeded.models import Publication, SearchProject
 from bibmeded.schemas.publication import (
     BulkExcludeRequest,
+    BulkExcludeResponse,
     PublicationListResponse,
     PublicationResponse,
     ToggleExcludeRequest,
+    ToggleExcludeResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -42,7 +44,7 @@ def list_publications(project_id: int, sort_by: str = Query("year", enum=["year"
                 id=pub.id, pmid=pub.pmid or "", doi=pub.doi, title=pub.title or "Untitled",
                 abstract=pub.abstract, year=pub.year, publication_type=pub.publication_type,
                 citation_count=pub.citation_count, excluded=pub.excluded,
-                exclusion_reason=pub.exclusion_reason,
+                exclusion_reason=pub.exclusion_reason, screening_stage=pub.screening_stage,
                 journal_name=pub.journal.name if pub.journal else None,
                 authors=[{"id": a.id, "name": a.name, "orcid": a.orcid} for a in pub.authors],
             )
@@ -55,16 +57,17 @@ def list_publications(project_id: int, sort_by: str = Query("year", enum=["year"
     return PublicationListResponse(total=total, excluded_count=excluded_count, items=items)
 
 
-@router.post("/bulk-exclude")
+@router.post("/bulk-exclude", response_model=BulkExcludeResponse)
 def bulk_exclude(project_id: int, body: BulkExcludeRequest, db: Session = Depends(get_db)):
-    """Exclude all publications with citation_count below threshold; stamps every
-    affected row with the supplied PRISMA exclusion reason."""
+    """Exclude all publications with citation_count at or below the threshold; stamps
+    every affected row with the supplied PRISMA exclusion reason and screening stage
+    (stage rule in ``schemas.publication._StagedExclusionRequest``)."""
     project = db.get(SearchProject, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     query_ids = [q.id for q in project.queries]
     if not query_ids:
-        return {"excluded_count": 0, "reason": body.reason}
+        return BulkExcludeResponse(excluded_count=0, reason=body.reason, screening_stage=body.resolved_screening_stage)
     updated = (
         db.query(Publication)
         .filter(
@@ -73,21 +76,29 @@ def bulk_exclude(project_id: int, body: BulkExcludeRequest, db: Session = Depend
             (Publication.citation_count == None) | (Publication.citation_count <= body.citation_threshold),
         )
         .update(
-            {Publication.excluded: True, Publication.exclusion_reason: body.reason},
+            {
+                Publication.excluded: True,
+                Publication.exclusion_reason: body.reason,
+                Publication.screening_stage: body.resolved_screening_stage,
+            },
             synchronize_session="fetch",
         )
     )
     db.commit()
-    return {"excluded_count": updated, "reason": body.reason}
+    return BulkExcludeResponse(excluded_count=updated, reason=body.reason, screening_stage=body.resolved_screening_stage)
 
 
-@router.patch("/{publication_id}/exclude")
+@router.patch("/{publication_id}/exclude", response_model=ToggleExcludeResponse)
 def toggle_exclude(
     project_id: int,
     publication_id: int,
     body: ToggleExcludeRequest | None = Body(default=None),
     db: Session = Depends(get_db),
 ):
+    """Toggle a publication between included and excluded. Excluding records the
+    PRISMA reason (default ``other``) and screening stage (``full_text`` for
+    ``fulltext_unavailable``, else ``title_abstract``, unless given); re-including
+    clears both."""
     project = db.get(SearchProject, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -97,10 +108,18 @@ def toggle_exclude(
     project_query_ids = {q.id for q in project.queries}
     if pub.query_id not in project_query_ids:
         raise HTTPException(status_code=404, detail="Publication not found")
+    body = body or ToggleExcludeRequest()
     pub.excluded = not pub.excluded
     if pub.excluded:
-        pub.exclusion_reason = (body.reason if body else None) or "other"
+        pub.exclusion_reason = body.reason or "other"
+        pub.screening_stage = body.resolved_screening_stage
     else:
         pub.exclusion_reason = None
+        pub.screening_stage = None
     db.commit()
-    return {"id": pub.id, "excluded": pub.excluded, "exclusion_reason": pub.exclusion_reason}
+    return ToggleExcludeResponse(
+        id=pub.id,
+        excluded=pub.excluded,
+        exclusion_reason=pub.exclusion_reason,
+        screening_stage=pub.screening_stage,
+    )

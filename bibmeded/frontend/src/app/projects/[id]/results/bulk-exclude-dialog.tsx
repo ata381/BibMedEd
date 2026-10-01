@@ -96,7 +96,7 @@ export function BulkExcludeDialog({ open, projectId, total, loaded, onCancel, on
           </p>
           {count !== 0 && (
             <p>
-              Each is recorded with the reason &ldquo;{EXCLUSION_REASON_LABELS[BULK_REASON]}&rdquo; in the PRISMA flow and methodology log, and
+              Each is recorded with the reason &ldquo;{EXCLUSION_REASON_LABELS[BULK_REASON]}&rdquo; at title/abstract screening in the PRISMA flow and methodology log, and
               can be re-included individually afterwards.
             </p>
           )}

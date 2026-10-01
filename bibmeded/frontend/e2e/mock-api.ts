@@ -22,6 +22,7 @@ const publications = [
     citation_count: 64,
     excluded: false,
     exclusion_reason: null,
+    screening_stage: null,
     journal_name: "Medical Education Practice",
     authors: [
       { id: 1, name: "Elena Garcia Sample", orcid: null },
@@ -39,6 +40,7 @@ const publications = [
     citation_count: 51,
     excluded: false,
     exclusion_reason: null,
+    screening_stage: null,
     journal_name: "Digital Health Education",
     authors: [{ id: 3, name: "Marcus Chen Sample", orcid: null }],
   },
@@ -228,6 +230,7 @@ export async function installMockApi(page: Page, options: MockApiOptions = {}) {
   const writeRequests: string[] = [];
   let exclusionReason: string | null = null;
   let uncitedExcluded = false;
+  let screeningStage: string | null = null;
 
   // Keep E2E deterministic and offline: icon-font availability must not turn
   // an application-flow test into a third-party network test.
@@ -291,22 +294,35 @@ export async function installMockApi(page: Page, options: MockApiOptions = {}) {
         items: [
           ...publications.map((publication) =>
             publication.id === 1
-              ? { ...publication, excluded: Boolean(exclusionReason), exclusion_reason: exclusionReason }
+              ? {
+                  ...publication,
+                  excluded: Boolean(exclusionReason),
+                  exclusion_reason: exclusionReason,
+                  screening_stage: screeningStage,
+                }
               : publication,
           ),
-          uncitedExcluded ? { ...uncitedPublication, excluded: true, exclusion_reason: "other" } : uncitedPublication,
+          uncitedExcluded
+            ? { ...uncitedPublication, excluded: true, exclusion_reason: "other", screening_stage: "title_abstract" }
+            : uncitedPublication,
         ],
       });
     }
     if (/^\/api\/projects\/1\/publications\/\d+\/exclude$/.test(pathname) && method === "PATCH") {
-      const body = request.postDataJSON() as { reason?: string } | null;
+      const body = request.postDataJSON() as { reason?: string; screening_stage?: string } | null;
       exclusionReason = exclusionReason ? null : (body?.reason ?? "other");
-      return json(route, { id: 1, excluded: Boolean(exclusionReason), exclusion_reason: exclusionReason });
+      screeningStage = exclusionReason ? (body?.screening_stage ?? "title_abstract") : null;
+      return json(route, {
+        id: 1,
+        excluded: Boolean(exclusionReason),
+        exclusion_reason: exclusionReason,
+        screening_stage: screeningStage,
+      });
     }
     if (pathname === "/api/projects/1/publications/bulk-exclude" && method === "POST") {
       const newlyExcluded = uncitedExcluded ? 0 : 1;
       uncitedExcluded = true;
-      return json(route, { excluded_count: newlyExcluded, reason: "other" });
+      return json(route, { excluded_count: newlyExcluded, reason: "other", screening_stage: "title_abstract" });
     }
     const analysisMatch = pathname.match(/^\/api\/projects\/1\/analysis\/([^/]+)$/);
     if (analysisMatch && (method === "GET" || method === "POST")) {

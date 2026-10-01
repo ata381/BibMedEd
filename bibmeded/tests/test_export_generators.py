@@ -43,6 +43,7 @@ def make_pub(
     source_database="pubmed",
     excluded=False,
     exclusion_reason=None,
+    screening_stage=None,
 ):
     pub = Publication(
         pmid=pmid,
@@ -55,6 +56,7 @@ def make_pub(
         source_database=source_database,
         excluded=excluded,
         exclusion_reason=exclusion_reason,
+        screening_stage=screening_stage,
     )
     pub.authors = authors if authors is not None else [Author(name="Doe J")]
     pub.journal = Journal(name=journal_name) if journal_name is not None else None
@@ -431,3 +433,57 @@ class TestGenerateMethodologyStudiesIncluded:
         text = generate_methodology("Empty Project", [])
         assert "No methodology steps recorded" in text
         assert "Studies included" not in text
+
+
+class TestGenerateMethodologyScreeningStages:
+    STEPS = [make_step(query_id=1, step_order=1, phase="search", records_in=0, records_out=20, records_affected=20)]
+
+    def test_reports_each_stage_with_per_reason_counts(self):
+        summary = {
+            ("title_abstract", "non_english"): 3,
+            ("title_abstract", "wrong_population"): 1,
+            ("full_text", "wrong_outcome"): 2,
+            ("full_text", "fulltext_unavailable"): 1,
+        }
+        text = generate_methodology("Staged", self.STEPS, summary)
+        section = text.split("SCREENING DECISIONS BY STAGE (PRISMA 2020 item 16a)", 1)[1].split("FINAL DATASET", 1)[0]
+        assert section.splitlines()[1:8] == [
+            "  Title/abstract screening: 4 records excluded",
+            "    Non-English language: 3",
+            "    Wrong population: 1",
+            "  Full-text retrieval: 1 report not retrieved",
+            "  Full-text eligibility: 2 reports excluded",
+            "    Wrong outcome: 2",
+            "",
+        ]
+
+    def test_reports_zero_counts_for_a_stage_without_exclusions(self):
+        text = generate_methodology("TA only", self.STEPS, {("title_abstract", "other"): 1})
+        assert "Title/abstract screening: 1 record excluded" in text
+        assert "Full-text retrieval: 0 reports not retrieved" in text
+        assert "Full-text eligibility: 0 reports excluded" in text
+
+    def test_notes_exclusions_without_a_recorded_stage(self):
+        text = generate_methodology("Legacy", self.STEPS, {"non_english": 2, None: 1})
+        assert "Title/abstract screening: 3 records excluded" in text
+        assert "3 exclusion(s) have no recorded screening stage and are counted at title/abstract" in text
+
+    def test_omits_unrecorded_note_when_every_exclusion_has_a_stage(self):
+        text = generate_methodology("Staged", self.STEPS, {("full_text", "other"): 1})
+        assert "no recorded screening stage" not in text
+
+    def test_reports_stage_section_with_zero_counts_when_nothing_excluded(self):
+        text = generate_methodology("Unscreened", self.STEPS, {})
+        assert "Title/abstract screening: 0 records excluded" in text
+        assert "Full-text eligibility: 0 reports excluded" in text
+
+
+class TestScreeningStageInJson:
+    def test_publication_entry_carries_screening_stage(self):
+        pub = make_pub(excluded=True, exclusion_reason="wrong_outcome", screening_stage="full_text")
+        entry = json.loads(generate_json("P", [pub]))["publications"][0]
+        assert entry["screening_stage"] == "full_text"
+
+    def test_included_publication_has_null_screening_stage(self):
+        entry = json.loads(generate_json("P", [make_pub()]))["publications"][0]
+        assert entry["screening_stage"] is None

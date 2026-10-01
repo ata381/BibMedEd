@@ -1,3 +1,5 @@
+import pytest
+
 from bibmeded.models import Author, Journal, Publication, SearchProject, SearchQuery
 
 def test_list_publications(client, db):
@@ -103,3 +105,142 @@ def test_bulk_exclude_stamps_reason(client, db):
     for item in listed["items"]:
         assert item["excluded"] is True
         assert item["exclusion_reason"] == "not_peer_reviewed"
+
+
+def _project_with_pubs(db, name, count=1, citation_count=None):
+    project = SearchProject(name=name)
+    db.add(project)
+    db.flush()
+    query = SearchQuery(project_id=project.id, query_string="t")
+    db.add(query)
+    db.flush()
+    pubs = [
+        Publication(pmid=f"{name}-{i}", title=f"P{i}", year=2024, citation_count=citation_count,
+                    query_id=query.id, project_id=project.id)
+        for i in range(count)
+    ]
+    db.add_all(pubs)
+    db.commit()
+    return project, pubs
+
+
+def _exclude_url(project, pub):
+    return f"/api/projects/{project.id}/publications/{pub.id}/exclude"
+
+
+def test_toggle_exclude_without_stage_defaults_to_title_abstract(client, db):
+    project, (pub,) = _project_with_pubs(db, "stage-default")
+    r = client.patch(_exclude_url(project, pub), json={"reason": "non_english"})
+    assert r.status_code == 200
+    assert r.json()["screening_stage"] == "title_abstract"
+
+
+def test_toggle_exclude_without_body_defaults_to_title_abstract(client, db):
+    project, (pub,) = _project_with_pubs(db, "stage-nobody")
+    r = client.patch(_exclude_url(project, pub))
+    assert r.json() == {"id": pub.id, "excluded": True, "exclusion_reason": "other", "screening_stage": "title_abstract"}
+
+
+def test_toggle_exclude_records_full_text_stage_and_lists_it(client, db):
+    project, (pub,) = _project_with_pubs(db, "stage-ft")
+    r = client.patch(_exclude_url(project, pub), json={"reason": "wrong_outcome", "screening_stage": "full_text"})
+    assert r.json()["screening_stage"] == "full_text"
+    item = client.get(f"/api/projects/{project.id}/publications").json()["items"][0]
+    assert item["excluded"] is True
+    assert item["exclusion_reason"] == "wrong_outcome"
+    assert item["screening_stage"] == "full_text"
+
+
+def test_re_including_clears_screening_stage(client, db):
+    project, (pub,) = _project_with_pubs(db, "stage-clear")
+    client.patch(_exclude_url(project, pub), json={"reason": "wrong_outcome", "screening_stage": "full_text"})
+    r = client.patch(_exclude_url(project, pub), json={"screening_stage": "full_text"})
+    assert r.json()["excluded"] is False
+    assert r.json()["exclusion_reason"] is None
+    assert r.json()["screening_stage"] is None
+    db.refresh(pub)
+    assert pub.screening_stage is None
+
+
+def test_included_publication_lists_null_screening_stage(client, db):
+    project, _ = _project_with_pubs(db, "stage-null")
+    item = client.get(f"/api/projects/{project.id}/publications").json()["items"][0]
+    assert item["screening_stage"] is None
+
+
+def test_toggle_exclude_rejects_unknown_screening_stage(client, db):
+    project, (pub,) = _project_with_pubs(db, "stage-bad")
+    r = client.patch(_exclude_url(project, pub), json={"reason": "other", "screening_stage": "abstract"})
+    assert r.status_code == 422
+    db.refresh(pub)
+    assert pub.excluded is False
+
+
+def test_bulk_exclude_defaults_to_title_abstract(client, db):
+    project, pubs = _project_with_pubs(db, "bulk-stage", count=2, citation_count=0)
+    r = client.post(f"/api/projects/{project.id}/publications/bulk-exclude", json={"citation_threshold": 0})
+    assert r.json() == {"excluded_count": 2, "reason": "other", "screening_stage": "title_abstract"}
+    for pub in pubs:
+        db.refresh(pub)
+        assert pub.screening_stage == "title_abstract"
+
+
+def test_bulk_exclude_accepts_full_text_stage(client, db):
+    project, pubs = _project_with_pubs(db, "bulk-ft", count=1, citation_count=0)
+    r = client.post(
+        f"/api/projects/{project.id}/publications/bulk-exclude",
+        json={"citation_threshold": 0, "reason": "fulltext_unavailable", "screening_stage": "full_text"},
+    )
+    assert r.json()["screening_stage"] == "full_text"
+    db.refresh(pubs[0])
+    assert pubs[0].screening_stage == "full_text"
+
+
+def test_toggle_exclude_treats_explicit_null_stage_as_default(client, db):
+    project, (pub,) = _project_with_pubs(db, "stage-null-body")
+    r = client.patch(_exclude_url(project, pub), json={"reason": "other", "screening_stage": None})
+    assert r.status_code == 200
+    assert r.json()["screening_stage"] == "title_abstract"
+
+
+def test_bulk_exclude_treats_explicit_null_stage_as_default(client, db):
+    project, _ = _project_with_pubs(db, "bulk-null", count=1, citation_count=0)
+    r = client.post(
+        f"/api/projects/{project.id}/publications/bulk-exclude",
+        json={"citation_threshold": 0, "screening_stage": None},
+    )
+    assert r.status_code == 200
+    assert r.json()["screening_stage"] == "title_abstract"
+
+
+@pytest.mark.parametrize("body_extra", [{}, {"screening_stage": None}, {"screening_stage": "full_text"}])
+def test_fulltext_unavailable_exclusion_defaults_to_full_text(client, db, body_extra):
+    project, (pub,) = _project_with_pubs(db, f"ft-unavail-{len(body_extra)}-{body_extra.get('screening_stage')}")
+    r = client.patch(_exclude_url(project, pub), json={"reason": "fulltext_unavailable", **body_extra})
+    assert r.status_code == 200
+    assert r.json()["screening_stage"] == "full_text"
+
+
+def test_toggle_exclude_rejects_fulltext_unavailable_at_title_abstract(client, db):
+    project, (pub,) = _project_with_pubs(db, "ft-unavail-ta")
+    r = client.patch(
+        _exclude_url(project, pub), json={"reason": "fulltext_unavailable", "screening_stage": "title_abstract"}
+    )
+    assert r.status_code == 422
+    assert "fulltext_unavailable" in r.text and "full_text" in r.text
+    db.refresh(pub)
+    assert pub.excluded is False
+
+
+def test_bulk_exclude_fulltext_unavailable_defaults_to_full_text_and_rejects_title_abstract(client, db):
+    project, pubs = _project_with_pubs(db, "bulk-ft-unavail", count=1, citation_count=0)
+    url = f"/api/projects/{project.id}/publications/bulk-exclude"
+    rejected = client.post(
+        url, json={"citation_threshold": 0, "reason": "fulltext_unavailable", "screening_stage": "title_abstract"}
+    )
+    assert rejected.status_code == 422
+    db.refresh(pubs[0])
+    assert pubs[0].excluded is False
+
+    r = client.post(url, json={"citation_threshold": 0, "reason": "fulltext_unavailable"})
+    assert r.json()["screening_stage"] == "full_text"
