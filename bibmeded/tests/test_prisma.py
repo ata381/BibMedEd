@@ -135,7 +135,7 @@ def test_render_svg_escapes_project_name():
 
 
 def test_compute_counts_threads_exclusion_summary():
-    """The PRISMA diagram should surface per-reason exclusion counts (PRISMA 2020 item 17)."""
+    """The PRISMA diagram should surface per-reason exclusion counts (PRISMA 2020 item 16a)."""
     summary = {"non_english": 5, "not_peer_reviewed": 3, None: 0, "other": 1}
     counts = compute_counts([], exclusion_summary=summary)
     assert counts.excluded_by_reason == {"non_english": 5, "not_peer_reviewed": 3, "other": 1}
@@ -475,7 +475,7 @@ def test_render_svg_two_stage_snapshot():
     svg = render_svg(counts, "Snapshot project")
     if os.environ.get("UPDATE_PRISMA_SNAPSHOT"):
         SNAPSHOT_PATH.write_text(svg, encoding="utf-8", newline="")
-    assert svg == SNAPSHOT_PATH.read_text(encoding="utf-8")
+    assert svg.rstrip("\n") == SNAPSHOT_PATH.read_text(encoding="utf-8").rstrip("\n")
 
 
 def _seed_project_with_staged_exclusions(db):

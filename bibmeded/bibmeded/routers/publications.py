@@ -61,13 +61,13 @@ def list_publications(project_id: int, sort_by: str = Query("year", enum=["year"
 def bulk_exclude(project_id: int, body: BulkExcludeRequest, db: Session = Depends(get_db)):
     """Exclude all publications with citation_count at or below the threshold; stamps
     every affected row with the supplied PRISMA exclusion reason and screening stage
-    (default ``title_abstract``)."""
+    (stage rule in ``schemas.publication._StagedExclusionRequest``)."""
     project = db.get(SearchProject, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     query_ids = [q.id for q in project.queries]
     if not query_ids:
-        return BulkExcludeResponse(excluded_count=0, reason=body.reason, screening_stage=body.screening_stage)
+        return BulkExcludeResponse(excluded_count=0, reason=body.reason, screening_stage=body.resolved_screening_stage)
     updated = (
         db.query(Publication)
         .filter(
@@ -79,13 +79,13 @@ def bulk_exclude(project_id: int, body: BulkExcludeRequest, db: Session = Depend
             {
                 Publication.excluded: True,
                 Publication.exclusion_reason: body.reason,
-                Publication.screening_stage: body.screening_stage,
+                Publication.screening_stage: body.resolved_screening_stage,
             },
             synchronize_session="fetch",
         )
     )
     db.commit()
-    return BulkExcludeResponse(excluded_count=updated, reason=body.reason, screening_stage=body.screening_stage)
+    return BulkExcludeResponse(excluded_count=updated, reason=body.reason, screening_stage=body.resolved_screening_stage)
 
 
 @router.patch("/{publication_id}/exclude", response_model=ToggleExcludeResponse)
@@ -96,8 +96,9 @@ def toggle_exclude(
     db: Session = Depends(get_db),
 ):
     """Toggle a publication between included and excluded. Excluding records the
-    PRISMA reason (default ``other``) and screening stage (default
-    ``title_abstract``); re-including clears both."""
+    PRISMA reason (default ``other``) and screening stage (``full_text`` for
+    ``fulltext_unavailable``, else ``title_abstract``, unless given); re-including
+    clears both."""
     project = db.get(SearchProject, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -111,7 +112,7 @@ def toggle_exclude(
     pub.excluded = not pub.excluded
     if pub.excluded:
         pub.exclusion_reason = body.reason or "other"
-        pub.screening_stage = body.screening_stage
+        pub.screening_stage = body.resolved_screening_stage
     else:
         pub.exclusion_reason = None
         pub.screening_stage = None

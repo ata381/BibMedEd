@@ -4,6 +4,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from bibmeded.database import Base
 
 SCREENING_STAGES = ("title_abstract", "full_text")
+# PRISMA 2020 counts this reason as "Reports not retrieved", a full-text-stage box.
+NOT_RETRIEVED_REASON = "fulltext_unavailable"
 
 
 class Publication(Base):

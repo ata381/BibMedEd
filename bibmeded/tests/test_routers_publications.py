@@ -1,3 +1,5 @@
+import pytest
+
 from bibmeded.models import Author, Journal, Publication, SearchProject, SearchQuery
 
 def test_list_publications(client, db):
@@ -192,3 +194,53 @@ def test_bulk_exclude_accepts_full_text_stage(client, db):
     assert r.json()["screening_stage"] == "full_text"
     db.refresh(pubs[0])
     assert pubs[0].screening_stage == "full_text"
+
+
+def test_toggle_exclude_treats_explicit_null_stage_as_default(client, db):
+    project, (pub,) = _project_with_pubs(db, "stage-null-body")
+    r = client.patch(_exclude_url(project, pub), json={"reason": "other", "screening_stage": None})
+    assert r.status_code == 200
+    assert r.json()["screening_stage"] == "title_abstract"
+
+
+def test_bulk_exclude_treats_explicit_null_stage_as_default(client, db):
+    project, _ = _project_with_pubs(db, "bulk-null", count=1, citation_count=0)
+    r = client.post(
+        f"/api/projects/{project.id}/publications/bulk-exclude",
+        json={"citation_threshold": 0, "screening_stage": None},
+    )
+    assert r.status_code == 200
+    assert r.json()["screening_stage"] == "title_abstract"
+
+
+@pytest.mark.parametrize("body_extra", [{}, {"screening_stage": None}, {"screening_stage": "full_text"}])
+def test_fulltext_unavailable_exclusion_defaults_to_full_text(client, db, body_extra):
+    project, (pub,) = _project_with_pubs(db, f"ft-unavail-{len(body_extra)}-{body_extra.get('screening_stage')}")
+    r = client.patch(_exclude_url(project, pub), json={"reason": "fulltext_unavailable", **body_extra})
+    assert r.status_code == 200
+    assert r.json()["screening_stage"] == "full_text"
+
+
+def test_toggle_exclude_rejects_fulltext_unavailable_at_title_abstract(client, db):
+    project, (pub,) = _project_with_pubs(db, "ft-unavail-ta")
+    r = client.patch(
+        _exclude_url(project, pub), json={"reason": "fulltext_unavailable", "screening_stage": "title_abstract"}
+    )
+    assert r.status_code == 422
+    assert "fulltext_unavailable" in r.text and "full_text" in r.text
+    db.refresh(pub)
+    assert pub.excluded is False
+
+
+def test_bulk_exclude_fulltext_unavailable_defaults_to_full_text_and_rejects_title_abstract(client, db):
+    project, pubs = _project_with_pubs(db, "bulk-ft-unavail", count=1, citation_count=0)
+    url = f"/api/projects/{project.id}/publications/bulk-exclude"
+    rejected = client.post(
+        url, json={"citation_threshold": 0, "reason": "fulltext_unavailable", "screening_stage": "title_abstract"}
+    )
+    assert rejected.status_code == 422
+    db.refresh(pubs[0])
+    assert pubs[0].excluded is False
+
+    r = client.post(url, json={"citation_threshold": 0, "reason": "fulltext_unavailable"})
+    assert r.json()["screening_stage"] == "full_text"
