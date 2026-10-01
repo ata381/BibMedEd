@@ -1,3 +1,4 @@
+import pytest
 from bibmeded.services.cleaning import normalize_name, deduplicate_records, extract_country
 from bibmeded.services.pubmed import PubMedRecord
 
@@ -111,3 +112,117 @@ def test_cross_source_dedup_chains_through_dropped_records_other_identifier():
     assert len(unique) == 1
     assert removed == 2
     assert breakdown["pmid"] + breakdown["doi"] == 2
+
+
+@pytest.mark.parametrize(
+    "affiliation, expected_country",
+    [
+        (
+            "Dept of Surgery, Harvard Medical School, Boston, MA 02115, USA. jdoe@hms.harvard.edu",
+            "USA",
+        ),
+        (
+            "Division of Cardiology, University of Ottawa Heart Institute, Ottawa, Canada. Electronic address: doc@ottawaheart.ca.",
+            "Canada",
+        ),
+        (
+            "Department of Medicine, Imperial College London, London, UK <m.smith@imperial.ac.uk>",
+            "UK",
+        ),
+        (
+            "Department of Oncology, University of Turin, Turin, Italy (oncology@unito.it)",
+            "Italy",
+        ),
+        (
+            "Nuffield Department of Clinical Neurosciences, University of Oxford, Oxford, UK OX1 2JD",
+            "UK",
+        ),
+        (
+            "UCL Institute of Child Health, London, UK WC1E 6BT",
+            "UK",
+        ),
+        (
+            "Sorbonne Université, INSERM, Paris, France 75005",
+            "France",
+        ),
+        (
+            "Charité - Universitätsmedizin Berlin, Berlin, Germany D-10117",
+            "Germany",
+        ),
+        (
+            "Ege University Faculty of Medicine, Bornova, Izmir, Turkey 35100",
+            "Turkey",
+        ),
+        (
+            "Universidade de São Paulo, São Paulo, Brazil 01246-903",
+            "Brazil",
+        ),
+        (
+            "Dalla Lana School of Public Health, University of Toronto, Toronto, ON, Canada M5S 2Z9",
+            "Canada",
+        ),
+        (
+            "Johns Hopkins University School of Medicine, Baltimore, Maryland",
+            "USA",
+        ),
+        (
+            "University of Washington School of Medicine, Seattle, WA",
+            "USA",
+        ),
+        (
+            "Massachusetts General Hospital, Boston, MA 02114",
+            "USA",
+        ),
+        (
+            "Perelman School of Medicine, University of Pennsylvania, Philadelphia, PA 19104-6056",
+            "USA",
+        ),
+        (
+            "Mayo Clinic Alix School of Medicine, Rochester, Minnesota. researcher@mayo.edu",
+            "USA",
+        ),
+        (
+            "Seoul National University College of Medicine, Seoul, Republic of Korea",
+            "South Korea",
+        ),
+        (
+            "Yonsei University College of Medicine, Seoul, South Korea",
+            "South Korea",
+        ),
+        (
+            "Istanbul University, Istanbul Faculty of Medicine, Istanbul, Türkiye",
+            "Turkey",
+        ),
+        (
+            "Hacettepe University Faculty of Medicine, Ankara, Turkiye",
+            "Turkey",
+        ),
+        (
+            "Hanoi Medical University, Hanoi, Viet Nam",
+            "Vietnam",
+        ),
+        (
+            "Sechenov First Moscow State Medical University, Moscow, Russian Federation",
+            "Russia",
+        ),
+        (
+            "Fudan University Shanghai Cancer Center, Shanghai, P.R. China",
+            "China",
+        ),
+        (
+            "University of Edinburgh Medical School, Edinburgh, Scotland",
+            "UK",
+        ),
+        (
+            "Department of Biochemistry, University of Cambridge, Cambridge, UK CB2 1QW. info@bioc.cam.ac.uk",
+            "UK",
+        ),
+        (
+            "Unknown Research Institute, Global Lab",
+            None,
+        ),
+    ],
+)
+def test_extract_country_real_world_affiliations(affiliation, expected_country):
+    assert extract_country(affiliation) == expected_country
+
