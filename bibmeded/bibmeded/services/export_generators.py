@@ -13,7 +13,7 @@ from datetime import date
 
 from bibmeded.models import Publication
 from bibmeded.models.methodology import MethodologyStep
-from bibmeded.services.prisma import compute_counts, render_svg
+from bibmeded.services.prisma import ExclusionSummary, compute_counts, render_svg, summarize_exclusions
 
 
 _PHASE_LABELS = {
@@ -83,6 +83,7 @@ def _publication_to_dict(pub: Publication) -> dict:
         "citation_count": pub.citation_count,
         "excluded": pub.excluded,
         "exclusion_reason": pub.exclusion_reason,
+        "screening_stage": pub.screening_stage,
         "journal_name": pub.journal.name if pub.journal else None,
         "journal_issn": pub.journal.issn if pub.journal else None,
         "authors": [
@@ -157,10 +158,41 @@ EXCLUSION_REASON_LABELS = {
 }
 
 
+def _plural(n: int, noun: str) -> str:
+    return f"{n} {noun}" if n == 1 else f"{n} {noun}s"
+
+
+def _reason_count_lines(by_reason: dict[str, int]) -> list[str]:
+    return [
+        f"    {EXCLUSION_REASON_LABELS.get(reason, reason)}: {n}"
+        for reason, n in sorted(by_reason.items(), key=lambda kv: (-kv[1], kv[0]))
+    ]
+
+
+def _screening_stage_lines(exclusion_summary: ExclusionSummary | None) -> list[str]:
+    """Current screening state per PRISMA 2020 stage, mirroring the flow diagram."""
+    staged = summarize_exclusions(exclusion_summary)
+    lines = [
+        "SCREENING DECISIONS BY STAGE (PRISMA 2020 item 16a)",
+        f"  Title/abstract screening: {_plural(staged.title_abstract_total, 'record')} excluded",
+        *_reason_count_lines(staged.title_abstract_by_reason),
+        f"  Full-text retrieval: {_plural(staged.not_retrieved, 'report')} not retrieved",
+        f"  Full-text eligibility: {_plural(staged.full_text_total, 'report')} excluded",
+        *_reason_count_lines(staged.full_text_by_reason),
+    ]
+    if staged.unrecorded_stage:
+        lines.append(
+            f"  Note: {staged.unrecorded_stage} exclusion(s) have no recorded screening stage "
+            "and are counted at title/abstract."
+        )
+    lines.append("")
+    return lines
+
+
 def generate_methodology(
     project_name: str,
     steps: list[MethodologyStep],
-    exclusion_summary: dict[str | None, int] | None = None,
+    exclusion_summary: ExclusionSummary | None = None,
 ) -> str:
     lines = [
         f'METHODOLOGY LOG — Project: "{project_name}"',
@@ -243,16 +275,7 @@ def generate_methodology(
             )
         lines.append("")
 
-    if exclusion_summary:
-        total_excluded = sum(exclusion_summary.values())
-        if total_excluded > 0:
-            lines.append("MANUAL EXCLUSIONS BY REASON (PRISMA 2020 item 17)")
-            for reason_code, n in sorted(exclusion_summary.items(), key=lambda kv: -kv[1]):
-                if n <= 0:
-                    continue
-                label = EXCLUSION_REASON_LABELS.get(reason_code or "other", reason_code or "Other / unspecified")
-                lines.append(f"  {label}: {n}")
-            lines.append("")
+    lines.extend(_screening_stage_lines(exclusion_summary))
 
     # For a multi-query project, `steps` interleaves the per-query pipelines
     # (ordered query_id, step_order), so steps[-1] is only the *last query's*
@@ -273,7 +296,7 @@ def generate_methodology(
 def generate_prisma_svg(
     project_name: str,
     steps: list[MethodologyStep],
-    exclusion_summary: dict[str | None, int] | None = None,
+    exclusion_summary: ExclusionSummary | None = None,
     included_count: int | None = None,
 ) -> str:
     counts = compute_counts(steps, exclusion_summary=exclusion_summary, included_override=included_count)
@@ -284,7 +307,7 @@ def generate_bundle(
     project_name: str,
     pubs: list[Publication],
     steps: list[MethodologyStep],
-    exclusion_summary: dict[str | None, int] | None = None,
+    exclusion_summary: ExclusionSummary | None = None,
 ) -> bytes:
     """Produce a single .zip containing CSV, RIS, JSON, methodology .txt, PRISMA .svg, and a manifest."""
     stamp = date.today().isoformat()

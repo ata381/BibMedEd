@@ -41,8 +41,8 @@ def _get_project_and_pubs(project_id: int, db: Session) -> tuple[SearchProject, 
     return project, pubs
 
 
-def _get_exclusion_summary(project_id: int, db: Session) -> dict[str | None, int]:
-    """Per-reason counts of records excluded in this project."""
+def _get_exclusion_summary(project_id: int, db: Session) -> dict[tuple[str | None, str | None], int]:
+    """Counts of records excluded in this project, keyed by (screening_stage, reason)."""
     project = db.get(SearchProject, project_id)
     if not project:
         return {}
@@ -50,12 +50,12 @@ def _get_exclusion_summary(project_id: int, db: Session) -> dict[str | None, int
     if not query_ids:
         return {}
     rows = (
-        db.query(Publication.exclusion_reason, func.count(Publication.id))
+        db.query(Publication.screening_stage, Publication.exclusion_reason, func.count(Publication.id))
         .filter(Publication.query_id.in_(query_ids), Publication.excluded == True)
-        .group_by(Publication.exclusion_reason)
+        .group_by(Publication.screening_stage, Publication.exclusion_reason)
         .all()
     )
-    return {reason: count for reason, count in rows}
+    return {(stage, reason): count for stage, reason, count in rows}
 
 
 def _get_project_and_steps(project_id: int, db: Session) -> tuple[SearchProject, list[MethodologyStep]]:

@@ -168,3 +168,41 @@ may want to split by year range and merge.
 `GET /api/projects/{id}/export/prisma` returns the SVG. Both reflect manual exclusions
 made through the toggle / bulk-exclude endpoints, so a fully programmatic workflow can
 still produce a journal-quality methodology section.
+
+## Screening stages
+
+PRISMA 2020 reports screening in two stages: title/abstract screening of *records* and
+full-text assessment of *reports*. Every exclusion carries a `screening_stage`:
+
+| Value | PRISMA 2020 box |
+|---|---|
+| `title_abstract` | Records excluded (beside "Records screened") |
+| `full_text` | Reports excluded, or Reports not retrieved when the reason is `fulltext_unavailable` |
+
+Both exclude endpoints accept an optional `screening_stage`. When it is omitted the stage is
+`title_abstract`, so clients written before stages existed keep their old meaning.
+
+```python
+# Exclude a record at full-text assessment
+c.patch(f"/api/projects/{pid}/publications/{pub_id}/exclude",
+        json={"reason": "wrong_outcome", "screening_stage": "full_text"})
+# -> {"id": ..., "excluded": true, "exclusion_reason": "wrong_outcome", "screening_stage": "full_text"}
+
+# Bulk-exclude low-citation records (stage defaults to title_abstract)
+c.post(f"/api/projects/{pid}/publications/bulk-exclude", json={"citation_threshold": 0})
+# -> {"excluded_count": ..., "reason": "other", "screening_stage": "title_abstract"}
+```
+
+The endpoint is a toggle: calling it on an excluded record re-includes it and clears both
+`exclusion_reason` and `screening_stage`, whatever the body says. A record has one stage,
+the stage it was excluded at; to move an exclusion to the other stage, re-include it and
+exclude it again. `GET /api/projects/{id}/publications` and the JSON export return
+`screening_stage` on every publication (`null` while it is included).
+
+The flow diagram counts *reports sought for retrieval* as records screened minus
+title/abstract exclusions, and *reports assessed for eligibility* as reports sought minus
+reports not retrieved. The methodology log lists both stages with per-reason counts.
+Alembic revision `0004_screening_stage` migrates existing exclusions to `title_abstract`; if any excluded record still
+has no stage, both exports count it at title/abstract and say how many there are.
+
+These are additive response fields, so `schema_version` stays `"1.0"`.

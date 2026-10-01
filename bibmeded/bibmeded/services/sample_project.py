@@ -128,6 +128,7 @@ def _create_sample_project(db: Session) -> SearchProject:
         excluded = publications["sample-005"]
         excluded.excluded = True
         excluded.exclusion_reason = "wrong_population"
+        excluded.screening_stage = "title_abstract"
 
         steps = (
             MethodologyStep(

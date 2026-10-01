@@ -16,6 +16,17 @@ ExclusionReason = Literal[
     "other",
 ]
 
+# PRISMA 2020 screening stage an exclusion was made at: title/abstract screening
+# of records, or full-text assessment of reports. Must match
+# bibmeded.models.publication.SCREENING_STAGES and its CHECK constraint.
+ScreeningStage = Literal["title_abstract", "full_text"]
+DEFAULT_SCREENING_STAGE: ScreeningStage = "title_abstract"
+
+_STAGE_DESCRIPTION = (
+    "PRISMA 2020 screening stage of the exclusion: 'title_abstract' (records screened) "
+    "or 'full_text' (reports assessed for eligibility). Defaults to 'title_abstract'."
+)
+
 
 class AuthorResponse(BaseModel):
     id: int
@@ -34,6 +45,9 @@ class PublicationResponse(BaseModel):
     citation_count: int | None
     excluded: bool = False
     exclusion_reason: ExclusionReason | None = None
+    screening_stage: ScreeningStage | None = Field(
+        default=None, description="Stage the record was excluded at; null while it is included."
+    )
     journal_name: str | None = None
     authors: list[AuthorResponse] = []
     model_config = {"from_attributes": True}
@@ -61,8 +75,23 @@ class BulkExcludeRequest(BaseModel):
     # Reason recorded against every record bulk-excluded by this request. Defaults to
     # "other" so the methodology log can always report a reason breakdown.
     reason: ExclusionReason = "other"
+    screening_stage: ScreeningStage = Field(default=DEFAULT_SCREENING_STAGE, description=_STAGE_DESCRIPTION)
+
+
+class BulkExcludeResponse(BaseModel):
+    excluded_count: int
+    reason: ExclusionReason
+    screening_stage: ScreeningStage
 
 
 class ToggleExcludeRequest(BaseModel):
-    # Optional on include (the field is cleared when the record is re-included).
+    # Both fields are ignored on re-include, which clears reason and stage.
     reason: ExclusionReason | None = None
+    screening_stage: ScreeningStage = Field(default=DEFAULT_SCREENING_STAGE, description=_STAGE_DESCRIPTION)
+
+
+class ToggleExcludeResponse(BaseModel):
+    id: int
+    excluded: bool
+    exclusion_reason: ExclusionReason | None
+    screening_stage: ScreeningStage | None

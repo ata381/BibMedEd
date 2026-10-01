@@ -100,10 +100,10 @@ FIXTURE_STATEMENTS = [
         (2, 2, 'ci fixture query for project B')
     """,
     """
-    INSERT INTO publications (id, pmid, title, query_id) VALUES
-        (1, '10000001', 'Project A paper 1', 1),
-        (2, '10000002', 'Project A paper 2', 1),
-        (3, '10000003', 'Project B paper 1', 2)
+    INSERT INTO publications (id, pmid, title, query_id, excluded, exclusion_reason) VALUES
+        (1, '10000001', 'Project A paper 1', 1, false, NULL),
+        (2, '10000002', 'Project A paper 2', 1, true, 'non_english'),
+        (3, '10000003', 'Project B paper 1', 2, false, NULL)
     """,
 ]
 
