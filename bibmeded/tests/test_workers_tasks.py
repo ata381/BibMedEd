@@ -11,6 +11,7 @@ from bibmeded.adapters.base import RawAuthor, RawRecord
 from bibmeded.adapters.registry import discover_adapters, get_adapter
 from bibmeded.config import settings
 from bibmeded.models import (
+    Journal,
     MethodologyStep,
     Publication,
     QueryStatus,
@@ -273,6 +274,38 @@ def test_run_search_logs_mid_batch_persist_failure_in_methodology(
             "error": "ValueError: simulated per-record failure",
         }
     ]
+
+
+def test_run_search_caps_persist_failure_details_but_keeps_true_total(
+    db, monkeypatch, task_session_factory
+):
+    query = _make_query(db)
+    query.database = "openalex"
+    db.commit()
+    ids = ["W2501", "W2502", "W2503"]
+    records = [_make_record(i, affiliation="TRIGGER_FAIL") for i in ids]
+    stub_adapter = _StubAdapter(ids=ids, records=records)
+    monkeypatch.setattr(tasks, "get_adapter", lambda source, **kwargs: stub_adapter)
+    monkeypatch.setattr(tasks, "SessionLocal", task_session_factory)
+    monkeypatch.setattr(tasks, "MAX_LOGGED_PERSIST_FAILURES", 2)
+    _fail_on_affiliation(monkeypatch)
+
+    asyncio.run(
+        tasks._run_search(_StubTask(), query.id, "openalex", None, None, tasks.DEFAULT_MAX_RESULTS)
+    )
+
+    db.expire_all()
+    fetch_step = (
+        db.query(MethodologyStep)
+        .filter(MethodologyStep.query_id == query.id, MethodologyStep.phase == "fetch")
+        .one()
+    )
+    assert fetch_step.parameters["persist_failed"] == 3
+    assert [f["source_id"] for f in fetch_step.parameters["persist_failures"]] == ["W2501", "W2502"]
+
+
+def test_persist_failure_cap_defaults_to_100():
+    assert tasks.MAX_LOGGED_PERSIST_FAILURES == 100
 
 
 def test_run_search_fetch_step_records_zero_persist_failures_on_clean_run(
@@ -746,6 +779,29 @@ def test_persist_records_evicts_phantom_journal_on_savepoint_rollback(db, monkey
     assert pub is not None
     assert pub.journal_id is not None
     assert pub.journal.name_normalized == "journal of testing"
+
+
+def test_persist_records_skipped_duplicate_does_not_leave_phantom_journal(db):
+    """A duplicate record naming a journal new to the DB must not cache a Journal
+    whose row was never kept; a later record naming that journal would otherwise
+    reuse a dangling journal_id (an FK violation on Postgres, so a lost record)."""
+    query = _make_query(db)
+    already_held = _make_record("9201")
+    already_held.journal_name = None
+    tasks._persist_records(db, [already_held], query.id, query.project_id)
+
+    duplicate = _make_record("9201")
+    duplicate.journal_name = "Brand New Journal"
+    fresh = _make_record("9202")
+    fresh.journal_name = "Brand New Journal"
+
+    count, pmids, failures = tasks._persist_records(db, [duplicate, fresh], query.id, query.project_id)
+
+    assert (count, pmids, failures) == (1, ["9202"], [])
+    pub = db.query(Publication).filter(Publication.pmid == "9202").one()
+    journals = db.query(Journal).filter(Journal.name_normalized == "brand new journal").all()
+    assert len(journals) == 1
+    assert pub.journal_id == journals[0].id
 
 
 # ---------------------------------------------------------------------------

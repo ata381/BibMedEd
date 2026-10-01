@@ -4,6 +4,12 @@ All notable changes to BibMedEd are recorded here. This project follows [Keep a 
 
 ## [Unreleased]
 
+### Fixed
+
+- Per-record savepoints in the search worker's persist loop are now always closed exactly once, and the test database fixture no longer stacks stray savepoints. This removes the `nested transaction already deassociated from connection` SAWarning ([#87](https://github.com/ata381/BibMedEd/issues/87)).
+- Records that fail to persist are no longer only written to the worker log. The fetch methodology step records them as `persist_failed` (true total) and `persist_failures` (first 100, with source id, source database and a truncated error). The text methodology export lists them under "Failed to persist: N record(s)" ([#87](https://github.com/ata381/BibMedEd/issues/87)).
+- A record skipped as already in the project could leave a rolled-back Journal in the batch cache. A later record in the same batch naming that journal then pointed at a journal row that did not exist, which is a foreign-key failure on Postgres and lost the record ([#87](https://github.com/ata381/BibMedEd/issues/87)).
+
 ## [0.4.0] - 2026-09-30
 
 BibMedEd 0.4.0 is the first release published to PyPI: `pip install bibmeded` installs a lightweight CLI ([#84](https://github.com/ata381/BibMedEd/pull/84)), and the Python import package was renamed `app` -> `bibmeded` ([#97](https://github.com/ata381/BibMedEd/pull/97), breaking). The frontend has a new journal-editorial redesign ([#75](https://github.com/ata381/BibMedEd/pull/75)), and a `BIBMEDED_READ_ONLY` mode ([#81](https://github.com/ata381/BibMedEd/pull/81)) plus a one-command local demo ([#86](https://github.com/ata381/BibMedEd/pull/86)) make it safe to explore a seeded sample without changing it. New CLI commands `--version` and `sources` come from first-time contributors @Sandro850 and @DYNOSuprovo. Also included are a fix for fresh installs on SQLAlchemy 2.1 ([#76](https://github.com/ata381/BibMedEd/pull/76)), a real-data README walkthrough GIF ([#96](https://github.com/ata381/BibMedEd/pull/96)), and the LICENSE holder correction ([#77](https://github.com/ata381/BibMedEd/pull/77)). A hosted public demo is deliberately deferred.

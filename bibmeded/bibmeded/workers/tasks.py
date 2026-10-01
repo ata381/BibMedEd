@@ -109,6 +109,9 @@ def _get_or_create_keyword(
 
 
 MAX_FAILURE_ERROR_CHARS = 300
+# Bounds the per-record detail stored on the fetch methodology step; the step's
+# `persist_failed` count always carries the true total.
+MAX_LOGGED_PERSIST_FAILURES = 100
 
 
 class PersistResult(NamedTuple):
@@ -477,7 +480,7 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
                   records_in=len(all_ids), records_out=persisted,
                   parameters={"batch_size": FETCH_BATCH_SIZE, "request_id": request_id,
                               "persist_failed": len(persist_failures),
-                              "persist_failures": persist_failures})
+                              "persist_failures": persist_failures[:MAX_LOGGED_PERSIST_FAILURES]})
 
         if cross_source_removed:
             _log_step(db, query_id, step_order=None, phase="dedup", source=source,
