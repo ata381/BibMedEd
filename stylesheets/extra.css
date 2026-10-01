@@ -1,0 +1,13 @@
+:root {
+  --md-primary-fg-color: #001e4f;
+  --md-accent-fg-color: #76d6d5;
+}
+
+/* Keep syntax labels and footer attribution above WCAG AA contrast. */
+.highlight .na {
+  color: #5f5f5f;
+}
+
+.md-copyright {
+  color: #b8b8b8;
+}
