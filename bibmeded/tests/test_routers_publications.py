@@ -103,3 +103,58 @@ def test_bulk_exclude_stamps_reason(client, db):
     for item in listed["items"]:
         assert item["excluded"] is True
         assert item["exclusion_reason"] == "not_peer_reviewed"
+
+
+def test_list_publications_pagination_deterministic_with_tied_sort_keys(client, db):
+    project = SearchProject(name="Pagination Tie Test")
+    db.add(project)
+    db.flush()
+    query = SearchQuery(project_id=project.id, query_string="test")
+    db.add(query)
+    db.flush()
+
+    # 25 publications with identical sort values: same year, same title, citation_count=0
+    pubs = [
+        Publication(
+            pmid=f"tie{i}",
+            title="Identical Title",
+            year=2024,
+            citation_count=0,
+            query_id=query.id,
+            project_id=project.id,
+        )
+        for i in range(25)
+    ]
+    db.add_all(pubs)
+    db.commit()
+
+    expected_ids = {p.id for p in pubs}
+    assert len(expected_ids) == 25
+
+    page_size = 7
+    for sort_by in ["year", "title", "citation_count"]:
+        for order in ["asc", "desc"]:
+            collected_ids = []
+            offset = 0
+            while True:
+                response = client.get(
+                    f"/api/projects/{project.id}/publications?sort_by={sort_by}&order={order}&limit={page_size}&offset={offset}"
+                )
+                assert response.status_code == 200
+                data = response.json()
+                items = data["items"]
+                if not items:
+                    break
+                collected_ids.extend([item["id"] for item in items])
+                offset += len(items)
+                if len(items) < page_size:
+                    break
+
+            assert len(collected_ids) == 25
+            assert set(collected_ids) == expected_ids
+            assert len(set(collected_ids)) == len(collected_ids)
+            if order == "asc":
+                assert collected_ids == sorted(collected_ids)
+            else:
+                assert collected_ids == sorted(collected_ids, reverse=True)
+
