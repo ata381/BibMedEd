@@ -1,4 +1,7 @@
+import math
 from collections import Counter
+from datetime import date
+
 from sqlalchemy.orm import Session
 from bibmeded.models import Publication, SearchProject
 
@@ -10,6 +13,49 @@ _EMPTY = {
     "cumulative": [],
     "field_maturity": None,
 }
+
+_INSUFFICIENT_YEARS_REASON = "At least two full calendar years of data are required to compute CAGR."
+_ZERO_START_REASON = "CAGR is undefined because the first full calendar year has zero publications."
+_NON_POSITIVE_GROWTH_REASON = "Doubling time is not defined for non-positive growth (CAGR <= 0)."
+
+
+def _growth_summary(yearly_items: list[tuple[int, int]], current_year: int) -> dict:
+    """Compound annual growth rate and doubling time over full calendar years.
+
+    ``yearly_items`` is the zero-filled ``(year, count)`` series. Years from
+    ``current_year`` onward are incomplete and excluded, so a partial current
+    year cannot drag the end point down. ``cagr`` is a percentage; periods are
+    ``end_year - start_year``.
+    """
+    full_years = [(year, count) for year, count in yearly_items if year < current_year]
+    summary = {
+        "cagr": None,
+        "doubling_time_years": None,
+        "start_year": full_years[0][0] if full_years else None,
+        "end_year": full_years[-1][0] if full_years else None,
+        "excluded_current_year": any(year == current_year and count > 0 for year, count in yearly_items),
+        "reason": None,
+    }
+    if len(full_years) < 2:
+        summary["reason"] = _INSUFFICIENT_YEARS_REASON
+        return summary
+
+    (start_year, start_count), (end_year, end_count) = full_years[0], full_years[-1]
+    if start_count == 0:
+        summary["reason"] = _ZERO_START_REASON
+        return summary
+
+    rate = (end_count / start_count) ** (1 / (end_year - start_year)) - 1
+    summary["cagr"] = round(rate * 100, 2)
+    if rate <= 0:
+        summary["reason"] = _NON_POSITIVE_GROWTH_REASON
+    else:
+        summary["doubling_time_years"] = round(math.log(2) / math.log(1 + rate), 2)
+    return summary
+
+
+def _empty_result(current_year: int) -> dict:
+    return {**_EMPTY, "growth_summary": _growth_summary([], current_year)}
 
 
 def _classify_maturity(cumulative: list[dict]) -> dict | None:
@@ -92,16 +138,17 @@ def _classify_maturity(cumulative: list[dict]) -> dict | None:
 
 
 def analyze_publication_trends(db: Session, project_id: int) -> dict:
+    current_year = date.today().year
     project = db.get(SearchProject, project_id)
     if not project:
-        return dict(_EMPTY)
+        return _empty_result(current_year)
     query_ids = [q.id for q in project.queries]
     if not query_ids:
-        return dict(_EMPTY)
+        return _empty_result(current_year)
     pubs = db.query(Publication.year).filter(
         Publication.query_id.in_(query_ids), Publication.year.isnot(None), Publication.excluded == False).all()
     if not pubs:
-        return dict(_EMPTY)
+        return _empty_result(current_year)
 
     yearly_counter = Counter(int(year) for (year,) in pubs if year is not None)
     # Zero-fill years with no publications so every entry in `yearly_items` is
@@ -145,4 +192,5 @@ def analyze_publication_trends(db: Session, project_id: int) -> dict:
         "growth_rates": growth_rates,
         "cumulative": cumulative,
         "field_maturity": field_maturity,
+        "growth_summary": _growth_summary(yearly_items, current_year),
     }
