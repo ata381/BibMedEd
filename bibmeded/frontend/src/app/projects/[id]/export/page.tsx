@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { exportApi } from "@/lib/api";
 import { Button, Card, CardHeader, EmptyState, Icon, LoadingState, PageHeader, Skeleton, Tabs, type IconName, type TabItem } from "@/components/ui";
 
-type DataFormat = "csv" | "ris" | "json";
+type DataFormat = "csv" | "ris" | "bibtex" | "json";
 type Tab = "data" | "methodology";
 
 const TABS: TabItem<Tab>[] = [
@@ -29,6 +29,13 @@ const FORMAT_DETAILS: Record<DataFormat, { title: string; subtitle: string; icon
     bullets: ["Standard interchange format for reference managers", "Authors, abstract, keywords, DOI preserved", "Imports cleanly into Zotero, EndNote, Mendeley"],
     url: exportApi.risUrl,
   },
+  bibtex: {
+    title: "BibTeX — LaTeX bibliography",
+    subtitle: "Overleaf · LaTeX · TeXstudio",
+    icon: "quote",
+    bullets: ["Standard @article entries formatted for LaTeX documents", "Deterministic, unique cite keys and escaped LaTeX characters", "Ready to drop into Overleaf, TeXstudio, or JabRef"],
+    url: exportApi.bibtexUrl,
+  },
   json: {
     title: "JSON — programmatic",
     subtitle: "Versioned schema · scripts · notebooks",
@@ -41,6 +48,7 @@ const FORMAT_DETAILS: Record<DataFormat, { title: string; subtitle: string; icon
 const INDIVIDUAL: Array<{ label: string; url: (id: number) => string }> = [
   { label: "CSV", url: exportApi.csvUrl },
   { label: "RIS", url: exportApi.risUrl },
+  { label: "BibTeX", url: exportApi.bibtexUrl },
   { label: "JSON", url: exportApi.jsonUrl },
   { label: "Methodology", url: exportApi.methodologyUrl },
   { label: "PRISMA", url: exportApi.prismaUrl },

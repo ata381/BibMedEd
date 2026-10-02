@@ -101,6 +101,11 @@ def test_create_sample_project_populates_a_complete_offline_workflow(client):
     assert methodology.status_code == 200
     assert "synthetic demonstration dataset" in methodology.text.lower()
 
+    bibtex = client.get(f"/api/projects/{project_id}/export/bibtex")
+    assert bibtex.status_code == 200
+    assert "@article{" in bibtex.text
+    assert "attachment" in bibtex.headers["content-disposition"]
+
 
 def test_create_sample_project_reuses_the_bundled_corpus(client):
     first_response = client.post("/api/projects/sample")

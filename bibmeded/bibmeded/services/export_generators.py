@@ -8,6 +8,7 @@ import csv
 import io
 import json
 import re
+import unicodedata
 import zipfile
 from datetime import date
 
@@ -142,6 +143,121 @@ def generate_ris(pubs: list[Publication]) -> str:
         lines.append("ER  - ")
         lines.append("")
     return "\n".join(lines)
+
+
+_LATEX_ESCAPES = {
+    "\\": r"\textbackslash{}",
+    "&": r"\&",
+    "%": r"\%",
+    "$": r"\$",
+    "#": r"\#",
+    "_": r"\_",
+    "{": r"\{",
+    "}": r"\}",
+    "~": r"\textasciitilde{}",
+    "^": r"\textasciicircum{}",
+}
+_LATEX_REGEX = re.compile(r"([\\&%\$#_{}~^])")
+
+
+def _bibtex_safe(value: str | None) -> str:
+    """Escape LaTeX special characters and normalize newlines.
+
+    Escapes &, %, $, #, _, {, }, ~, ^, and \\ without double-escaping.
+    """
+    if not value:
+        return ""
+    clean = re.sub(r"[\r\n]+", " ", str(value)).strip()
+    return _LATEX_REGEX.sub(lambda m: _LATEX_ESCAPES[m.group(1)], clean)
+
+
+def _index_to_suffix(index: int) -> str:
+    """Convert a 0-based collision index to alphabetical suffixes (a, b, ..., z, aa, ab, ...)."""
+    chars = []
+    while True:
+        chars.append(chr(ord("a") + (index % 26)))
+        index = index // 26 - 1
+        if index < 0:
+            break
+    return "".join(reversed(chars))
+
+
+_CITE_KEY_STOPWORDS = {"a", "an", "the"}
+
+
+def _generate_cite_key(pub: Publication, seen_keys: set[str]) -> str:
+    """Generate a stable, unique BibTeX cite key.
+
+    Follows the pattern `firstauthorYEARfirsttitleword` (e.g. `smith2024machine`),
+    resolving collisions with alphabetical suffixes (`a`, `b`, ...).
+    """
+    author_part = "unknown"
+    if pub.authors and pub.authors[0].name:
+        author_ascii = unicodedata.normalize("NFKD", pub.authors[0].name).encode("ascii", "ignore").decode("ascii")
+        tokens = re.findall(r"[a-zA-Z0-9]+", author_ascii)
+        if tokens:
+            author_part = tokens[0].lower()
+
+    year_part = str(pub.year) if pub.year else "nodate"
+
+    title_part = "untitled"
+    if pub.title:
+        title_ascii = unicodedata.normalize("NFKD", pub.title).encode("ascii", "ignore").decode("ascii")
+        tokens = re.findall(r"[a-zA-Z0-9]+", title_ascii)
+        significant = [t for t in tokens if t.lower() not in _CITE_KEY_STOPWORDS]
+        chosen = significant if significant else tokens
+        if chosen:
+            title_part = chosen[0].lower()
+
+    base_key = f"{author_part}{year_part}{title_part}"
+
+    if base_key not in seen_keys:
+        seen_keys.add(base_key)
+        return base_key
+
+    idx = 0
+    while True:
+        candidate = f"{base_key}{_index_to_suffix(idx)}"
+        if candidate not in seen_keys:
+            seen_keys.add(candidate)
+            return candidate
+        idx += 1
+
+
+def generate_bibtex(pubs: list[Publication]) -> str:
+    """Generate BibTeX (@article) records for a list of publications."""
+    seen_keys: set[str] = set()
+    entries: list[str] = []
+    for pub in pubs:
+        cite_key = _generate_cite_key(pub, seen_keys)
+        fields: list[str] = []
+        if pub.title:
+            fields.append(f"  title = {{{_bibtex_safe(pub.title)}}}")
+        if pub.authors:
+            authors_str = " and ".join(
+                _bibtex_safe(a.name) for a in pub.authors if a.name
+            )
+            if authors_str:
+                fields.append(f"  author = {{{authors_str}}}")
+        if pub.journal and pub.journal.name:
+            fields.append(f"  journal = {{{_bibtex_safe(pub.journal.name)}}}")
+        if pub.year:
+            fields.append(f"  year = {{{pub.year}}}")
+        if pub.doi:
+            fields.append(f"  doi = {{{_bibtex_safe(pub.doi)}}}")
+        if pub.pmid:
+            fields.append(f"  pmid = {{{_bibtex_safe(pub.pmid)}}}")
+        if pub.abstract:
+            fields.append(f"  abstract = {{{_bibtex_safe(pub.abstract)}}}")
+
+        if fields:
+            entries.append(f"@article{{{cite_key},\n" + ",\n".join(fields) + "\n}")
+        else:
+            entries.append(f"@article{{{cite_key}\n}}")
+
+    if not entries:
+        return ""
+    return "\n\n".join(entries) + "\n"
 
 
 EXCLUSION_REASON_LABELS = {
@@ -296,6 +412,7 @@ def generate_bundle(
     with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         zf.writestr(f"{slug}-{stamp}.csv", generate_csv(pubs))
         zf.writestr(f"{slug}-{stamp}.ris", generate_ris(pubs))
+        zf.writestr(f"{slug}-{stamp}.bib", generate_bibtex(pubs))
         zf.writestr(f"{slug}-{stamp}.json", generate_json(project_name, pubs))
         zf.writestr(f"{slug}-methodology-{stamp}.txt", generate_methodology(project_name, steps, exclusion_summary))
         zf.writestr(f"{slug}-prisma-{stamp}.svg", generate_prisma_svg(project_name, steps, exclusion_summary, included_count=included_count))
@@ -307,6 +424,7 @@ def generate_bundle(
             f"Included files:\n"
             f"  - {slug}-{stamp}.csv ({len(pubs)} records)\n"
             f"  - {slug}-{stamp}.ris ({len(pubs)} records)\n"
+            f"  - {slug}-{stamp}.bib ({len(pubs)} records)\n"
             f"  - {slug}-{stamp}.json ({len(pubs)} records, schema_version={EXPORT_SCHEMA_VERSION})\n"
             f"  - {slug}-methodology-{stamp}.txt ({len(steps)} steps)\n"
             f"  - {slug}-prisma-{stamp}.svg\n"
