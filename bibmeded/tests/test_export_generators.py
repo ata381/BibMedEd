@@ -20,6 +20,7 @@ from bibmeded.models.methodology import MethodologyStep
 from bibmeded.models.publication import Publication
 from bibmeded.services.export_generators import (
     EXPORT_SCHEMA_VERSION,
+    generate_bibtex,
     generate_bundle,
     generate_csv,
     generate_json,
@@ -323,6 +324,99 @@ class TestGenerateRis:
 
 
 # ---------------------------------------------------------------------------
+# generate_bibtex
+# ---------------------------------------------------------------------------
+
+
+class TestGenerateBibtex:
+    def test_empty_pubs_returns_empty_string(self):
+        assert generate_bibtex([]) == ""
+
+    def test_writes_exact_article_entry(self):
+        pub = make_pub(
+            pmid="12345",
+            doi="10.1000/xyz",
+            title="A Study of Things",
+            abstract="Line one.\nLine two.",
+            year=2024,
+            authors=[Author(name="Smith A"), Author(name="Jones B")],
+            journal_name="Medical Education Review",
+        )
+        bib_text = generate_bibtex([pub])
+        assert bib_text.startswith("@article{smith2024study,\n")
+        assert "  title = {A Study of Things}" in bib_text
+        assert "  author = {Smith A and Jones B}" in bib_text
+        assert "  journal = {Medical Education Review}" in bib_text
+        assert "  year = {2024}" in bib_text
+        assert "  doi = {10.1000/xyz}" in bib_text
+        assert "  pmid = {12345}" in bib_text
+        assert "  abstract = {Line one. Line two.}" in bib_text
+        assert bib_text.endswith("}\n")
+
+    def test_latex_escaping(self):
+        pub = make_pub(
+            pmid="123",
+            title=r"Special: & % $ # _ { } ~ ^ \ in title",
+            abstract=r"Escaping: 50% & $10 #1 _foo {bar} ~user ^exp C:\test",
+        )
+        bib_text = generate_bibtex([pub])
+        assert r"\&" in bib_text
+        assert r"\%" in bib_text
+        assert r"\$" in bib_text
+        assert r"\#" in bib_text
+        assert r"\_" in bib_text
+        assert r"\{" in bib_text
+        assert r"\}" in bib_text
+        assert r"\textasciitilde{}" in bib_text
+        assert r"\textasciicircum{}" in bib_text
+        assert r"\textbackslash{}" in bib_text
+
+    def test_cite_key_collision_handling(self):
+        pubs = [
+            make_pub(authors=[Author(name="Smith, John")], year=2024, title="Machine Learning"),
+            make_pub(authors=[Author(name="Smith, Jane")], year=2024, title="Machine Vision"),
+            make_pub(authors=[Author(name="Smith, James")], year=2024, title="Machine Intelligence"),
+        ]
+        bib_text = generate_bibtex(pubs)
+        assert "@article{smith2024machine," in bib_text
+        assert "@article{smith2024machinea," in bib_text
+        assert "@article{smith2024machineb," in bib_text
+
+    def test_cite_key_missing_fields(self):
+        pub_no_author = make_pub(authors=[], year=2024, title="Deep Learning")
+        pub_no_year = make_pub(authors=[Author(name="Brown T")], year=None, title="Overview")
+        pub_no_title = make_pub(authors=[Author(name="Davis R")], year=2023, title="")
+        bib_text = generate_bibtex([pub_no_author, pub_no_year, pub_no_title])
+        assert "@article{unknown2024deep," in bib_text
+        assert "@article{brownnodateoverview," in bib_text
+        assert "@article{davis2023untitled," in bib_text
+
+    def test_unicode_author_name_in_cite_key(self):
+        pub = make_pub(authors=[Author(name="Öztürk, Mehmet")], year=2024, title="Medical Education")
+        bib_text = generate_bibtex([pub])
+        assert "@article{ozturk2024medical," in bib_text
+
+    def test_missing_optional_fields(self):
+        pub = make_pub(
+            authors=[],
+            title=None,
+            journal_name=None,
+            year=None,
+            doi=None,
+            pmid=None,
+            abstract=None,
+        )
+        bib_text = generate_bibtex([pub])
+        assert bib_text == "@article{unknownnodateuntitled\n}\n"
+
+    def test_multiple_publications_separated_by_blank_line(self):
+        pubs = [make_pub(pmid="1"), make_pub(pmid="2")]
+        bib_text = generate_bibtex(pubs)
+        entries = bib_text.strip().split("\n\n")
+        assert len(entries) == 2
+
+
+# ---------------------------------------------------------------------------
 # generate_bundle
 # ---------------------------------------------------------------------------
 
@@ -336,6 +430,7 @@ class TestGenerateBundle:
         names = zf.namelist()
         assert any(name.endswith(".csv") for name in names)
         assert any(name.endswith(".ris") for name in names)
+        assert any(name.endswith(".bib") for name in names)
         assert any(name.endswith(".json") for name in names)
         assert any("methodology" in name and name.endswith(".txt") for name in names)
         assert any(name.endswith(".svg") for name in names)

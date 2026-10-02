@@ -12,6 +12,7 @@ from bibmeded.database import get_db
 from bibmeded.models import Publication, SearchProject
 from bibmeded.models.methodology import MethodologyStep
 from bibmeded.services.export_generators import (
+    generate_bibtex,
     generate_bundle,
     generate_csv,
     generate_json,
@@ -96,6 +97,17 @@ def export_ris(project_id: int, db: Session = Depends(get_db)):
     return StreamingResponse(
         iter([generate_ris(pubs)]),
         media_type="application/x-research-info-systems",
+        headers=_attachment(filename),
+    )
+
+
+@router.get("/bibtex")
+def export_bibtex(project_id: int, db: Session = Depends(get_db)):
+    project, pubs = _get_project_and_pubs(project_id, db)
+    filename = f"{slugify(project.name)}-{date.today().isoformat()}.bib"
+    return StreamingResponse(
+        iter([generate_bibtex(pubs)]),
+        media_type="application/x-bibtex",
         headers=_attachment(filename),
     )
 

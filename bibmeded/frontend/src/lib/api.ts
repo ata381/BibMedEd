@@ -138,6 +138,8 @@ export const exportApi = {
     `${API_BASE_URL}/api/projects/${projectId}/export/csv`,
   risUrl: (projectId: number) =>
     `${API_BASE_URL}/api/projects/${projectId}/export/ris`,
+  bibtexUrl: (projectId: number) =>
+    `${API_BASE_URL}/api/projects/${projectId}/export/bibtex`,
   jsonUrl: (projectId: number) =>
     `${API_BASE_URL}/api/projects/${projectId}/export/json`,
   methodologyUrl: (projectId: number) =>
