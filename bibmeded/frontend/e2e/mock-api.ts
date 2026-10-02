@@ -220,6 +220,7 @@ export interface MockApiOptions {
   readOnly?: boolean;
   configUnavailable?: boolean;
   missingAnalyses?: string[];
+  sampleSearch?: boolean;
 }
 
 export async function installMockApi(page: Page, options: MockApiOptions = {}) {
@@ -276,7 +277,12 @@ export async function installMockApi(page: Page, options: MockApiOptions = {}) {
       ]);
     }
     if (pathname === "/api/projects/1/search/latest" && method === "GET") {
-      return json(route, searchStatus("completed"));
+      return json(
+        route,
+        options.sampleSearch
+          ? { ...searchStatus("completed"), query_string: sampleQueryString, database: "sample" }
+          : searchStatus("completed"),
+      );
     }
     if (pathname === "/api/projects/1/search" && method === "POST") {
       return json(route, searchStatus("running"), 202);
@@ -344,6 +350,9 @@ export async function installMockApi(page: Page, options: MockApiOptions = {}) {
 
   return { writeRequests };
 }
+
+export const sampleQueryString =
+  '("Education, Medical"[Mesh] OR "medical education"[tiab]) AND ("Artificial Intelligence"[Mesh] OR "machine learning"[tiab] OR "generative AI"[tiab] OR "learning analytics"[tiab] OR "simulation"[tiab] OR "virtual patient*"[tiab]) AND ("2018/01/01"[PDAT] : "2025/12/31"[PDAT])';
 
 function searchStatus(status: string) {
   return {

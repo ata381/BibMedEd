@@ -4,6 +4,7 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 
 from bibmeded.models import Publication, SearchProject
+from bibmeded.services.sample_project import SAMPLE_QUERY_STRING
 
 
 @pytest.mark.filterwarnings("error::sqlalchemy.exc.SAWarning")
@@ -81,6 +82,11 @@ def test_create_sample_project_populates_a_complete_offline_workflow(client):
     assert latest_search_data["raw_result_count"] == 13
     assert latest_search_data["duplicate_count"] == 1
     assert latest_search_data["progress"] == 100
+    assert latest_search_data["query_string"] == SAMPLE_QUERY_STRING
+    assert latest_search_data["database"] == "sample"
+    assert project["date_range_start"] == "2018-01-01"
+    assert project["date_range_end"] == "2025-12-31"
+    assert '("2018/01/01"[PDAT] : "2025/12/31"[PDAT])' in latest_search_data["query_string"]
 
     expected_analysis_signals = {
         "publications": lambda data: data["total"] == 11 and len(data["yearly_counts"]) >= 5,

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installMockApi } from "./mock-api";
+import { installMockApi, sampleQueryString } from "./mock-api";
 
 function collectRuntimeErrors(page: Page) {
   const errors: string[] = [];
@@ -77,6 +77,22 @@ test("search builder exposes labels and selected options", async ({ page }) => {
 
   await page.getByRole("button", { name: "Advanced Query (Raw)" }).click();
   await expect(page.getByRole("textbox", { name: "Raw query" })).toBeVisible();
+});
+
+test("sample project search page shows its stored strategy", async ({ page }) => {
+  const { writeRequests } = await installMockApi(page, { sampleSearch: true });
+  await page.goto("/projects/1/search");
+
+  await expect(page.getByRole("textbox", { name: "Raw query" })).toHaveValue(sampleQueryString);
+  await expect(page.getByRole("button", { name: "Advanced Query (Raw)" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("Loaded from the bundled sample project's search strategy")).toBeVisible();
+
+  await page.getByRole("button", { name: "Query Builder" }).click();
+  await page.getByRole("button", { name: "Discard edits" }).click();
+  await expect(page.getByRole("spinbutton", { name: "Start year" })).toHaveValue("2018");
+  await expect(page.getByRole("spinbutton", { name: "End year" })).toHaveValue("2025");
+  await expect(page.getByRole("radio", { name: "PubMed" })).toBeChecked();
+  expect(writeRequests).toEqual([]);
 });
 
 test("results can be screened with the keyboard", async ({ page }) => {

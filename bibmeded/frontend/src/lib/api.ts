@@ -69,6 +69,8 @@ export interface SearchStatus {
   raw_result_count: number | null;
   duplicate_count: number | null;
   progress: number | null;
+  query_string?: string | null;
+  database?: string | null;
 }
 
 export interface AnalysisResult {
