@@ -38,7 +38,24 @@ Use the [issue templates](.github/ISSUE_TEMPLATE/). Bugs need a reproduction; fe
 3. Fork the repository, branch from `master`, and run the focused tests while you work.
 4. Open a PR with `Closes #N`, fixture-based tests, and any user-facing documentation the change needs.
 
-Questions and early design ideas are welcome in [GitHub Discussions](https://github.com/ata381/BibMedEd/discussions). Maintainers aim to acknowledge contribution questions and claims within three working days; if a thread is quiet for a week, one friendly ping is welcome.
+Questions and early design ideas are welcome in [GitHub Discussions](https://github.com/ata381/BibMedEd/discussions).
+
+## Response times
+
+Maintainers aim to:
+
+- acknowledge questions, claims and new PRs within 3 working days;
+- give a review verdict on a PR (approve or changes requested) within 7 calendar days.
+
+During an announced maintainer absence, the other maintainer acknowledges and approves CI runs, and the review verdict may slip to 10 days. If a thread is quiet past these targets, one friendly ping is welcome.
+
+Security reports follow the separate timeline in [SECURITY.md](SECURITY.md).
+
+## Claiming an issue
+
+- An issue is assigned to you when your claim comment says something specific (an approach, a file you plan to change, or a question about the acceptance criteria) or when you open a draft PR linked to it. A bare "can I work on this?" is not enough.
+- New contributors hold one open claim at a time. Once you have a merged PR, you can hold two.
+- A claim with no linked draft PR after 14 days is released with a one-line note so someone else can pick it up. You are welcome to claim it again later.
 
 ## Local development
 
@@ -87,7 +104,11 @@ Commit the refreshed `api-shapes.json` together with the backend change. The sam
 2. Make focused commits; rebase rather than merge `master` into your branch.
 3. `pytest -q` must pass; CI will re-run it on Python 3.12 and 3.13.
 4. Fill in the [PR template](.github/PULL_REQUEST_TEMPLATE.md). Link the issue you're closing.
-5. A maintainer will review. Most adapter PRs are reviewed within a week.
+5. A maintainer will review; see [Response times](#response-times). CI on a first PR may wait for a maintainer to approve the run, which is normal.
+6. You do not need to rebase after every merge to `master`. A maintainer will update your branch before merging.
+7. Do not edit `CHANGELOG.md`. Maintainers add the entry at release time and credit you there.
+
+When a contributor PR and a maintainer PR are both ready, the contributor PR merges first and the maintainers absorb the rebase.
 
 ## AI-assisted contributions
 

@@ -1,17 +1,17 @@
 # Good First Contributions
 
-> **October contribution sprint:** Hacktoberfest 2026 no longer counts pull requests, so this is not a swag or PR-count event. We are still running an October sprint: every issue labelled [`hacktoberfest`](https://github.com/ata381/BibMedEd/issues?q=is%3Aissue+is%3Aopen+label%3Ahacktoberfest) is scoped, has acceptance criteria, and can be tested without live APIs. Maintainers aim to review sprint PRs within three working days, and contributors are credited in the CHANGELOG and release notes.
+> **October contribution sprint:** Hacktoberfest 2026 no longer counts pull requests, so this is not a swag or PR-count event. We are still running an October sprint: every issue labelled [`hacktoberfest`](https://github.com/ata381/BibMedEd/issues?q=is%3Aissue+is%3Aopen+label%3Ahacktoberfest) is scoped, has acceptance criteria, and can be tested without live APIs. Sprint PRs follow the same [response times](CONTRIBUTING.md#response-times) as every other PR, and contributors are credited in the CHANGELOG and release notes.
 
 The fastest way to make a high-impact contribution to BibMedEd is to write an adapter. The adapter module is usually focused, while a complete contribution also includes captured API fixtures, parsing and pagination tests, and short source-specific documentation.
 
 How to claim:
 
 1. Pick an item below.
-2. Comment on its existing GitHub issue and ask to be assigned.
+2. Comment on its existing GitHub issue with something specific: your approach, a file you plan to change, or a question about the acceptance criteria.
 3. If no issue exists, open an [adapter request](https://github.com/ata381/BibMedEd/issues/new?template=adapter_request.yml) and tick the claim checkbox.
 4. Open a PR linked to the issue and include fixture-based tests.
 
-Open items have one active owner at a time. Maintainers aim to acknowledge claims within three working days; if a claim has no update for two weeks, it may be opened for someone else.
+Open items have one active owner at a time. The claim rules (when an issue is assigned, how many claims you can hold, and release after 14 days without a linked draft PR) are in [Claiming an issue](CONTRIBUTING.md#claiming-an-issue), and the maintainer [response times](CONTRIBUTING.md#response-times) are in the same file.
 
 Read the [adapter guide](https://ata381.github.io/BibMedEd/adapters/) first. Reference implementations: `bibmeded/bibmeded/adapters/pubmed.py`, `openalex.py`, `crossref.py`, `semantic_scholar.py`, and the API-keyed `lens.py`.
 
@@ -68,4 +68,4 @@ For an untracked idea above, open a [feature request](https://github.com/ata381/
 1. Comment on (or open) an issue for the item you want.
 2. Fork → branch off `master` → implement → `pytest -q`.
 3. Open a PR using the template. Tag the issue with `Closes #N`.
-4. Expect review within a week. PRs that include tests get merged faster.
+4. Review follows the [response times](CONTRIBUTING.md#response-times) in `CONTRIBUTING.md`. PRs that include tests get merged faster.

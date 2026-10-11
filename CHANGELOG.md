@@ -84,6 +84,8 @@ BibMedEd 0.4.0 is the first release published to PyPI: `pip install bibmeded` in
 
 ## [0.2.0] — 2026-05-28
 
+Note: 0.2.0 was never tagged or published. Its changes shipped as part of v0.3.0.
+
 A research-grade hardening release. Ten thorough multi-agent review rounds (3-7
 parallel agents each, plus persona-based outside-in audits and inter-round drift
 checks) drove 200+ commits worth of findings into ~10 focused commits across the
