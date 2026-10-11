@@ -12,7 +12,12 @@ from bibmeded.workers.tasks import _persist_records
 
 SAMPLE_PROJECT_NAME = "AI in Medical Education — Sample Project"
 SAMPLE_PROJECT_KEY = "bundled-ai-medical-education-v1"
-SAMPLE_QUERY_STRING = "Bundled synthetic demonstration corpus"
+SAMPLE_QUERY_STRING = (
+    '("Education, Medical"[Mesh] OR "medical education"[tiab]) AND '
+    '("Artificial Intelligence"[Mesh] OR "machine learning"[tiab] OR "generative AI"[tiab] '
+    'OR "learning analytics"[tiab] OR "simulation"[tiab] OR "virtual patient*"[tiab]) AND '
+    '("2018/01/01"[PDAT] : "2025/12/31"[PDAT])'
+)
 SAMPLE_PROJECT_DESCRIPTION = (
     "A synthetic demonstration corpus bundled with BibMedEd. Explore every analysis, "
     "screening, PRISMA, and export workflow without calling an external database."

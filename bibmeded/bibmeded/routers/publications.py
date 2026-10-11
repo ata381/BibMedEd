@@ -31,9 +31,11 @@ def list_publications(project_id: int, sort_by: str = Query("year", enum=["year"
     sort_col = getattr(Publication, sort_by, Publication.year)
     if order == "desc":
         sort_col = sort_col.desc()
+        id_col = Publication.id.desc()
     else:
         sort_col = sort_col.asc()
-    publications = base_query.order_by(sort_col).offset(offset).limit(limit).all()
+        id_col = Publication.id.asc()
+    publications = base_query.order_by(sort_col, id_col).offset(offset).limit(limit).all()
     items = []
     skipped = 0
     for pub in publications:

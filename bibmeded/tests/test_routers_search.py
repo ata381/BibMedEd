@@ -84,3 +84,30 @@ def test_get_search_status(client, db):
     response = client.get(f"/api/projects/{project.id}/search/{query_id}")
     assert response.status_code == 200
     assert response.json()["query_id"] == query_id
+
+
+def test_get_latest_search_returns_stored_query_and_database(client, db):
+    project = SearchProject(name="Test")
+    db.add(project)
+    db.commit()
+    db.refresh(project)
+    with patch("bibmeded.routers.search.run_search") as mock_task:
+        mock_task.delay.return_value = None
+        client.post(
+            f"/api/projects/{project.id}/search",
+            json={"query_string": '"AI" AND "medical education"', "source": "openalex"},
+        )
+    response = client.get(f"/api/projects/{project.id}/search/latest")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["query_string"] == '"AI" AND "medical education"'
+    assert data["database"] == "openalex"
+
+
+def test_get_latest_search_is_404_for_a_project_without_searches(client, db):
+    project = SearchProject(name="Test")
+    db.add(project)
+    db.commit()
+    db.refresh(project)
+    response = client.get(f"/api/projects/{project.id}/search/latest")
+    assert response.status_code == 404
