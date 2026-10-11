@@ -286,6 +286,34 @@ def test_toggle_exclude_rejects_fulltext_unavailable_at_title_abstract(client, d
     assert pub.excluded is False
 
 
+def test_toggle_exclude_stage_contradiction_keeps_validation_error_shape(client, db):
+    project, (pub,) = _project_with_pubs(db, "ft-unavail-shape")
+    body = {"reason": "fulltext_unavailable", "screening_stage": "title_abstract"}
+    r = client.patch(_exclude_url(project, pub), json=body)
+    assert r.status_code == 422
+    (error,) = r.json()["detail"]
+    assert error["type"] == "value_error"
+    assert error["loc"] == ["body"]
+    assert error["msg"].startswith("Value error, reason 'fulltext_unavailable'")
+    assert error["input"] == body
+
+
+def test_re_including_ignores_a_contradictory_body(client, db):
+    project, (pub,) = _project_with_pubs(db, "ft-unavail-reinclude")
+    excluded = client.patch(_exclude_url(project, pub), json={"reason": "fulltext_unavailable"})
+    assert excluded.json()["screening_stage"] == "full_text"
+
+    r = client.patch(
+        _exclude_url(project, pub), json={"reason": "fulltext_unavailable", "screening_stage": "title_abstract"}
+    )
+    assert r.status_code == 200
+    assert r.json() == {"id": pub.id, "excluded": False, "exclusion_reason": None, "screening_stage": None}
+    db.refresh(pub)
+    assert pub.excluded is False
+    assert pub.exclusion_reason is None
+    assert pub.screening_stage is None
+
+
 def test_bulk_exclude_fulltext_unavailable_defaults_to_full_text_and_rejects_title_abstract(client, db):
     project, pubs = _project_with_pubs(db, "bulk-ft-unavail", count=1, citation_count=0)
     url = f"/api/projects/{project.id}/publications/bulk-exclude"

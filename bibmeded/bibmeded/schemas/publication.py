@@ -28,7 +28,12 @@ _STAGE_DESCRIPTION = (
     "PRISMA 2020 screening stage of the exclusion: 'title_abstract' (records screened) "
     "or 'full_text' (reports assessed for eligibility). Omitted or null means 'full_text' "
     "for reason 'fulltext_unavailable' and 'title_abstract' otherwise; "
-    "'fulltext_unavailable' with 'title_abstract' is rejected with 422."
+    "'fulltext_unavailable' with 'title_abstract' is rejected with 422 when the request excludes."
+)
+
+STAGE_CONTRADICTION_MESSAGE = (
+    "reason 'fulltext_unavailable' records a report that could not be retrieved, which "
+    "PRISMA 2020 counts at the full-text stage; use screening_stage 'full_text' or omit it"
 )
 
 
@@ -80,20 +85,17 @@ class _StagedExclusionRequest(BaseModel):
     Omitted or null → ``full_text`` for ``fulltext_unavailable`` (PRISMA 2020
     "Reports not retrieved" only exists at full text), ``title_abstract``
     otherwise. ``fulltext_unavailable`` with an explicit ``title_abstract`` is a
-    contradiction and is rejected with 422 rather than silently re-staged.
+    contradiction and is rejected with 422 rather than silently re-staged:
+    bulk-exclude at validation, the toggle in its handler and only when it is
+    excluding, because a re-include ignores the body.
     """
 
     reason: ExclusionReason | None = None
     screening_stage: ScreeningStage | None = Field(default=None, description=_STAGE_DESCRIPTION)
 
-    @model_validator(mode="after")
-    def _reject_unretrieved_title_abstract_exclusion(self):
-        if self.reason == NOT_RETRIEVED_REASON and self.screening_stage == "title_abstract":
-            raise ValueError(
-                "reason 'fulltext_unavailable' records a report that could not be retrieved, which "
-                "PRISMA 2020 counts at the full-text stage; use screening_stage 'full_text' or omit it"
-            )
-        return self
+    @property
+    def contradicts_stage_rule(self) -> bool:
+        return self.reason == NOT_RETRIEVED_REASON and self.screening_stage == "title_abstract"
 
     @property
     def resolved_screening_stage(self) -> ScreeningStage:
@@ -108,6 +110,12 @@ class BulkExcludeRequest(_StagedExclusionRequest):
     # "other" so the methodology log can always report a reason breakdown.
     reason: ExclusionReason = "other"
 
+    @model_validator(mode="after")
+    def _reject_unretrieved_title_abstract_exclusion(self):
+        if self.contradicts_stage_rule:
+            raise ValueError(STAGE_CONTRADICTION_MESSAGE)
+        return self
+
 
 class BulkExcludeResponse(BaseModel):
     excluded_count: int
@@ -116,7 +124,8 @@ class BulkExcludeResponse(BaseModel):
 
 
 class ToggleExcludeRequest(_StagedExclusionRequest):
-    """Both fields are ignored on re-include, which clears reason and stage."""
+    """Both fields are ignored on re-include, which clears reason and stage, so the
+    stage rule's contradiction check runs in the handler once it knows it is excluding."""
 
 
 class ToggleExcludeResponse(BaseModel):
