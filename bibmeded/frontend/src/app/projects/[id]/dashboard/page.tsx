@@ -27,6 +27,14 @@ interface YearCount {
   year: number;
   count: number;
 }
+interface GrowthSummary {
+  cagr: number | null;
+  doubling_time_years: number | null;
+  start_year: number | null;
+  end_year: number | null;
+  excluded_current_year: boolean;
+  reason: string | null;
+}
 interface TopAuthor {
   name: string;
   pub_count: number;
@@ -122,6 +130,7 @@ export default function Dashboard() {
   const cite = analyses.citations || {};
   const kw = analyses.keywords || {};
   const yearlyCounts = (pub.yearly_counts as YearCount[]) || [];
+  const growthSummary = pub.growth_summary as GrowthSummary | null | undefined;
   const topAuthors = (auth.top_authors as TopAuthor[]) || [];
   const mostCited = (cite.most_cited as CitedPublication[]) || [];
   const topKeywords = (kw.top_keywords as Keyword[]) || [];
@@ -171,6 +180,7 @@ export default function Dashboard() {
           {show("overview") && (
             <Card as="section" className="lg:col-span-4" aria-labelledby="fig-trends">
               <CardHeader eyebrow="Figure 1" title={<span id="fig-trends">Publication trends</span>} subtitle="Annual publication count across the included corpus." />
+              {growthSummary ? <GrowthSummaryStats summary={growthSummary} /> : null}
               <BarChart data={yearlyCounts.map((y) => ({ label: String(y.year), value: y.count }))} ariaLabel="Annual publication counts" />
             </Card>
           )}
@@ -247,6 +257,44 @@ export default function Dashboard() {
       ))}
     </div>
   );
+}
+
+function GrowthSummaryStats({ summary }: { summary: GrowthSummary }) {
+  const window =
+    summary.start_year == null || summary.end_year == null
+      ? null
+      : `${summary.start_year}–${summary.end_year}`;
+  const cagrUnavailable = summary.cagr == null;
+  const doublingUnavailable = summary.doubling_time_years == null;
+  const reason = summary.reason ?? "Growth summary is unavailable for this corpus.";
+  const hasUnavailableMetric = cagrUnavailable || doublingUnavailable;
+  const cagrValue = summary.cagr == null ? "—" : `${formatGrowthNumber(summary.cagr)}%`;
+  const doublingValue =
+    summary.doubling_time_years == null ? "—" : `${formatGrowthNumber(summary.doubling_time_years)} years`;
+
+  return (
+    <div className="mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rule-t rule-b [&>*]:py-4 sm:[&>*+*]:border-l sm:[&>*+*]:border-divider sm:[&>*+*]:pl-5">
+        <Stat
+          label="CAGR"
+          value={cagrValue}
+        />
+        <Stat
+          label="Doubling time"
+          value={doublingValue}
+        />
+      </div>
+      {hasUnavailableMetric ? <p className="mt-3 text-xs text-on-surface-subtle leading-snug">{reason}</p> : null}
+      {window ? <p className="mt-3 text-xs text-on-surface-subtle leading-snug">Growth window {window}</p> : null}
+      {summary.excluded_current_year ? (
+        <p className="mt-3 text-xs text-on-surface-subtle leading-snug">Current incomplete year excluded from growth calculations.</p>
+      ) : null}
+    </div>
+  );
+}
+
+function formatGrowthNumber(value: number) {
+  return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
 function PageTitle({ project }: { project: Project | null }) {
