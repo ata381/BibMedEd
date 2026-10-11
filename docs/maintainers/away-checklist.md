@@ -26,9 +26,10 @@ Only the owner can:
 
 - approve PyPI releases;
 - change repository settings;
-- see private vulnerability reports.
+- see private vulnerability reports;
+- change `LICENSE`, `CITATION.cff` authorship, `render.yaml` service plans, or the agent instructions (`CLAUDE.md`, `AGENTS.md`).
 
-Anything on the owner-only list waits for the owner's return.
+The authoritative list of owner-only decisions is the "Trusted developers" section of [`CLAUDE.md`](../../CLAUDE.md). Anything on it waits for the owner's return.
 
 ## When no local machine works
 
