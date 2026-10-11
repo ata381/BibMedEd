@@ -71,9 +71,16 @@ Style nits below the bar of correctness should be grouped or skipped.
 
 Well-done contributions are merged, not rewritten. If a PR needs changes of roughly 20+ lines or a design-level rework, ask the contributor in a review. Smaller non-blocking fixes are merged as-is and followed up by the maintainers in a separate PR that credits the contributor.
 
+## Merge order and review norms
+
+- Dependabot patch and security PRs auto-merge once CI is green (`.github/workflows/dependabot-auto-merge.yml`); minor and major bumps need a maintainer.
+- A PR by `ata381` or `MugeBakiryol` that adds a migration, changes `RawRecord` or dedup, or exceeds roughly 300 lines gets the other maintainer's review before auto-merge is enabled. Smaller maintainer PRs may merge on agent review plus green CI.
+- Contributor PRs merge before maintainer PRs when both are ready; maintainers absorb the rebases.
+- Response-time targets: acknowledge within 3 working days; review verdict (approve or changes requested) within 7 calendar days, 10 during an announced absence. The contributor-facing wording is in `CONTRIBUTING.md`.
+
 ## Reviewer setup
 
-Codex Cloud handles automatic PR reviews on this repo (see e.g. PR #4). Do not duplicate that loop with a second AI reviewer workflow.
+Automatic PR review is not configured. Maintainers run an on-demand agent review from the diff (`gh pr diff <n>`) and write the human review themselves. Do not add a CI review workflow without the owner's approval.
 
 ## Trusted developers
 
@@ -81,4 +88,4 @@ Codex Cloud handles automatic PR reviews on this repo (see e.g. PR #4). Do not d
 
 ## Security review before pulling external PRs
 
-For PRs from outside contributors (anyone other than `ata381` and `MugeBakiryol`), do the security pass **from afar first** — read the diff via `gh pr diff <n>` / `gh pr view <n>` / `gh api` without checking out the branch. Fetching refs (`git fetch origin pull/<n>/head`) and reading blobs (`git show <ref>:<path>`) is fine since neither executes anything. Do not run `pytest`, install deps, `docker compose up`, pre-commit hooks, or anything else that executes the contributor's code (including their CI-invoked scripts) until the diff has been read and cleared. Flag anything that would run on checkout/build (setup.py/postinstall hooks, entrypoint scripts, CI workflow changes) as CRITICAL regardless of what else the PR does.
+For PRs from outside contributors (anyone other than `ata381` and `MugeBakiryol`), do the security pass **from afar first** — read the diff via `gh pr diff <n>` / `gh pr view <n>` / `gh api` without checking out the branch. Fetching refs (`git fetch origin pull/<n>/head`) and reading blobs (`git show <ref>:<path>`) is fine since neither executes anything. Do not run `pytest`, install deps, `docker compose up`, pre-commit hooks, or anything else that executes the contributor's code on your own machine until the diff has been read and cleared. Approving the GitHub-hosted CI run for a fork PR before the diff read is acceptable: it runs on a read-only token with no secrets. Flag anything that would run on checkout/build (setup.py/postinstall hooks, entrypoint scripts, CI workflow changes) as CRITICAL regardless of what else the PR does.
