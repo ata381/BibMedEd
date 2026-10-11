@@ -1,3 +1,4 @@
+import logging
 from datetime import date, datetime, timezone
 from threading import Lock
 
@@ -5,10 +6,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from bibmeded.adapters.base import RawAuthor, RawRecord
+from bibmeded.config import settings
 from bibmeded.models import Publication, QueryStatus, SearchProject, SearchQuery
 from bibmeded.models.methodology import MethodologyStep
 from bibmeded.workers.tasks import _persist_records
 
+logger = logging.getLogger(__name__)
 
 SAMPLE_PROJECT_NAME = "AI in Medical Education — Sample Project"
 SAMPLE_PROJECT_KEY = "bundled-ai-medical-education-v1"
@@ -18,6 +21,7 @@ SAMPLE_QUERY_STRING = (
     'OR "learning analytics"[tiab] OR "simulation"[tiab] OR "virtual patient*"[tiab]) AND '
     '("2018/01/01"[PDAT] : "2025/12/31"[PDAT])'
 )
+LEGACY_SAMPLE_QUERY_STRING = "Bundled synthetic demonstration corpus"
 SAMPLE_PROJECT_DESCRIPTION = (
     "A synthetic demonstration corpus bundled with BibMedEd. Explore every analysis, "
     "screening, PRISMA, and export workflow without calling an external database."
@@ -190,10 +194,34 @@ def _find_sample_project(db: Session) -> SearchProject | None:
     )
 
 
+def _replace_legacy_query_string(db: Session, project: SearchProject) -> None:
+    # Alembic revision 0005_sample_query_string does the same rewrite; this
+    # covers create_all databases that never run migrations. Skipped in
+    # read-only mode, whose Docker entrypoint has already run the migration.
+    if settings.read_only:
+        return
+    replaced = (
+        db.query(SearchQuery)
+        .filter(
+            SearchQuery.project_id == project.id,
+            SearchQuery.database == "sample",
+            SearchQuery.query_string == LEGACY_SAMPLE_QUERY_STRING,
+        )
+        .update({SearchQuery.query_string: SAMPLE_QUERY_STRING})
+    )
+    if replaced:
+        db.commit()
+        logger.info(
+            "sample project id=%d: replaced the placeholder query string with the bundled search strategy",
+            project.id,
+        )
+
+
 def get_or_create_sample_project(db: Session) -> tuple[SearchProject, bool]:
     with _sample_creation_lock:
         existing = _find_sample_project(db)
         if existing is not None:
+            _replace_legacy_query_string(db, existing)
             return existing, False
         try:
             return _create_sample_project(db), True

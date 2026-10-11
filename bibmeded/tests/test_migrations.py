@@ -12,9 +12,26 @@ from alembic import command
 from alembic.config import Config
 
 from bibmeded.config import settings
+from bibmeded.services.sample_project import (
+    LEGACY_SAMPLE_QUERY_STRING,
+    SAMPLE_PROJECT_KEY,
+    SAMPLE_QUERY_STRING,
+)
 
 ALEMBIC_DIR = Path(__file__).resolve().parents[1] / "alembic"
 LOSSY_DOWNGRADE_ENV_VAR = "BIBMEDED_ALLOW_LOSSY_DOWNGRADE"
+
+PRE_0005_DDL = [
+    "CREATE TABLE search_projects (id INTEGER PRIMARY KEY, name VARCHAR(255) NOT NULL, sample_key VARCHAR(100))",
+    """
+    CREATE TABLE search_queries (
+        id INTEGER PRIMARY KEY,
+        project_id INTEGER NOT NULL REFERENCES search_projects(id),
+        query_string TEXT NOT NULL,
+        database VARCHAR(50) NOT NULL DEFAULT 'pubmed'
+    )
+    """,
+]
 
 PRE_0004_DDL = [
     "CREATE TABLE search_projects (id INTEGER PRIMARY KEY, name VARCHAR(255) NOT NULL, sample_key VARCHAR(100))",
@@ -171,3 +188,68 @@ def test_0004_is_idempotent_on_a_create_all_schema(sqlite_db):
     command.upgrade(config, "head")
 
     assert "screening_stage" in _columns(sqlite_db)
+
+
+def _seed_pre_0005(engine) -> None:
+    with engine.begin() as conn:
+        for statement in PRE_0005_DDL:
+            conn.execute(sa.text(statement))
+        conn.execute(
+            sa.text("INSERT INTO search_projects (id, name, sample_key) VALUES (:id, :name, :sample_key)"),
+            [
+                {"id": 1, "name": "sample", "sample_key": SAMPLE_PROJECT_KEY},
+                {"id": 2, "name": "ordinary", "sample_key": None},
+            ],
+        )
+        conn.execute(
+            sa.text(
+                "INSERT INTO search_queries (id, project_id, query_string, database) "
+                "VALUES (:id, :project_id, :query_string, :database)"
+            ),
+            [
+                {"id": 1, "project_id": 1, "query_string": LEGACY_SAMPLE_QUERY_STRING, "database": "sample"},
+                {"id": 2, "project_id": 2, "query_string": LEGACY_SAMPLE_QUERY_STRING, "database": "sample"},
+                {"id": 3, "project_id": 1, "query_string": "edited by the user", "database": "sample"},
+                {"id": 4, "project_id": 1, "query_string": LEGACY_SAMPLE_QUERY_STRING, "database": "pubmed"},
+            ],
+        )
+
+
+def _query_strings(engine) -> list[tuple[int, str]]:
+    with engine.connect() as conn:
+        rows = conn.execute(sa.text("SELECT id, query_string FROM search_queries ORDER BY id")).fetchall()
+    return [tuple(r) for r in rows]
+
+
+def test_0005_replaces_only_the_seeded_sample_placeholder(sqlite_db):
+    _seed_pre_0005(sqlite_db)
+    config = _alembic_config()
+    command.stamp(config, "0004_screening_stage")
+
+    command.upgrade(config, "0005_sample_query_string")
+
+    assert _query_strings(sqlite_db) == [
+        (1, SAMPLE_QUERY_STRING),
+        (2, LEGACY_SAMPLE_QUERY_STRING),
+        (3, "edited by the user"),
+        (4, LEGACY_SAMPLE_QUERY_STRING),
+    ]
+
+
+def test_0005_downgrade_and_reupgrade_leave_the_strategy_in_place(sqlite_db):
+    _seed_pre_0005(sqlite_db)
+    config = _alembic_config()
+    command.stamp(config, "0004_screening_stage")
+    command.upgrade(config, "0005_sample_query_string")
+    expected = _query_strings(sqlite_db)
+
+    command.downgrade(config, "0004_screening_stage")
+    assert _query_strings(sqlite_db) == expected
+
+    command.upgrade(config, "0005_sample_query_string")
+    assert _query_strings(sqlite_db) == expected
+
+
+def test_0005_is_a_no_op_on_an_empty_database(sqlite_db):
+    command.upgrade(_alembic_config(), "head")
+    assert not sa.inspect(sqlite_db).has_table("search_queries")
