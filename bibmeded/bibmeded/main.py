@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 import logging
 import os
+import re
 import time
 import uuid
 
@@ -12,6 +13,19 @@ from bibmeded.config import settings, unrecognised_env_vars
 from bibmeded.read_only import ReadOnlyMiddleware, ReadOnlyViolation, read_only_violation_handler
 from bibmeded.request_context import request_id_ctx
 from bibmeded.routers import projects, search, publications, analysis, export, adapters
+
+
+_CLIENT_REQUEST_ID = re.compile(r"[A-Za-z0-9._-]{1,64}")
+
+
+def _client_request_id(raw: str | None) -> str | None:
+    # The id is written verbatim into every log line, the methodology log, the
+    # response header and 500 bodies, so a client value is only trusted when it
+    # cannot carry line breaks or other structure. fullmatch, not match with
+    # `$`, because `$` also matches before a trailing newline.
+    if raw is not None and _CLIENT_REQUEST_ID.fullmatch(raw):
+        return raw
+    return None
 
 
 class _RequestIdFilter(logging.Filter):
@@ -103,7 +117,7 @@ def create_app() -> FastAPI:
 
     @app.middleware("http")
     async def request_id_middleware(request: Request, call_next):
-        rid = request.headers.get("x-request-id") or uuid.uuid4().hex[:12]
+        rid = _client_request_id(request.headers.get("x-request-id")) or uuid.uuid4().hex[:12]
         token = request_id_ctx.set(rid)
         start = time.perf_counter()
         try:
