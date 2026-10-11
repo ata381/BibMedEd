@@ -20,4 +20,6 @@ class SearchStatusResponse(BaseModel):
     raw_result_count: int | None = None
     duplicate_count: int | None = None
     progress: float | None = None
+    query_string: str | None = None
+    database: str | None = None
     model_config = {"from_attributes": True}

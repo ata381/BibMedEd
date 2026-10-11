@@ -3,15 +3,20 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { searchApi, adaptersApi, AdapterInfo } from "@/lib/api";
+import { searchApi, adaptersApi, projectsApi, AdapterInfo } from "@/lib/api";
 import { fetchReadOnly, useReadOnly } from "@/lib/read-only";
-import { Button, ConfirmDialog, Icon, PageHeader } from "@/components/ui";
+import { Badge, Button, ConfirmDialog, Icon, PageHeader } from "@/components/ui";
 
 const MAX_RESULTS = 2000;
 const POLL_INTERVAL_MS = 2000;
 const REDIRECT_DELAY_MS = 500;
 const PUBMED_TAGS = ["[Mesh]", "[tiab]", "[PDAT]", "[AU]", "[TA]"];
 const OPERATORS = ["AND", "OR", "NOT"];
+const DEFAULT_YEAR_START = "2022";
+const DEFAULT_YEAR_END = "2025";
+// The bundled sample project's stored query is display metadata, not a runnable
+// adapter, so it is only ever loaded into the raw editor and never set as `source`.
+const SAMPLE_DATABASE = "sample";
 
 const CHIP_CLASSES = (active: boolean) =>
   [
@@ -38,8 +43,8 @@ export default function SearchConfig() {
   const [topicA, setTopicA] = useState('"Artificial Intelligence" OR "AI" OR "Machine Learning"');
   const [topicB, setTopicB] = useState('"Medical Education" OR "Curriculum"');
   const [operator, setOperator] = useState("AND");
-  const [yearStart, setYearStart] = useState("2022");
-  const [yearEnd, setYearEnd] = useState("2025");
+  const [yearStart, setYearStart] = useState(DEFAULT_YEAR_START);
+  const [yearEnd, setYearEnd] = useState(DEFAULT_YEAR_END);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [progress, setProgress] = useState<{ found: number; fetched: number; total: number } | null>(null);
@@ -48,6 +53,7 @@ export default function SearchConfig() {
   const [rawQuery, setRawQuery] = useState("");
   const [adapters, setAdapters] = useState<AdapterInfo[]>([]);
   const [source, setSource] = useState("pubmed");
+  const [sampleStrategy, setSampleStrategy] = useState(false);
 
   // PubMed uses field tags like [PDAT]; OpenAlex and others use plain text search.
   const pubmedQuery = `(${topicA}) ${operator} (${topicB}) AND ("${yearStart}/01/01"[PDAT] : "${yearEnd}/12/31"[PDAT])`;
@@ -74,6 +80,42 @@ export default function SearchConfig() {
   useEffect(() => {
     adaptersApi.list().then((res) => setAdapters(res.data)).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    let hydrated = false;
+    searchApi
+      .latest(projectId)
+      .then(async (res) => {
+        const { query_string, database } = res.data;
+        if (!active || database !== SAMPLE_DATABASE || !query_string) return;
+        const project = await projectsApi
+          .get(projectId)
+          .then((r) => r.data)
+          .catch(() => null);
+        if (!active) return;
+        hydrated = true;
+        setRawQuery(query_string);
+        setAdvancedMode(true);
+        setSource("pubmed");
+        setSampleStrategy(true);
+        if (project?.date_range_start) setYearStart(project.date_range_start.slice(0, 4));
+        if (project?.date_range_end) setYearEnd(project.date_range_end.slice(0, 4));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+      // Without a remount on `[id]` changes, the sample strategy would otherwise
+      // carry over into the next project's editor.
+      if (hydrated) {
+        setRawQuery("");
+        setAdvancedMode(false);
+        setSampleStrategy(false);
+        setYearStart(DEFAULT_YEAR_START);
+        setYearEnd(DEFAULT_YEAR_END);
+      }
+    };
+  }, [projectId]);
 
   const handleSearch = useCallback(async () => {
     if (await fetchReadOnly()) return;
@@ -192,6 +234,15 @@ export default function SearchConfig() {
         <div className="lg:col-span-7 space-y-10">
           {advancedMode ? (
             <Section number="01" title="Raw query">
+              {sampleStrategy && (
+                <p className="text-sm text-on-surface-muted mb-4 max-w-prose">
+                  <Badge tone="info" className="mr-2">
+                    Sample data
+                  </Badge>
+                  Loaded from the bundled sample project&apos;s search strategy. The sample&apos;s records are synthetic and were not
+                  retrieved from a live database; executing this query searches {sourceName}.
+                </p>
+              )}
               <p className="text-sm text-on-surface-muted mb-4 max-w-prose">
                 {source === "pubmed"
                   ? "Paste or write your full PubMed/MEDLINE query with MeSH terms, field tags, and Boolean operators."

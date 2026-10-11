@@ -62,6 +62,8 @@ def get_latest_search(project_id: int, db: Session = Depends(get_db)):
         raw_result_count=query.raw_result_count,
         duplicate_count=query.duplicate_count,
         progress=_infer_progress(query.status),
+        query_string=query.query_string,
+        database=query.database,
     )
 
 
@@ -86,4 +88,6 @@ def get_search_status(project_id: int, query_id: int, db: Session = Depends(get_
         raw_result_count=query.raw_result_count,
         duplicate_count=query.duplicate_count,
         progress=_infer_progress(status),
+        query_string=query.query_string,
+        database=query.database,
     )
