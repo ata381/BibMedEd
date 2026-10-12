@@ -44,10 +44,11 @@ ESEARCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 EFETCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
 
 class PubMedClient:
-    def __init__(self, api_key: str = "", rate_limit: float = 3.0):
+    def __init__(self, api_key: str = "", rate_limit: float = 3.0, email: str = ""):
         if rate_limit <= 0:
             raise ValueError("rate_limit must be greater than 0")
-        self.api_key = api_key
+        self.api_key = api_key.strip()
+        self.email = email.strip()
         self.rate_limit = rate_limit
         self._client = httpx.AsyncClient(timeout=30.0)
         self._last_request_time: float = 0.0
@@ -68,10 +69,17 @@ class PubMedClient:
             await asyncio.sleep(min_interval - elapsed)
         self._last_request_time = asyncio.get_running_loop().time()
 
-    async def search(self, query: str, retstart: int = 0, retmax: int = 10000) -> SearchResult:
-        params = {"db": "pubmed", "term": query, "retmode": "xml", "retstart": retstart, "retmax": retmax}
+    def _request_params(self) -> dict[str, str]:
+        params = {"tool": "bibmeded"}
         if self.api_key:
             params["api_key"] = self.api_key
+        if self.email:
+            params["email"] = self.email
+        return params
+
+    async def search(self, query: str, retstart: int = 0, retmax: int = 10000) -> SearchResult:
+        params = {"db": "pubmed", "term": query, "retmode": "xml", "retstart": retstart, "retmax": retmax}
+        params.update(self._request_params())
         await self._throttle()
         response = await self._client.get(ESEARCH_URL, params=params)
         response.raise_for_status()
@@ -84,8 +92,7 @@ class PubMedClient:
         if not pmids:
             return []
         params = {"db": "pubmed", "id": ",".join(pmids), "retmode": "xml", "rettype": "full"}
-        if self.api_key:
-            params["api_key"] = self.api_key
+        params.update(self._request_params())
         await self._throttle()
         response = await self._client.get(EFETCH_URL, params=params)
         response.raise_for_status()

@@ -348,10 +348,11 @@ def test_adapter_kwargs_unknown_source_returns_empty_dict():
 def test_adapter_kwargs_pubmed_reflects_configured_api_key_and_rate_limit(monkeypatch):
     monkeypatch.setattr(settings, "pubmed_api_key", "pm-key-123")
     monkeypatch.setattr(settings, "pubmed_rate_limit", 9.5)
+    monkeypatch.setattr(settings, "ncbi_email", "team@example.org")
 
     kwargs = tasks._adapter_kwargs("pubmed")
 
-    assert kwargs == {"api_key": "pm-key-123", "rate_limit": 9.5}
+    assert kwargs == {"api_key": "pm-key-123", "rate_limit": 9.5, "email": "team@example.org"}
 
 
 def test_adapter_kwargs_openalex_reflects_configured_email(monkeypatch):

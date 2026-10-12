@@ -7,6 +7,7 @@ _ADAPTER_KWARGS_BUILDERS = {
     "pubmed": lambda: {
         "api_key": settings.pubmed_api_key,
         "rate_limit": settings.pubmed_rate_limit,
+        "email": settings.ncbi_email,
     },
     "openalex": lambda: {"email": settings.openalex_email},
     "crossref": lambda: {"email": settings.crossref_email},

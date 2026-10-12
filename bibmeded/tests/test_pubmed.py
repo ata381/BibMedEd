@@ -4,6 +4,48 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from bibmeded.services.pubmed import PubMedClient
 
+
+async def _capture_request(client: PubMedClient, operation: str) -> dict:
+    fixture = "pubmed_search_response.xml" if operation == "search" else "pubmed_response.xml"
+    response = AsyncMock()
+    response.text = Path("tests/fixtures", fixture).read_text()
+    response.raise_for_status = lambda: None
+    async with client:
+        with patch.object(client._client, "get", return_value=response) as get_mock:
+            if operation == "search":
+                await client.search("medical education")
+            else:
+                await client.fetch(["38000001"])
+    return get_mock.call_args.kwargs["params"]
+
+
+@pytest.mark.parametrize("operation", ["search", "fetch"])
+async def test_request_identifies_tool_without_email(operation):
+    params = await _capture_request(PubMedClient(), operation)
+    assert params["tool"] == "bibmeded"
+    assert "email" not in params
+
+
+@pytest.mark.parametrize("operation", ["search", "fetch"])
+@pytest.mark.parametrize("api_key", ["", " \t\n", " test-key "])
+async def test_request_normalizes_optional_api_key(operation, api_key):
+    params = await _capture_request(PubMedClient(api_key=api_key), operation)
+    if api_key.strip():
+        assert params["api_key"] == "test-key"
+    else:
+        assert "api_key" not in params
+
+
+@pytest.mark.parametrize("operation", ["search", "fetch"])
+@pytest.mark.parametrize("email", ["", " \t\n", " team@example.org "])
+async def test_request_sends_only_configured_email(operation, email):
+    params = await _capture_request(PubMedClient(email=email), operation)
+    assert params["tool"] == "bibmeded"
+    if email.strip():
+        assert params["email"] == "team@example.org"
+    else:
+        assert "email" not in params
+
 @pytest.fixture
 def sample_xml():
     return Path("tests/fixtures/pubmed_response.xml").read_text()

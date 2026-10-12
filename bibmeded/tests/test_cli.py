@@ -102,7 +102,7 @@ def test_search_dry_run_prints_estimated_count(monkeypatch, capsys):
     assert exit_code == 0
     assert "1234" in output
 
-    get_adapter_mock.assert_called_once_with("pubmed", api_key="", rate_limit=3.0)
+    get_adapter_mock.assert_called_once_with("pubmed", api_key="", rate_limit=3.0, email="")
     adapter.search.assert_awaited_once_with("machine learning")
     adapter.fetch.assert_not_called()
     adapter.fetch_stream.assert_not_called()
@@ -132,7 +132,7 @@ def test_search_dry_run_uses_pubmed_by_default(monkeypatch, capsys):
     capsys.readouterr()
 
     assert exit_code == 0
-    get_adapter_mock.assert_called_once_with("pubmed", api_key="", rate_limit=3.0)
+    get_adapter_mock.assert_called_once_with("pubmed", api_key="", rate_limit=3.0, email="")
     adapter.search.assert_awaited_once_with("machine learning")
     adapter.close.assert_awaited_once()
 
@@ -172,7 +172,7 @@ def test_search_dry_run_reports_missing_lens_key_without_api_call(monkeypatch, c
 @pytest.mark.parametrize(
     ("source", "expected_kwargs"),
     [
-        ("pubmed", {"api_key": "pm-key", "rate_limit": 9.5}),
+        ("pubmed", {"api_key": "pm-key", "rate_limit": 9.5, "email": "ncbi@example.org"}),
         ("openalex", {"email": "openalex@example.org"}),
         ("crossref", {"email": "crossref@example.org"}),
         ("semanticscholar", {"api_key": "s2-key"}),
@@ -190,6 +190,7 @@ def test_search_dry_run_uses_configured_kwargs_for_every_source(
     configured_values = {
         "pubmed_api_key": "pm-key",
         "pubmed_rate_limit": 9.5,
+        "ncbi_email": "ncbi@example.org",
         "openalex_email": "openalex@example.org",
         "crossref_email": "crossref@example.org",
         "semantic_scholar_api_key": "s2-key",

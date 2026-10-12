@@ -23,6 +23,19 @@ def test_pubmed_adapter_metadata():
     assert a.requires_api_key is False
 
 
+async def test_pubmed_adapter_forwards_email_to_requests(sample_xml):
+    response = AsyncMock()
+    response.text = sample_xml
+    response.raise_for_status = lambda: None
+    adapter = PubMedAdapter(email="team@example.org")
+    try:
+        with patch.object(adapter._client._client, "get", return_value=response) as get_mock:
+            await adapter.fetch(["38000001"])
+        assert get_mock.call_args.kwargs["params"]["email"] == "team@example.org"
+    finally:
+        await adapter.close()
+
+
 def test_pubmed_search(adapter):
     mock_response = AsyncMock()
     mock_response.text = '<?xml version="1.0"?><eSearchResult><Count>2</Count><IdList><Id>38000001</Id><Id>38000002</Id></IdList></eSearchResult>'

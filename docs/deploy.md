@@ -105,6 +105,7 @@ cp .env.example .env
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `BIBMEDED_PUBMED_API_KEY` | *(empty)* | Optional. Register free at [NCBI](https://www.ncbi.nlm.nih.gov/account/) for 10 req/s (default is 3 req/s) |
+| `BIBMEDED_NCBI_EMAIL` | *(empty)* | Optional contact email sent to NCBI on every PubMed search/fetch request. Requests identify the tool as `bibmeded`; blank email and API-key values are omitted. |
 | `BIBMEDED_LENS_API_KEY` | *(empty)* | Required only for Lens.org searches. Scholarly API bearer token |
 | `BIBMEDED_READ_ONLY` | `false` | Public demo mode — see [Public read-only demo](#public-read-only-demo) |
 | `POSTGRES_USER` | `bibmeded` | Database username |

@@ -14,8 +14,8 @@ class PubMedAdapter(BaseSourceAdapter):
     display_name = "PubMed"
     requires_api_key = False
 
-    def __init__(self, api_key: str = "", rate_limit: float = 3.0):
-        self._client = PubMedClient(api_key=api_key, rate_limit=rate_limit)
+    def __init__(self, api_key: str = "", rate_limit: float = 3.0, email: str = ""):
+        self._client = PubMedClient(api_key=api_key, rate_limit=rate_limit, email=email)
 
     async def search(self, query: str, **kwargs) -> SearchResponse:
         result = await self._client.search(query)
