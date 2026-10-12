@@ -181,7 +181,8 @@ Every exclude, re-include and bulk-exclude appends one row per changed record to
 append-only screening decision log, in the same transaction as the change. A row holds the
 UTC time, the endpoint (`toggle` or `bulk_exclude`, with the citation threshold for bulk
 exclusions), the record's exclusion state, reason and stage before and after, and an
-optional reviewer label. BibMedEd has no accounts, so the label is whatever the client
+optional reviewer label. The bundled sample project logs its one seeded exclusion with
+source `sample_seed` and no reviewer. BibMedEd has no accounts, so the label is whatever the client
 sends in the `X-Reviewer` header. Use ASCII letters, digits, spaces and `. _ @ ' ( ) -`,
 start with a letter or digit, and keep it to 64 characters at most. Anything else is
 rejected with `422`. Without the header no reviewer is recorded, and none is invented.

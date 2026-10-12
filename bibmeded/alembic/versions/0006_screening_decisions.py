@@ -13,7 +13,7 @@ Downgrading drops the table and every logged decision with it. It refuses to do
 so while any exist unless ``BIBMEDED_ALLOW_LOSSY_DOWNGRADE=1`` is set.
 
 Revision ID: 0006_screening_decisions
-Revises: 0004_screening_stage
+Revises: 0005_sample_query_string
 Create Date: 2026-10-12
 """
 
@@ -26,9 +26,7 @@ import sqlalchemy as sa
 
 
 revision: str = "0006_screening_decisions"
-# TODO(#131): re-point to "0005_sample_query_string" if that revision merges
-# first; two revisions revising 0004 would leave alembic with two heads.
-down_revision: str | None = "0004_screening_stage"
+down_revision: str | None = "0005_sample_query_string"
 branch_labels: str | None = None
 depends_on: str | None = None
 

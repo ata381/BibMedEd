@@ -256,6 +256,7 @@ def test_0005_is_a_no_op_on_an_empty_database(sqlite_db):
 
 
 DECISIONS_REVISION = "0006_screening_decisions"
+PRE_DECISIONS_REVISION = "0005_sample_query_string"
 DECISIONS_TABLE = "screening_decisions"
 DECISION_COLUMNS = {
     "id", "project_id", "publication_id", "decided_at", "reviewer", "source", "criteria",
@@ -271,13 +272,17 @@ INSERT_DECISION = sa.text(
 
 def _upgrade_seeded_db_to_decisions(sqlite_db) -> Config:
     _seed_pre_0004(sqlite_db)
+    # 0005 filters on search_queries.database, which every real schema has but
+    # the minimal pre-0004 fixture leaves out.
+    with sqlite_db.begin() as conn:
+        conn.execute(sa.text("ALTER TABLE search_queries ADD COLUMN database VARCHAR(50) NOT NULL DEFAULT 'pubmed'"))
     config = _alembic_config()
     command.stamp(config, "0003_sample_project_key")
     command.upgrade(config, DECISIONS_REVISION)
     return config
 
 
-def test_0006_module_imports_and_chains_onto_the_screening_stage_revision():
+def test_0006_module_imports_and_chains_onto_the_sample_query_revision():
     import importlib.util
 
     path = ALEMBIC_DIR / "versions" / "0006_screening_decisions.py"
@@ -286,7 +291,7 @@ def test_0006_module_imports_and_chains_onto_the_screening_stage_revision():
     spec.loader.exec_module(module)
 
     assert module.revision == DECISIONS_REVISION
-    assert module.down_revision == "0004_screening_stage"
+    assert module.down_revision == PRE_DECISIONS_REVISION
     assert callable(module.upgrade) and callable(module.downgrade)
 
 
@@ -320,10 +325,10 @@ def test_0006_is_idempotent_on_a_create_all_schema(sqlite_db):
 
     Base.metadata.create_all(sqlite_db)
     config = _alembic_config()
-    command.stamp(config, "0004_screening_stage")
+    command.stamp(config, PRE_DECISIONS_REVISION)
 
     command.upgrade(config, "head")
-    command.downgrade(config, "0004_screening_stage")
+    command.downgrade(config, PRE_DECISIONS_REVISION)
     assert not sa.inspect(sqlite_db).has_table(DECISIONS_TABLE)
     command.upgrade(config, "head")
 
@@ -337,7 +342,7 @@ def test_0006_downgrade_refuses_to_drop_logged_decisions(sqlite_db, monkeypatch)
         conn.execute(INSERT_DECISION, {"stage": "title_abstract"})
 
     with pytest.raises(RuntimeError, match="methodology log") as excinfo:
-        command.downgrade(config, "0004_screening_stage")
+        command.downgrade(config, PRE_DECISIONS_REVISION)
 
     assert LOSSY_DOWNGRADE_ENV_VAR in str(excinfo.value)
     assert "1 screening decision(s)" in str(excinfo.value)
@@ -350,7 +355,7 @@ def test_0006_downgrade_drops_the_table_when_loss_is_allowed(sqlite_db, monkeypa
     with sqlite_db.begin() as conn:
         conn.execute(INSERT_DECISION, {"stage": "title_abstract"})
 
-    command.downgrade(config, "0004_screening_stage")
+    command.downgrade(config, PRE_DECISIONS_REVISION)
 
     assert not sa.inspect(sqlite_db).has_table(DECISIONS_TABLE)
     assert "screening_stage" in _columns(sqlite_db)

@@ -19,6 +19,7 @@ from bibmeded.models import Publication, ScreeningDecision
 
 TOGGLE_SOURCE = "toggle"
 BULK_EXCLUDE_SOURCE = "bulk_exclude"
+SAMPLE_SEED_SOURCE = "sample_seed"
 
 # Keeps each UPDATE's IN list below SQLite's historical 999 bound-parameter limit.
 UPDATE_BATCH_SIZE = 500

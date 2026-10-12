@@ -1,5 +1,7 @@
+from sqlalchemy import select
+
 from bibmeded.config import settings
-from bibmeded.models import QueryStatus, SearchProject, SearchQuery
+from bibmeded.models import Publication, QueryStatus, ScreeningDecision, SearchProject, SearchQuery
 from bibmeded.services.sample_project import (
     LEGACY_SAMPLE_QUERY_STRING,
     SAMPLE_QUERY_STRING,
@@ -63,6 +65,35 @@ def test_reusing_a_sample_project_keeps_searches_the_user_ran_in_it(db):
         LEGACY_SAMPLE_QUERY_STRING,
         '"clinical reasoning"[tiab]',
     ]
+
+
+def test_seeded_exclusion_is_logged_as_a_sample_seed_decision(db):
+    project, created = get_or_create_sample_project(db)
+
+    assert created is True
+    (decision,) = db.scalars(select(ScreeningDecision).where(ScreeningDecision.project_id == project.id)).all()
+    excluded = db.scalars(
+        select(Publication).where(Publication.project_id == project.id, Publication.excluded == True)
+    ).one()
+    assert decision.publication_id == excluded.id
+    assert excluded.pmid == "sample-005"
+    assert decision.source == "sample_seed"
+    assert decision.reviewer is None
+    assert decision.criteria is None
+    assert (
+        decision.previous_excluded, decision.previous_exclusion_reason, decision.previous_screening_stage,
+        decision.excluded, decision.exclusion_reason, decision.screening_stage,
+    ) == (False, None, None, True, "wrong_population", "title_abstract")
+
+
+def test_sample_methodology_export_has_no_unlogged_exclusion(client):
+    project_id = client.post("/api/projects/sample").json()["id"]
+
+    text = client.get(f"/api/projects/{project_id}/export/methodology").text
+
+    section = text.split("SCREENING DECISION HISTORY (audit trail)\n", 1)[1].split("\n\n", 1)[0]
+    assert "  Decisions logged: 1\n    Exclusions: 1\n" in section
+    assert "no logged decision" not in section
 
 
 def test_reusing_a_legacy_sample_project_writes_nothing_in_read_only_mode(db, monkeypatch):
