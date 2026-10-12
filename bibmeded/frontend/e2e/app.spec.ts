@@ -1,5 +1,14 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installMockApi, sampleQueryString } from "./mock-api";
+import { analysisResults, installMockApi, sampleQueryString } from "./mock-api";
+
+type GrowthSummaryOverride = {
+  cagr: number | null;
+  doubling_time_years: number | null;
+  start_year: number | null;
+  end_year: number | null;
+  excluded_current_year: boolean;
+  reason: string | null;
+};
 
 function collectRuntimeErrors(page: Page) {
   const errors: string[] = [];
@@ -10,6 +19,25 @@ function collectRuntimeErrors(page: Page) {
     }
   });
   return errors;
+}
+
+async function overridePublicationGrowthSummary(page: Page, growthSummary: GrowthSummaryOverride) {
+  await page.route("**/api/projects/1/analysis/publications", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: 1,
+        project_id: 1,
+        analysis_type: "publications",
+        results: {
+          ...analysisResults.publications,
+          growth_summary: growthSummary,
+        },
+        created_at: "2026-08-23T12:00:00Z",
+      }),
+    }),
+  );
 }
 
 test("sample project opens a complete dashboard", async ({ page }) => {
@@ -23,7 +51,81 @@ test("sample project opens a complete dashboard", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Analysis Overview" })).toBeVisible();
   await expect(page.getByText("AI in Medical Education — Sample Project")).toBeVisible();
   await expect(page.getByText("Marcus Chen Sample — 5")).toBeAttached();
+  await expect(page.getByText("CAGR")).toBeVisible();
+  await expect(page.getByText("41.42%")).toBeVisible();
+  await expect(page.getByText("Doubling time")).toBeVisible();
+  await expect(page.getByText("2 years")).toBeVisible();
+  await expect(page.getByText("Growth window 2018–2020")).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test("publication trends notes when current incomplete year is excluded", async ({ page }) => {
+  await installMockApi(page);
+  await overridePublicationGrowthSummary(page, {
+    cagr: 50,
+    doubling_time_years: 1.71,
+    start_year: 2023,
+    end_year: 2025,
+    excluded_current_year: true,
+    reason: null,
+  });
+
+  await page.goto("/projects/1/dashboard");
+
+  await expect(page.getByText("Current incomplete year excluded from growth calculations.")).toBeVisible();
+});
+
+test("publication trends shows null metric reasons without hiding zero values", async ({ page }) => {
+  await installMockApi(page);
+  await overridePublicationGrowthSummary(page, {
+    cagr: 0,
+    doubling_time_years: null,
+    start_year: 2018,
+    end_year: 2020,
+    excluded_current_year: false,
+    reason: "Doubling time is not defined for non-positive growth (CAGR <= 0).",
+  });
+
+  await page.goto("/projects/1/dashboard");
+
+  await expect(page.getByText("0%")).toBeVisible();
+  await expect(page.getByText("Doubling time is not defined for non-positive growth (CAGR <= 0).")).toBeVisible();
+  await expect(page.getByText("NaN")).toHaveCount(0);
+});
+
+test("publication trends shows CAGR null reasons without hiding zero doubling time", async ({ page }) => {
+  await installMockApi(page);
+  await overridePublicationGrowthSummary(page, {
+    cagr: null,
+    doubling_time_years: 0,
+    start_year: 2018,
+    end_year: 2020,
+    excluded_current_year: false,
+    reason: "CAGR is undefined because the first full calendar year has zero publications.",
+  });
+
+  await page.goto("/projects/1/dashboard");
+
+  await expect(page.getByText("0 years")).toBeVisible();
+  await expect(page.getByText("CAGR is undefined because the first full calendar year has zero publications.")).toBeVisible();
+  await expect(page.getByText("NaN")).toHaveCount(0);
+});
+
+test("publication trends shows a shared reason once when both growth metrics are null", async ({ page }) => {
+  await installMockApi(page);
+  await overridePublicationGrowthSummary(page, {
+    cagr: null,
+    doubling_time_years: null,
+    start_year: 2029,
+    end_year: 2029,
+    excluded_current_year: false,
+    reason: "At least two full calendar years of data are required to compute CAGR.",
+  });
+
+  await page.goto("/projects/1/dashboard");
+
+  await expect(page.getByText("At least two full calendar years of data are required to compute CAGR.")).toHaveCount(1);
+  await expect(page.getByText("NaN")).toHaveCount(0);
 });
 
 test("new project gives an inline date correction and continues to search", async ({ page }) => {

@@ -180,7 +180,14 @@ def _screening_stage_lines(exclusion_summary: ExclusionSummary | None) -> list[s
         f"  Full-text eligibility: {_plural(staged.full_text_total, 'report')} excluded",
         *_reason_count_lines(staged.full_text_by_reason),
     ]
-    if staged.unrecorded_stage:
+    if staged.unrecorded_not_retrieved:
+        lines.append(
+            f"  Note: {staged.unrecorded_stage} exclusion(s) have no recorded screening stage: "
+            f"{staged.unrecorded_not_retrieved} with reason full-text unavailable are counted as "
+            "reports not retrieved, "
+            f"{staged.unrecorded_stage - staged.unrecorded_not_retrieved} at title/abstract."
+        )
+    elif staged.unrecorded_stage:
         lines.append(
             f"  Note: {staged.unrecorded_stage} exclusion(s) have no recorded screening stage "
             "and are counted at title/abstract."

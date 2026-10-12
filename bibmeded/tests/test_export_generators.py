@@ -468,6 +468,15 @@ class TestGenerateMethodologyScreeningStages:
         assert "Title/abstract screening: 3 records excluded" in text
         assert "3 exclusion(s) have no recorded screening stage and are counted at title/abstract" in text
 
+    def test_notes_stageless_fulltext_unavailable_as_reports_not_retrieved(self):
+        text = generate_methodology("Legacy", self.STEPS, {"non_english": 2, (None, "fulltext_unavailable"): 1})
+        assert "Title/abstract screening: 2 records excluded" in text
+        assert "Full-text retrieval: 1 report not retrieved" in text
+        assert (
+            "3 exclusion(s) have no recorded screening stage: 1 with reason full-text unavailable "
+            "are counted as reports not retrieved, 2 at title/abstract."
+        ) in text
+
     def test_omits_unrecorded_note_when_every_exclusion_has_a_stage(self):
         text = generate_methodology("Staged", self.STEPS, {("full_text", "other"): 1})
         assert "no recorded screening stage" not in text
