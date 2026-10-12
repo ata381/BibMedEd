@@ -168,6 +168,34 @@ methodology log.
 The Celery soft time limit is 600 seconds per task — for very large windowed searches you
 may want to split by year range and merge.
 
+## Author productivity (Lotka's law)
+
+The authors analysis ranks authors by the h-index (Hirsch 2005), g-index (Egghe 2006) and
+e-index (Zhang 2009), all computed within the project's corpus. Its `lotka` block fits
+Lotka's law (Lotka 1926): the number of authors with *n* papers is about C / n^alpha,
+with alpha close to 2 in many fields.
+
+- `distribution` lists every productivity level (`papers`, `authors`). Authors are counted
+  in full on every included paper they co-wrote (complete counting), so the levels sum to
+  `total_authors`.
+- `fit.alpha` and `fit.C` come from a least-squares line through log10(authors) against
+  log10(papers), over every level with no tail cutoff. `fit.r_squared` is the R² of that
+  line. A few single authors with many papers carry as much weight as the many authors with
+  one paper and pull alpha towards 1, so read alpha together with the distribution.
+- `fit.goodness_of_fit` is the Kolmogorov-Smirnov test of Pao (1985). It compares the
+  observed cumulative share of authors with the Lotka distribution for the fitted alpha.
+  That distribution has C = 1 / zeta(alpha) (`expected_single_paper_share`), so the test
+  needs alpha > 1. `consistent_with_lotka` is `true` when `D` is below the 0.01-level
+  critical value 1.63 / sqrt(N). That formula holds only for more than 35 authors, so
+  smaller corpora get `D` without a verdict.
+- With fewer than 3 distinct productivity levels, or the same number of authors at every
+  level, `fit` is `null` and `reason` says why. Two points always fit a line exactly, so
+  an exponent from them would mean nothing.
+
+The methodology export recomputes the fit from the included records and logs the method,
+its parameters and the result, or the reason no fit was made, under "AUTHOR PRODUCTIVITY
+(Lotka's law)". The `lotka` block is an additive field, so `schema_version` stays `"1.0"`.
+
 ## Methodology export from scripts
 
 `GET /api/projects/{id}/export/methodology` returns the citable PRISMA-aligned text log.

@@ -13,7 +13,7 @@ You arrived here because you were searching for something like *"Covidence alter
 | **Multi-database search built-in** | ✅ PubMed + OpenAlex + CrossRef + Semantic Scholar + Lens.org (extensible) | ❌ (import only) | ❌ (import only) | ❌ (import only) | ⚠️ via WoS/Scopus importers | ❌ (file import) |
 | **Automatic cross-source dedup** | ✅ DOI + PMID | ✅ | ❌ | ❌ | ⚠️ manual | ❌ |
 | **Screening workflow** | 📋 single-reviewer with PRISMA-2020 exclusion reasons (dual planned) | ✅ dual-reviewer | ❌ | ❌ | ❌ | ❌ |
-| **Bibliometric analyses** | ✅ 6 modules + h/g/e-index, coupling, co-citation, burst detection, field maturity | ❌ | ⚠️ network only | ✅ many | ✅ many | ✅ many + AI |
+| **Bibliometric analyses** | ✅ 6 modules + h/g/e-index, Lotka's law, coupling, co-citation, burst detection, field maturity | ❌ | ⚠️ network only | ✅ many | ✅ many | ✅ many + AI |
 | **Network visualisation** | ✅ D3.js interactive | ❌ | ✅ desktop | ✅ desktop | ✅ static | ✅ static |
 | **PRISMA-ready methodology log** | ✅ auto-generated | ✅ manual | ❌ | ❌ | ❌ | ❌ |
 | **Self-hostable** | ✅ `docker compose up` | ❌ SaaS only | ✅ desktop binary | ✅ desktop binary | ✅ R/RStudio | ✅ Python lib |
