@@ -1,10 +1,9 @@
 from pathlib import Path
 
 import pytest
+import yaml
 
 from bibmeded.config import Settings
-
-yaml = pytest.importorskip("yaml")
 
 COMPOSE_FILE = Path(__file__).resolve().parents[1] / "docker-compose.yml"
 

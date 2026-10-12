@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
 ENV_PREFIX = "BIBMEDED_"
@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     pubmed_api_key: str = ""
     # None means "derive from whether a key is set"; see effective_pubmed_rate_limit.
-    pubmed_rate_limit: float | None = None
+    pubmed_rate_limit: float | None = Field(default=None, gt=0, allow_inf_nan=False)
     ncbi_email: str = ""
     openalex_email: str = ""
     crossref_email: str = ""

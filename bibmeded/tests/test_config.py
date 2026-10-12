@@ -1,4 +1,5 @@
 import pytest
+from pydantic import ValidationError
 from sqlalchemy.engine import make_url
 
 from bibmeded.config import Settings, unrecognised_env_vars
@@ -96,10 +97,11 @@ def test_blank_pubmed_rate_counts_as_unset(monkeypatch, blank):
 
 
 @pytest.mark.usefixtures("_no_pubmed_env")
-def test_non_numeric_pubmed_rate_is_rejected(monkeypatch):
-    monkeypatch.setenv("BIBMEDED_PUBMED_RATE_LIMIT", "fast")
+@pytest.mark.parametrize("invalid", ["fast", "0", "-1", "nan", "inf"])
+def test_invalid_pubmed_rate_fails_at_startup(monkeypatch, invalid):
+    monkeypatch.setenv("BIBMEDED_PUBMED_RATE_LIMIT", invalid)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError, match="pubmed_rate_limit"):
         Settings(_env_file=None)
 
 
