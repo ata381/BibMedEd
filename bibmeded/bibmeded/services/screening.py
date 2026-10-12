@@ -8,18 +8,20 @@ none when the requested state equals the current one.
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from itertools import batched
 
 from sqlalchemy import exists, func, insert, select, update
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, load_only, raiseload
 
-from bibmeded.models import Publication, ScreeningDecision
+from bibmeded.models import MethodologyStep, Publication, ScreeningDecision
 
 TOGGLE_SOURCE = "toggle"
 BULK_EXCLUDE_SOURCE = "bulk_exclude"
 SAMPLE_SEED_SOURCE = "sample_seed"
+BULK_EXCLUDE_PHASE = "bulk_exclude"
 
 # Keeps each UPDATE's IN list below SQLite's historical 999 bound-parameter limit.
 UPDATE_BATCH_SIZE = 500
@@ -104,8 +106,13 @@ def exclude_by_citation_threshold(
     reviewer: str | None,
 ) -> int:
     """Exclude every included publication whose citation count is missing or at
-    most ``citation_threshold``, logging one decision per publication. Returns
-    the number excluded. Does not commit."""
+    most ``citation_threshold``. Logs one decision per excluded publication and
+    one ``bulk_exclude`` methodology step for the request, even when nothing
+    matched, all sharing a fresh ``run_id``. Returns the number excluded. Does
+    not commit."""
+    included_before = db.scalar(
+        select(func.count(Publication.id)).where(Publication.query_id.in_(query_ids), Publication.excluded == False)
+    )
     rows = db.execute(
         select(Publication.id, Publication.exclusion_reason, Publication.screening_stage)
         .where(
@@ -114,14 +121,13 @@ def exclude_by_citation_threshold(
             (Publication.citation_count == None) | (Publication.citation_count <= citation_threshold),
         )
         .order_by(Publication.id)
-        # Holds the matched rows on Postgres so a concurrent toggle cannot change
-        # them between this snapshot and the update; SQLite ignores it.
-        .with_for_update()
+        # FOR NO KEY UPDATE on Postgres: only non-key columns change, and plain
+        # FOR UPDATE blocks (and can deadlock with) the worker's KEY SHARE locks
+        # from inserting author and keyword links during a fetch. SQLite ignores it.
+        .with_for_update(key_share=True)
     ).all()
-    if not rows:
-        return 0
+    run_id = str(uuid.uuid4())
     decided_at = _now_utc()
-    criteria = {"citation_threshold": citation_threshold}
     for batch in batched([row.id for row in rows], UPDATE_BATCH_SIZE):
         db.execute(
             update(Publication)
@@ -133,28 +139,97 @@ def exclude_by_citation_threshold(
             )
             .execution_options(synchronize_session="fetch")
         )
-    db.execute(
-        insert(ScreeningDecision),
-        [
-            {
-                "project_id": project_id,
-                "publication_id": row.id,
-                "decided_at": decided_at,
-                "reviewer": reviewer,
-                "source": BULK_EXCLUDE_SOURCE,
-                "criteria": criteria,
-                **_decision_values(ScreeningState(False, row.exclusion_reason, row.screening_stage), target),
-            }
-            for row in rows
-        ],
-    )
+    if rows:
+        db.execute(
+            insert(ScreeningDecision),
+            [
+                {
+                    "project_id": project_id,
+                    "publication_id": row.id,
+                    "decided_at": decided_at,
+                    "reviewer": reviewer,
+                    "source": BULK_EXCLUDE_SOURCE,
+                    "run_id": run_id,
+                    "criteria": {"citation_threshold": citation_threshold},
+                    **_decision_values(ScreeningState(False, row.exclusion_reason, row.screening_stage), target),
+                }
+                for row in rows
+            ],
+        )
+    db.add(_bulk_exclude_step(
+        db,
+        query_id=max(query_ids),
+        run_id=run_id,
+        decided_at=decided_at,
+        citation_threshold=citation_threshold,
+        # Every matched row is still included (the select filters on it), so
+        # nothing is skipped yet; #147 may add matches it leaves alone.
+        counts={"matched": len(rows), "excluded": len(rows), "skipped": 0},
+        included_before=included_before,
+        target=target,
+        reviewer=reviewer,
+    ))
     return len(rows)
 
 
-def load_decision_log(db: Session, project_id: int, query_ids: list[int]) -> ScreeningDecisionLog:
+def _bulk_exclude_step(
+    db: Session,
+    *,
+    query_id: int,
+    run_id: str,
+    decided_at: datetime,
+    citation_threshold: int,
+    counts: dict[str, int],
+    included_before: int,
+    target: ScreeningState,
+    reviewer: str | None,
+) -> MethodologyStep:
+    # Steps belong to a query but a bulk exclusion covers the whole project, so
+    # it is filed under the project's latest query with scope "project", and the
+    # exports keep it out of the per-query pipeline and PRISMA totals.
+    # Same MAX + 1 rule as the worker's _next_step_order; importing it would pull
+    # Celery and the adapters into the request path.
+    last_step = db.scalar(select(func.max(MethodologyStep.step_order)).where(MethodologyStep.query_id == query_id))
+    return MethodologyStep(
+        query_id=query_id,
+        step_order=(last_step or 0) + 1,
+        phase=BULK_EXCLUDE_PHASE,
+        source=BULK_EXCLUDE_SOURCE,
+        action=f"Bulk exclusion of included records with citation count missing or at most {citation_threshold}",
+        records_in=included_before,
+        records_out=included_before - counts["excluded"],
+        records_affected=counts["excluded"],
+        parameters={
+            "run_id": run_id,
+            "scope": "project",
+            "citation_threshold": citation_threshold,
+            **counts,
+            "reason": target.exclusion_reason,
+            "screening_stage": target.screening_stage,
+            "reviewer": reviewer,
+        },
+        timestamp=decided_at,
+    )
+
+
+def load_decision_log(
+    db: Session,
+    project_id: int,
+    query_ids: list[int],
+    *,
+    with_publications: bool = True,
+) -> ScreeningDecisionLog:
+    """``with_publications`` loads each decision's PMID and DOI for the CSV. The
+    text summary never reads them, so it skips the join, and raiseload turns any
+    accidental per-row lazy load into an error instead of an N+1."""
+    publication_option = (
+        joinedload(ScreeningDecision.publication).options(load_only(Publication.pmid, Publication.doi))
+        if with_publications
+        else raiseload(ScreeningDecision.publication)
+    )
     decisions = db.scalars(
         select(ScreeningDecision)
-        .options(joinedload(ScreeningDecision.publication))
+        .options(publication_option)
         .where(ScreeningDecision.project_id == project_id)
         .order_by(ScreeningDecision.id)
     ).all()

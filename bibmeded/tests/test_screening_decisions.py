@@ -4,14 +4,17 @@ Every change to a publication's screening state appends one ``ScreeningDecision`
 row in the same transaction as the change; calls that change nothing append none.
 """
 
+import uuid
 from datetime import datetime, timezone
 
 import pytest
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from bibmeded.models import MethodologyStep, Publication, ScreeningDecision, SearchProject, SearchQuery
 from bibmeded.services import screening
-from bibmeded.services.screening import INCLUDED, ScreeningState, apply_screening_state
+from bibmeded.services.screening import INCLUDED, ScreeningState, apply_screening_state, load_decision_log
 
 REVIEWER_HEADER = "X-Reviewer"
 
@@ -65,6 +68,7 @@ def test_toggle_exclude_appends_one_decision_with_the_previous_state(client, db)
     assert decision.publication_id == pub.id
     assert _snapshot(decision) == (False, None, None, True, "wrong_outcome", "full_text")
     assert decision.source == "toggle"
+    assert decision.run_id is None
     assert decision.criteria is None
     assert decision.reviewer is None
     # SQLite hands back naive datetimes; the column stores UTC either way.
@@ -146,6 +150,8 @@ def test_bulk_exclude_appends_one_decision_per_affected_publication(client, db):
         assert decision.criteria == {"citation_threshold": 0}
         assert decision.reviewer == "MB"
     assert len({d.decided_at for d in decisions}) == 1
+    (run_id,) = {d.run_id for d in decisions}
+    assert uuid.UUID(run_id).version == 4
 
 
 def test_bulk_exclude_that_matches_nothing_writes_no_decision(client, db):
@@ -155,6 +161,96 @@ def test_bulk_exclude_that_matches_nothing_writes_no_decision(client, db):
 
     assert r.json()["excluded_count"] == 0
     assert _decisions(db, project.id) == []
+
+
+def _bulk_steps(db, project):
+    query_ids = [q.id for q in project.queries]
+    return db.scalars(
+        select(MethodologyStep)
+        .where(MethodologyStep.query_id.in_(query_ids), MethodologyStep.phase == "bulk_exclude")
+        .order_by(MethodologyStep.id)
+    ).all()
+
+
+def test_bulk_exclude_records_a_methodology_step_sharing_the_run_id(client, db):
+    project, pubs = _project_with_pubs(db, "audit-bulk-step", count=2, citation_count=0)
+    later_query = SearchQuery(project_id=project.id, query_string="second")
+    db.add(later_query)
+    db.flush()
+    db.add(MethodologyStep(
+        query_id=later_query.id, step_order=4, phase="search", source="pubmed", action="Search",
+        records_in=0, records_out=0, records_affected=0, parameters={}, timestamp=datetime.now(timezone.utc),
+    ))
+    db.add(Publication(pmid="audit-bulk-step-cited", title="Cited", year=2024, citation_count=7,
+                       query_id=later_query.id, project_id=project.id))
+    db.commit()
+
+    client.post(_bulk_url(project), json={"citation_threshold": 0, "reason": "non_english"},
+                headers={REVIEWER_HEADER: "MB"})
+
+    (step,) = _bulk_steps(db, project)
+    (run_id,) = {d.run_id for d in _decisions(db, project.id)}
+    assert (step.query_id, step.step_order) == (later_query.id, 5)
+    assert (step.source, step.records_in, step.records_out, step.records_affected) == ("bulk_exclude", 3, 1, 2)
+    assert step.parameters == {
+        "run_id": run_id, "scope": "project", "citation_threshold": 0, "matched": 2, "excluded": 2,
+        "skipped": 0, "reason": "non_english", "screening_stage": "title_abstract", "reviewer": "MB",
+    }
+
+
+def test_a_bulk_exclude_that_matches_nothing_still_appears_in_the_methodology_export(client, db):
+    project, _ = _project_with_pubs(db, "audit-bulk-zero", count=1, citation_count=50)
+
+    client.post(_bulk_url(project), json={"citation_threshold": 0})
+
+    (step,) = _bulk_steps(db, project)
+    assert step.parameters["matched"] == step.parameters["excluded"] == step.parameters["skipped"] == 0
+    assert uuid.UUID(step.parameters["run_id"]).version == 4
+    text = client.get(f"/api/projects/{project.id}/export/methodology").text
+    section = text.split("SCREENING DECISION HISTORY (audit trail)\n", 1)[1].split("\n\n", 1)[0]
+    assert "  Decisions logged: 0\n  Bulk exclusions:\n" in section
+    assert f"(run {step.parameters['run_id']}): 0 matched, 0 excluded, 0 skipped;" in section
+
+
+def test_each_bulk_request_gets_its_own_run_id(client, db):
+    project, (first, second) = _project_with_pubs(db, "audit-bulk-runs", count=2, citation_count=0)
+    second.citation_count = 3
+    db.commit()
+
+    client.post(_bulk_url(project), json={"citation_threshold": 0})
+    client.post(_bulk_url(project), json={"citation_threshold": 5})
+
+    first_run, second_run = (d.run_id for d in _decisions(db, project.id))
+    assert first_run != second_run
+    assert [s.parameters["run_id"] for s in _bulk_steps(db, project)] == [first_run, second_run]
+
+
+def test_the_model_rejects_an_unknown_decision_source(db):
+    project, (pub,) = _project_with_pubs(db, "audit-bad-source")
+    db.add(ScreeningDecision(
+        project_id=project.id, publication_id=pub.id, decided_at=datetime.now(timezone.utc), source="import",
+        previous_excluded=False, excluded=True,
+    ))
+    with pytest.raises(IntegrityError):
+        db.flush()
+    db.rollback()
+
+
+def test_decision_log_loads_only_identifiers_and_can_skip_publications(client, db):
+    project, (pub,) = _project_with_pubs(db, "audit-lean-load")
+    client.patch(_exclude_url(project, pub))
+    query_ids = [q.id for q in project.queries]
+
+    db.expunge_all()
+    (lean,) = load_decision_log(db, project.id, query_ids, with_publications=False).decisions
+    assert "publication" in sa_inspect(lean).unloaded
+
+    db.expunge_all()
+    (full,) = load_decision_log(db, project.id, query_ids, with_publications=True).decisions
+    assert "publication" not in sa_inspect(full).unloaded
+    loaded_pub = full.publication
+    assert loaded_pub.pmid == "audit-lean-load-0"
+    assert {"title", "abstract"} <= sa_inspect(loaded_pub).unloaded
 
 
 def test_bulk_exclude_skips_already_excluded_records(client, db):

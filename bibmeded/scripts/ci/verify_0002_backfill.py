@@ -16,7 +16,7 @@ exclusion is backfilled to ``full_text``, the other exclusion to
 ``title_abstract``, included rows keep a NULL stage, and the CHECK constraint
 exists.
 
-Also checks 0006_screening_decisions: the table exists with its stage CHECK
+Also checks 0006_screening_decisions: the table exists with its stage and source CHECK
 constraints and holds no rows, because the decision log is never backfilled.
 
 Usage (from bibmeded/ directory, BIBMEDED_DATABASE_URL pointing at Postgres):
@@ -66,6 +66,7 @@ def _screening_stage_errors(conn) -> list[str]:
 DECISION_CHECK_CONSTRAINTS = {
     "ck_screening_decisions_screening_stage",
     "ck_screening_decisions_previous_screening_stage",
+    "ck_screening_decisions_source",
 }
 
 

@@ -25,6 +25,7 @@ from bibmeded.services.export_generators import (
     generate_csv,
     generate_json,
     generate_methodology,
+    generate_prisma_svg,
     generate_ris,
     generate_screening_decisions_csv,
 )
@@ -535,6 +536,7 @@ def make_decision(
     reviewer=None,
     source="toggle",
     criteria=None,
+    run_id=None,
 ):
     decision = ScreeningDecision(
         id=decision_id,
@@ -543,6 +545,7 @@ def make_decision(
         decided_at=decided_at,
         reviewer=reviewer,
         source=source,
+        run_id=run_id,
         criteria=criteria,
         previous_excluded=previous[0],
         previous_exclusion_reason=previous[1],
@@ -610,8 +613,8 @@ class TestScreeningDecisionHistory:
             "      Full-text not retrievable: 1",
             "      Wrong outcome: 1",
             "  Bulk exclusions:",
-            "    2026-10-01T09:05:00Z: 2 records with citation count missing or at most 0 "
-            "(reason: Other / unspecified; stage: Title/abstract; reviewer: none recorded)",
+            "    2026-10-01T09:05:00Z (run id not recorded): 2 records excluded with citation count missing "
+            "or at most 0 (reason: Other / unspecified; stage: Title/abstract; reviewer: none recorded)",
             "  Reviewer labels: MB, Reviewer A",
             "  Decisions without a reviewer label: 2",
             "  Per-decision log: the screening-decisions CSV in the export bundle.",
@@ -663,11 +666,12 @@ class TestScreeningDecisionHistory:
         text = generate_methodology("Audit", self.STEPS, {}, ScreeningDecisionLog(decisions=decisions))
         section = _decision_section(text)
         assert (
-            "    2026-10-01T09:00:00Z: 1 record with criteria {\"year_before\": 2000} "
+            "    2026-10-01T09:00:00Z (run id not recorded): 1 record excluded with "
+            "criteria {\"year_before\": 2000} "
             "(reason: Other / unspecified; stage: Title/abstract; reviewer: none recorded)"
         ) in section
         assert (
-            "    2026-10-01T10:00:00Z: 1 record with criteria not recorded "
+            "    2026-10-01T10:00:00Z (run id not recorded): 1 record excluded with criteria not recorded "
             "(reason: No reason recorded; stage: Full text; reviewer: MB)"
         ) in section
 
@@ -701,7 +705,7 @@ class TestScreeningDecisionHistory:
 
 class TestScreeningDecisionsCsv:
     HEADER = [
-        "decision_id", "decided_at_utc", "reviewer", "source", "action", "criteria",
+        "decision_id", "decided_at_utc", "reviewer", "source", "run_id", "action", "criteria",
         "publication_id", "pmid", "doi",
         "previous_excluded", "previous_exclusion_reason", "previous_screening_stage",
         "excluded", "exclusion_reason", "screening_stage",
@@ -714,21 +718,21 @@ class TestScreeningDecisionsCsv:
         header, *rows = self._rows(DECISIONS)
         assert header == self.HEADER
         assert [r[0] for r in rows] == ["1", "2", "3", "4", "5", "6"]
-        assert [r[4] for r in rows] == ["exclude", "exclude", "exclude", "re-include", "exclude", "change"]
+        assert [r[5] for r in rows] == ["exclude", "exclude", "exclude", "re-include", "exclude", "change"]
 
     def test_writes_exact_row_content(self):
         _, first, second, _, fourth, *_ = self._rows(DECISIONS)
         assert first == [
-            "1", "2026-10-01T09:00:00.000000Z", "Reviewer A", "toggle", "exclude", "",
+            "1", "2026-10-01T09:00:00.000000Z", "Reviewer A", "toggle", "", "exclude", "",
             "10", "111", "10.1/one", "false", "", "", "true", "non_english", "title_abstract",
         ]
-        assert second[5] == '{"citation_threshold": 0}'
-        assert second[8] == ""
-        assert fourth[9:] == ["true", "non_english", "title_abstract", "false", "", ""]
+        assert second[6] == '{"citation_threshold": 0}'
+        assert second[9] == ""
+        assert fourth[10:] == ["true", "non_english", "title_abstract", "false", "", ""]
 
     def test_escapes_formula_injection_in_identifiers(self):
         _, _, _, third, *_ = self._rows(DECISIONS)
-        assert third[7] == "'=333"
+        assert third[8] == "'=333"
 
     def test_empty_log_writes_only_the_header(self):
         assert self._rows(()) == [self.HEADER]
@@ -749,3 +753,107 @@ class TestBundleScreeningDecisions:
     def test_bundle_without_a_log_has_no_decision_csv(self):
         zf = zipfile.ZipFile(io.BytesIO(generate_bundle("Bundle Project", [make_pub()], [make_step()], {})))
         assert not [n for n in zf.namelist() if "screening-decisions" in n]
+
+
+RUN_A = "11111111-1111-4111-8111-111111111111"
+RUN_B = "22222222-2222-4222-8222-222222222222"
+RUN_C = "33333333-3333-4333-8333-333333333333"
+
+
+def make_bulk_step(*, run_id, at, matched, excluded, query_id=1, step_order=9, included_before=20,
+                   reason="other", stage="title_abstract", reviewer=None):
+    step = make_step(
+        query_id=query_id, step_order=step_order, phase="bulk_exclude", source="bulk_exclude",
+        action="Bulk exclusion", records_in=included_before, records_out=included_before - excluded,
+        records_affected=excluded,
+        parameters={
+            "run_id": run_id, "scope": "project", "citation_threshold": 0, "matched": matched,
+            "excluded": excluded, "skipped": matched - excluded, "reason": reason,
+            "screening_stage": stage, "reviewer": reviewer,
+        },
+    )
+    step.timestamp = at
+    return step
+
+
+def _bulk_section_lines(text):
+    section = _decision_section(text)
+    start = section.index("  Bulk exclusions:") + 1
+    return [line for line in section[start:] if line.startswith("    ")]
+
+
+class TestBulkExclusionRuns:
+    PIPELINE = [
+        make_step(query_id=1, step_order=1, phase="search", records_in=0, records_out=20, records_affected=20),
+        make_step(query_id=1, step_order=2, phase="fetch", records_in=20, records_out=18, records_affected=2),
+    ]
+
+    def _bulk_rows(self, run_id, at, count, first_id=1):
+        return tuple(
+            make_decision(decision_id=first_id + i, decided_at=at, publication=P1, source="bulk_exclude",
+                          criteria={"citation_threshold": 0}, run_id=run_id)
+            for i in range(count)
+        )
+
+    def test_a_zero_match_run_is_reported_from_its_methodology_step(self):
+        steps = self.PIPELINE + [make_bulk_step(run_id=RUN_A, at=_utc(4, 8), matched=0, excluded=0, reviewer="MB")]
+        text = generate_methodology("Audit", steps, {}, ScreeningDecisionLog(decisions=()))
+        section = _decision_section(text)
+        assert section[0] == "  Decisions logged: 0"
+        assert section[1:3] == [
+            "  Bulk exclusions:",
+            f"    2026-10-04T08:00:00Z (run {RUN_A}): 0 matched, 0 excluded, 0 skipped; citation count missing "
+            "or at most 0 (reason: Other / unspecified; stage: Title/abstract; reviewer: MB)",
+        ]
+
+    def test_runs_are_grouped_by_run_id_not_by_timestamp(self):
+        same_moment = _utc(5, 9)
+        decisions = self._bulk_rows(RUN_A, same_moment, 2) + self._bulk_rows(RUN_B, same_moment, 1, first_id=3)
+        steps = self.PIPELINE + [
+            make_bulk_step(run_id=RUN_A, at=same_moment, matched=2, excluded=2),
+            make_bulk_step(run_id=RUN_B, at=same_moment, matched=1, excluded=1, step_order=10),
+        ]
+        lines = _bulk_section_lines(generate_methodology("Audit", steps, {}, ScreeningDecisionLog(decisions=decisions)))
+        assert [line.split(": ", 1)[1].split(";", 1)[0] for line in lines[:2]] == [
+            "2 matched, 2 excluded, 0 skipped",
+            "1 matched, 1 excluded, 0 skipped",
+        ]
+        assert RUN_A in lines[0] and RUN_B in lines[1]
+
+    def test_rows_whose_run_has_no_step_are_still_reported(self):
+        decisions = self._bulk_rows(RUN_C, _utc(6, 7), 2)
+        lines = _bulk_section_lines(generate_methodology("Audit", self.PIPELINE, {}, ScreeningDecisionLog(decisions)))
+        assert lines == [
+            f"    2026-10-06T07:00:00Z (run {RUN_C}, no methodology step recorded): 2 records excluded with "
+            "citation count missing or at most 0 (reason: Other / unspecified; stage: Title/abstract; "
+            "reviewer: none recorded)",
+        ]
+
+    def test_a_step_that_disagrees_with_its_decision_rows_is_flagged(self):
+        decisions = self._bulk_rows(RUN_A, _utc(5, 9), 1)
+        steps = self.PIPELINE + [make_bulk_step(run_id=RUN_A, at=_utc(5, 9), matched=2, excluded=2)]
+        lines = _bulk_section_lines(generate_methodology("Audit", steps, {}, ScreeningDecisionLog(decisions)))
+        assert lines[1] == "      Note: 1 decision row carries this run id, but the step records 2 exclusion(s)."
+
+    def test_bulk_steps_stay_out_of_the_pipeline_and_the_included_total(self):
+        bulk = make_bulk_step(run_id=RUN_A, at=_utc(4, 8), matched=3, excluded=3, included_before=18)
+        with_bulk = generate_methodology("Audit", self.PIPELINE + [bulk], {}, ScreeningDecisionLog(decisions=()))
+        without_bulk = generate_methodology("Audit", self.PIPELINE, {}, ScreeningDecisionLog(decisions=()))
+        assert "BULK_EXCLUDE" not in with_bulk
+        assert "Step 9" not in with_bulk
+        assert "  Studies included: 18" in with_bulk
+        assert with_bulk.split("FINAL DATASET", 1)[1] == without_bulk.split("FINAL DATASET", 1)[1]
+
+    def test_bulk_steps_do_not_change_the_prisma_diagram(self):
+        bulk = make_bulk_step(run_id=RUN_A, at=_utc(4, 8), matched=3, excluded=3, included_before=18)
+        assert generate_prisma_svg("Audit", self.PIPELINE + [bulk], {}) == generate_prisma_svg("Audit", self.PIPELINE, {})
+
+    def test_a_project_with_only_a_bulk_step_still_gets_the_history_section(self):
+        steps = [make_bulk_step(run_id=RUN_A, at=_utc(4, 8), matched=0, excluded=0)]
+        text = generate_methodology("Audit", steps)
+        assert "No methodology steps recorded" in text
+        assert f"(run {RUN_A}): 0 matched, 0 excluded, 0 skipped" in text
+
+    def test_csv_carries_the_run_id(self):
+        (row,) = list(csv.reader(io.StringIO(generate_screening_decisions_csv(self._bulk_rows(RUN_A, _utc(5, 9), 1)))))[1:]
+        assert row[3:5] == ["bulk_exclude", RUN_A]

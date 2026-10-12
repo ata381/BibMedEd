@@ -259,7 +259,7 @@ DECISIONS_REVISION = "0006_screening_decisions"
 PRE_DECISIONS_REVISION = "0005_sample_query_string"
 DECISIONS_TABLE = "screening_decisions"
 DECISION_COLUMNS = {
-    "id", "project_id", "publication_id", "decided_at", "reviewer", "source", "criteria",
+    "id", "project_id", "publication_id", "decided_at", "reviewer", "source", "run_id", "criteria",
     "previous_excluded", "previous_exclusion_reason", "previous_screening_stage",
     "excluded", "exclusion_reason", "screening_stage",
 }
@@ -312,6 +312,58 @@ def test_0006_rejects_an_unknown_screening_stage(sqlite_db):
     with pytest.raises(sa.exc.IntegrityError):
         with sqlite_db.begin() as conn:
             conn.execute(INSERT_DECISION, {"stage": "abstract"})
+
+
+def test_0006_rejects_an_unknown_source(sqlite_db):
+    _upgrade_seeded_db_to_decisions(sqlite_db)
+
+    with pytest.raises(sa.exc.IntegrityError, match="ck_screening_decisions_source|CHECK"):
+        with sqlite_db.begin() as conn:
+            conn.execute(sa.text(
+                "INSERT INTO screening_decisions (project_id, publication_id, decided_at, source, "
+                "previous_excluded, excluded) VALUES (1, 1, '2026-10-12 09:00:00', 'import', 0, 1)"
+            ))
+
+
+def _decision_table_shape(engine) -> dict:
+    inspector = sa.inspect(engine)
+    return {
+        "columns": {
+            c["name"]: (str(c["type"]), c["nullable"]) for c in inspector.get_columns(DECISIONS_TABLE)
+        },
+        "indexes": {
+            (i["name"], tuple(i["column_names"]), bool(i["unique"])) for i in inspector.get_indexes(DECISIONS_TABLE)
+        },
+        "checks": {
+            c["name"]: " ".join(c["sqltext"].split()) for c in inspector.get_check_constraints(DECISIONS_TABLE)
+        },
+        "foreign_keys": {
+            (tuple(fk["constrained_columns"]), fk["referred_table"], tuple(fk["referred_columns"]),
+             (fk.get("options") or {}).get("ondelete"))
+            for fk in inspector.get_foreign_keys(DECISIONS_TABLE)
+        },
+    }
+
+
+def test_0006_matches_the_model_schema(sqlite_db, tmp_path):
+    from bibmeded.database import Base
+    import bibmeded.models  # noqa: F401
+
+    _upgrade_seeded_db_to_decisions(sqlite_db)
+    model_engine = sa.create_engine(f"sqlite:///{(tmp_path / 'model.db').as_posix()}")
+    try:
+        Base.metadata.create_all(model_engine)
+        migrated, modelled = _decision_table_shape(sqlite_db), _decision_table_shape(model_engine)
+    finally:
+        model_engine.dispose()
+
+    assert migrated == modelled
+    assert ("ix_screening_decisions_project_id_run_id", ("project_id", "run_id"), False) in migrated["indexes"]
+    assert set(migrated["checks"]) == {
+        "ck_screening_decisions_screening_stage",
+        "ck_screening_decisions_previous_screening_stage",
+        "ck_screening_decisions_source",
+    }
 
 
 def test_0006_is_a_no_op_on_an_empty_database(sqlite_db):

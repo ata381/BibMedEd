@@ -129,8 +129,10 @@ def toggle_exclude(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     # Locked on Postgres so two concurrent toggles log consecutive states rather
-    # than two decisions that both start from the same snapshot.
-    pub = db.get(Publication, publication_id, with_for_update=True)
+    # than two decisions that both start from the same snapshot. FOR NO KEY
+    # UPDATE is enough because only non-key columns change, and it does not block
+    # the worker's KEY SHARE locks from inserting author and keyword links.
+    pub = db.get(Publication, publication_id, with_for_update={"key_share": True})
     if not pub:
         raise HTTPException(status_code=404, detail="Publication not found")
     project_query_ids = {q.id for q in project.queries}

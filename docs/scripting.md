@@ -195,9 +195,14 @@ c.patch(f"/api/projects/{pid}/publications/{pub_id}/exclude",
 The methodology log has a "Screening decision history" section. It gives the number of
 decisions (exclusions, reversals where an excluded record is re-included, and reason or
 stage changes), the first and last decision times, exclusion decisions by stage and
-reason, each bulk exclusion with its threshold and record count, and the reviewer labels
-seen. The export bundle adds `<project>-screening-decisions-<date>.csv` with one row per
-decision. The log starts at Alembic revision `0006_screening_decisions` and is not
+reason, every bulk-exclude request, and the reviewer labels seen. Each bulk-exclude request
+gets a `run_id` (a UUID) that is stored on every decision row it writes. It also gets a
+`bulk_exclude` methodology step with the run id, the threshold and the matched, excluded
+and skipped counts. A request that matches nothing therefore still shows up in the export.
+These steps cover the whole project. They are listed in this section and are not counted
+in the pipeline totals or the PRISMA diagram. The export bundle adds
+`<project>-screening-decisions-<date>.csv` with one row per decision, including its
+`run_id`. The log starts at Alembic revision `0006_screening_decisions` and is not
 backfilled, so the section also counts excluded records that have no logged decision.
 Downgrading that revision refuses to drop logged decisions unless
 `BIBMEDED_ALLOW_LOSSY_DOWNGRADE=1` is set.
