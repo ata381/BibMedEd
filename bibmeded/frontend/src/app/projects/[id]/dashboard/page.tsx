@@ -22,6 +22,7 @@ const TABS: TabItem<DashboardTab>[] = [
 ];
 const TOP_N = 8;
 const KEYWORD_LIMIT = 24;
+const GROWTH_REASON_ID = "growth-summary-reason";
 
 interface YearCount {
   year: number;
@@ -260,7 +261,7 @@ export default function Dashboard() {
 }
 
 function GrowthSummaryStats({ summary }: { summary: GrowthSummary }) {
-  const window =
+  const growthWindow =
     summary.start_year == null || summary.end_year == null
       ? null
       : `${summary.start_year}–${summary.end_year}`;
@@ -268,13 +269,23 @@ function GrowthSummaryStats({ summary }: { summary: GrowthSummary }) {
   const doublingUnavailable = summary.doubling_time_years == null;
   const reason = summary.reason ?? "Growth summary is unavailable for this corpus.";
   const hasUnavailableMetric = cagrUnavailable || doublingUnavailable;
-  const cagrValue = summary.cagr == null ? "—" : `${formatGrowthNumber(summary.cagr)}%`;
+  const unavailableValue = (
+    <span aria-describedby={GROWTH_REASON_ID}>
+      —<span className="sr-only"> not available</span>
+    </span>
+  );
+  const doublingText = summary.doubling_time_years == null ? null : formatGrowthNumber(summary.doubling_time_years);
+  const cagrValue = summary.cagr == null ? unavailableValue : `${formatGrowthNumber(summary.cagr)}%`;
   const doublingValue =
-    summary.doubling_time_years == null ? "—" : `${formatGrowthNumber(summary.doubling_time_years)} years`;
+    doublingText == null ? unavailableValue : `${doublingText} ${doublingText === formatGrowthNumber(1) ? "year" : "years"}`;
 
   return (
     <div className="mb-5">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rule-t rule-b [&>*]:py-4 sm:[&>*+*]:border-l sm:[&>*+*]:border-divider sm:[&>*+*]:pl-5">
+      <div
+        role="group"
+        aria-label="Publication growth summary"
+        className="grid grid-cols-1 sm:grid-cols-2 gap-4 rule-t rule-b [&>*]:py-4 sm:[&>*+*]:border-l sm:[&>*+*]:border-divider sm:[&>*+*]:pl-5"
+      >
         <Stat
           label="CAGR"
           value={cagrValue}
@@ -284,8 +295,8 @@ function GrowthSummaryStats({ summary }: { summary: GrowthSummary }) {
           value={doublingValue}
         />
       </div>
-      {hasUnavailableMetric ? <p className="mt-3 text-xs text-on-surface-subtle leading-snug">{reason}</p> : null}
-      {window ? <p className="mt-3 text-xs text-on-surface-subtle leading-snug">Growth window {window}</p> : null}
+      {hasUnavailableMetric ? <p id={GROWTH_REASON_ID} className="mt-3 text-xs text-on-surface-subtle leading-snug">{reason}</p> : null}
+      {growthWindow ? <p className="mt-3 text-xs text-on-surface-subtle leading-snug">Growth window {growthWindow}</p> : null}
       {summary.excluded_current_year ? (
         <p className="mt-3 text-xs text-on-surface-subtle leading-snug">Current incomplete year excluded from growth calculations.</p>
       ) : null}
@@ -294,7 +305,9 @@ function GrowthSummaryStats({ summary }: { summary: GrowthSummary }) {
 }
 
 function formatGrowthNumber(value: number) {
-  return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  // Rounding first lets a tiny negative value collapse to 0 instead of rendering as "-0".
+  const rounded = Math.round(value * 100) / 100;
+  return (rounded === 0 ? 0 : rounded).toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
 function PageTitle({ project }: { project: Project | null }) {
