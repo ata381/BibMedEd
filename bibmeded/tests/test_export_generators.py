@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 
 import pytest
 
+from bibmeded.analysis.lotka import LOTKA_METHOD, fit_lotka
 from bibmeded.models.author import Author
 from bibmeded.models.journal import Journal
 from bibmeded.models.keyword import Keyword, KeywordType
@@ -508,6 +509,58 @@ class TestGenerateMethodologyScreeningStages:
         text = generate_methodology("Unscreened", self.STEPS, {})
         assert "Title/abstract screening: 0 records excluded" in text
         assert "Full-text eligibility: 0 reports excluded" in text
+
+
+class TestGenerateMethodologyAuthorProductivity:
+    STEPS = [make_step(query_id=1, step_order=1, phase="search", records_in=0, records_out=20, records_affected=20)]
+
+    @staticmethod
+    def _section(text: str) -> list[str]:
+        return text.split("AUTHOR PRODUCTIVITY (Lotka's law)\n", 1)[1].split("\n\n", 1)[0].splitlines()
+
+    def test_reports_fit_parameters_and_ks_verdict(self):
+        counts = [n for n, a in {1: 3600, 2: 900, 3: 400, 4: 225, 5: 144, 6: 100}.items() for _ in range(a)]
+        lotka = fit_lotka(counts)
+        text = generate_methodology("Lotka", self.STEPS, {}, author_productivity=lotka)
+        assert self._section(text) == [
+            f"  Method: {LOTKA_METHOD}",
+            "  Parameters: complete counting over included records; at least 3 productivity levels; "
+            "K-S critical value 1.63/sqrt(N), used only above 35 authors",
+            "  Authors: 5369 across 6 productivity levels",
+            "  Fit: alpha = 2.0, C = 3600.0, R^2 = 1.0",
+            "  Kolmogorov-Smirnov: D = 0.0933, critical value = 0.0222 at the 0.01 level; "
+            "consistent with Lotka's law: no",
+        ]
+
+    def test_states_why_no_fit_was_made(self):
+        text = generate_methodology("Small", self.STEPS, {}, author_productivity=fit_lotka([1, 1, 2]))
+        section = self._section(text)
+        assert "  Authors: 3 across 2 productivity levels" in section
+        assert any(line.startswith("  Fit: not computed. ") and "3 distinct" in line for line in section)
+        assert not any(line.startswith("  Kolmogorov-Smirnov:") for line in section)
+
+    def test_states_why_the_ks_verdict_is_missing(self):
+        counts = [n for n, a in {1: 20, 2: 5, 3: 2, 4: 1}.items() for _ in range(a)]
+        section = self._section(generate_methodology("Few", self.STEPS, {}, author_productivity=fit_lotka(counts)))
+        ks_line = next(line for line in section if line.startswith("  Kolmogorov-Smirnov:"))
+        assert ks_line.startswith("  Kolmogorov-Smirnov: D = ")
+        assert "no verdict" in ks_line and "35" in ks_line
+
+    def test_states_why_the_ks_test_was_not_run(self):
+        counts = [n for n, a in {1: 5, 2: 6, 3: 8, 4: 9}.items() for _ in range(a)]
+        section = self._section(generate_methodology("Rising", self.STEPS, {}, author_productivity=fit_lotka(counts)))
+        ks_line = next(line for line in section if line.startswith("  Kolmogorov-Smirnov:"))
+        assert ks_line.startswith("  Kolmogorov-Smirnov: not computed. ")
+        assert "alpha > 1" in ks_line
+
+    def test_omits_the_section_when_no_author_analysis_is_given(self):
+        assert "AUTHOR PRODUCTIVITY" not in generate_methodology("Plain", self.STEPS, {})
+
+    def test_bundle_methodology_carries_the_section(self):
+        data = generate_bundle("Bundle", [make_pub()], self.STEPS, {}, author_productivity=fit_lotka([1]))
+        with zipfile.ZipFile(io.BytesIO(data)) as zf:
+            name = next(n for n in zf.namelist() if "methodology" in n)
+            assert "AUTHOR PRODUCTIVITY (Lotka's law)" in zf.read(name).decode("utf-8")
 
 
 class TestScreeningStageInJson:

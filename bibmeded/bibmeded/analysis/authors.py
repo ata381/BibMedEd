@@ -3,9 +3,20 @@ from collections import Counter
 from itertools import combinations
 
 import networkx as nx
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
-from bibmeded.models import Publication, SearchProject
+from bibmeded.models import Publication, SearchProject, publication_authors
+from bibmeded.analysis.lotka import fit_lotka
 from bibmeded.analysis.utils import graph_to_d3
+
+
+def _empty_result() -> dict:
+    return {
+        "top_authors": [],
+        "coauthorship_network": {"nodes": [], "links": []},
+        "total_authors": 0,
+        "lotka": fit_lotka([]),
+    }
 
 
 def _compute_indices(citations: list[int], pub_count: int) -> dict[str, float | int]:
@@ -64,6 +75,7 @@ def analyze_authors(db: Session, project_id: int) -> dict:
             "links": [{"source": int, "target": int, "weight": int}, ...],
           },
           "total_authors": int,
+          "lotka": {...},  # Lotka's law fit, see bibmeded.analysis.lotka.fit_lotka
         }
 
     The indices are **corpus-scoped**, not career-wide — they reflect the author's
@@ -72,10 +84,10 @@ def analyze_authors(db: Session, project_id: int) -> dict:
     """
     project = db.get(SearchProject, project_id)
     if not project:
-        return {"top_authors": [], "coauthorship_network": {"nodes": [], "links": []}, "total_authors": 0}
+        return _empty_result()
     query_ids = [q.id for q in project.queries]
     if not query_ids:
-        return {"top_authors": [], "coauthorship_network": {"nodes": [], "links": []}, "total_authors": 0}
+        return _empty_result()
     pubs = (
         db.query(Publication)
         .options(joinedload(Publication.authors))
@@ -116,4 +128,29 @@ def analyze_authors(db: Session, project_id: int) -> dict:
         G.add_node(aid, name=stats["name"], pub_count=stats["pub_count"])
     for (a1, a2), weight in coauthor_counter.items():
         G.add_edge(a1, a2, weight=weight)
-    return {"top_authors": top_authors, "coauthorship_network": graph_to_d3(G), "total_authors": len(author_stats)}
+    return {
+        "top_authors": top_authors,
+        "coauthorship_network": graph_to_d3(G),
+        "total_authors": len(author_stats),
+        "lotka": fit_lotka(stats["pub_count"] for stats in author_stats.values()),
+    }
+
+
+def analyze_author_productivity(db: Session, project_id: int) -> dict:
+    """Lotka's law fit for a project without building the co-authorship network.
+
+    Counts the same authors as ``analyze_authors`` (authors of included records), but
+    with one aggregate query, so the methodology export can log the fit cheaply.
+    """
+    project = db.get(SearchProject, project_id)
+    query_ids = [q.id for q in project.queries] if project else []
+    if not query_ids:
+        return fit_lotka([])
+    rows = (
+        db.query(func.count(publication_authors.c.publication_id))
+        .join(Publication, Publication.id == publication_authors.c.publication_id)
+        .filter(Publication.query_id.in_(query_ids), Publication.excluded == False)
+        .group_by(publication_authors.c.author_id)
+        .all()
+    )
+    return fit_lotka(count for (count,) in rows)

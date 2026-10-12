@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, joinedload
 
 logger = logging.getLogger(__name__)
 
+from bibmeded.analysis.authors import analyze_author_productivity
 from bibmeded.database import get_db
 from bibmeded.models import Publication, SearchProject
 from bibmeded.models.methodology import MethodologyStep
@@ -150,10 +151,11 @@ def export_prisma(project_id: int, db: Session = Depends(get_db)):
 def export_methodology(project_id: int, db: Session = Depends(get_db)):
     project, steps = _get_project_and_steps(project_id, db)
     exclusion_summary = _get_exclusion_summary(project_id, db)
+    author_productivity = analyze_author_productivity(db, project_id)
     decision_log = _get_decision_log(project, db, with_publications=False)
     filename = f"{slugify(project.name)}-methodology-{date.today().isoformat()}.txt"
     return StreamingResponse(
-        iter([generate_methodology(project.name, steps, exclusion_summary, decision_log)]),
+        iter([generate_methodology(project.name, steps, exclusion_summary, decision_log, author_productivity)]),
         media_type="text/plain",
         headers=_attachment(filename),
     )
@@ -170,10 +172,11 @@ def export_bundle(project_id: int, db: Session = Depends(get_db)):
     project, pubs = _get_project_and_pubs(project_id, db)
     _, steps = _get_project_and_steps(project_id, db)
     exclusion_summary = _get_exclusion_summary(project_id, db)
+    author_productivity = analyze_author_productivity(db, project_id)
     decision_log = _get_decision_log(project, db, with_publications=True)
     filename = f"{slugify(project.name)}-bundle-{date.today().isoformat()}.zip"
     return StreamingResponse(
-        iter([generate_bundle(project.name, pubs, steps, exclusion_summary, decision_log)]),
+        iter([generate_bundle(project.name, pubs, steps, exclusion_summary, decision_log, author_productivity)]),
         media_type="application/zip",
         headers=_attachment(filename),
     )
