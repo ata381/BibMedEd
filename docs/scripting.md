@@ -56,6 +56,10 @@ When the API is running locally:
 Use the raw spec with [`openapi-generator`](https://openapi-generator.tech/) to generate a
 typed client in Python, TypeScript, R, or any other supported language.
 
+## Example Jupyter Notebook
+
+For a complete, runnable example, see [`examples/sample_project_api.ipynb`](../../examples/sample_project_api.ipynb).
+
 ## Versioning contract
 
 Every analysis response carries a `schema_version` field. As of v0.2.0 the version is
