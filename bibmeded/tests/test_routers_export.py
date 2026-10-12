@@ -56,7 +56,7 @@ def test_export_wos_returns_utf8_plaintext_attachment(client, db):
     body = resp.content.decode("utf-8")
     assert body.startswith("\ufeffFN Clarivate Analytics Web of Science\nVR 1.0\n")
     assert "TI Geri bildirim çalışması\n" in body
-    assert "C1 [Demir, S] Hacettepe University, Ankara, Turkey\n" in body
+    assert "C1 [Demir, S] Hacettepe University, Ankara, Turkey.\n" in body
     assert "CR DOI 10.1000/cited\n" in body
     assert "Excluded record" not in body
     assert body.endswith("\nEF\n")

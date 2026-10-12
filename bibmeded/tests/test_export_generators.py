@@ -400,7 +400,7 @@ def make_wos_pub(**overrides):
             ),
             Author(
                 name="Smith, John",
-                affiliations=[Affiliation(name="University of Michigan, Ann Arbor, MI, USA", country="United States")],
+                affiliations=[Affiliation(name="University of Michigan, Ann Arbor, MI, USA", country="USA")],
             ),
         ],
         keywords=[
@@ -480,27 +480,64 @@ class TestGenerateWosPlaintext:
     def test_c1_groups_authors_by_affiliation_and_keeps_the_country(self):
         fields = wos_fields(generate_wos_plaintext([make_wos_pub()]))
         assert fields["C1"] == [
-            "[Demir, SA; Kaya, A] Hacettepe University, Ankara, Turkey",
-            "[Smith, J] University of Michigan, Ann Arbor, MI, USA",
+            "[Demir, SA; Kaya, A] Hacettepe University, Ankara, Turkey.",
+            "[Smith, J] University of Michigan, Ann Arbor, MI, USA.",
         ]
 
-    def test_doi_references_become_cited_references(self):
+    def test_c1_address_ends_with_exactly_one_period(self):
+        # bibliometrix splits the space-joined C1 lines into addresses on "." and
+        # matches countries with the trailing period, so every address needs one.
+        pub = make_wos_pub(
+            authors=[Author(name="Kaya, Ali", affiliations=[Affiliation(name="Ege University, Izmir, Turkey.", country="Turkey")])],
+        )
+        assert wos_fields(generate_wos_plaintext([pub]))["C1"] == ["[Kaya, A] Ege University, Izmir, Turkey."]
+
+    def test_c1_appends_the_stored_country_when_the_text_lacks_it(self):
+        pub = make_wos_pub(
+            source_database="openalex",
+            authors=[Author(name="Sofia Demir", affiliations=[Affiliation(name="Hacettepe University", country="Turkey")])],
+        )
+        assert wos_fields(generate_wos_plaintext([pub]))["C1"] == ["[Demir, S] Hacettepe University, Turkey."]
+
+    def test_c1_does_not_append_a_country_the_text_already_names_by_alias(self):
+        pub = make_wos_pub(
+            authors=[Author(name="Patel, James", affiliations=[Affiliation(name="University of Oxford, Oxford, England", country="UK")])],
+        )
+        assert wos_fields(generate_wos_plaintext([pub]))["C1"] == ["[Patel, J] University of Oxford, Oxford, England."]
+
+    def test_doi_references_outside_the_export_stay_bare(self):
         pub = make_wos_pub(external_references=["10.1000/cited-one", "10.1000/CITED-two"])
         fields = wos_fields(generate_wos_plaintext([pub]))
         assert fields["CR"] == ["DOI 10.1000/cited-one", "DOI 10.1000/cited-two"]
         assert fields["NR"] == ["2"]
 
-    def test_in_corpus_references_resolve_to_the_cited_record_doi(self):
-        cited = make_wos_pub(pmid="W100", doi="10.1000/in-corpus", source_database="openalex")
+    def test_in_corpus_references_use_the_wos_cited_reference_form(self):
+        # bibliometrix histNetwork matches "AU, PY, SO" plus the DOI against each
+        # record's SR, so a bare "DOI x" can never produce a local citation.
+        cited = make_wos_pub(pmid="W100", doi="10.1000/In-Corpus", source_database="openalex")
         citing = make_wos_pub(
             pmid="W200",
             doi="10.1000/citing",
             source_database="openalex",
-            external_references=["W100", "W999"],
+            external_references=["W100", "W999", "10.1000/outside"],
         )
         fields = wos_fields(generate_wos_plaintext([citing, cited]))
-        assert fields["CR"] == ["DOI 10.1000/in-corpus"]
-        assert fields["NR"] == ["2"]
+        assert fields["CR"] == [
+            "DEMIR SA, 2019, MEDICAL EDUCATION, DOI 10.1000/in-corpus",
+            "DOI 10.1000/outside",
+        ]
+        assert fields["NR"] == ["3"]
+
+    def test_a_doi_reference_to_an_exported_record_also_gets_the_full_form(self):
+        cited = make_wos_pub(pmid="1", doi="10.1000/in-corpus", journal_name="Med Teach", year=2021)
+        citing = make_wos_pub(pmid="2", doi="10.1000/citing", external_references=["10.1000/IN-CORPUS", "1"])
+        fields = wos_fields(generate_wos_plaintext([citing, cited]))
+        assert fields["CR"] == ["DEMIR SA, 2021, MED TEACH, DOI 10.1000/in-corpus"]
+
+    def test_full_form_leaves_out_parts_the_cited_record_lacks(self):
+        cited = make_wos_pub(pmid="1", doi="10.1000/bare", authors=[], year=None, journal_name=None)
+        citing = make_wos_pub(pmid="2", doi="10.1000/citing", external_references=["1"])
+        assert wos_fields(generate_wos_plaintext([citing, cited]))["CR"] == ["DOI 10.1000/bare"]
 
     def test_unresolvable_references_leave_cr_out_but_nr_counts_them(self):
         pub = make_wos_pub(source_database="sample", external_references=["sample-001", "sample-002"])
@@ -549,7 +586,7 @@ class TestGenerateWosPlaintext:
         fields = wos_fields(decoded)
         assert fields["TI"] == ["Tıp eğitiminde geri bildirim: 医学教育"]
         assert fields["AU"] == ["Çelik, Ö"]
-        assert fields["C1"] == ["[Çelik, Ö] Ege Üniversitesi, İzmir, Türkiye"]
+        assert fields["C1"] == ["[Çelik, Ö] Ege Üniversitesi, İzmir, Türkiye."]
 
     def test_missing_fields_produce_no_empty_tags(self):
         pub = make_wos_pub(
@@ -598,6 +635,14 @@ class TestGenerateWosPlaintext:
         fields = dict(records[0])
         assert fields["TI"] == ["Normal ER PT J TI injected"]
         assert fields["AB"] == ["Line one Line two"]
+
+    @pytest.mark.parametrize("separator", ["\v", "\f", "\x1c", "\x1d", "\x1e", "\x85", " ", " "])
+    def test_unicode_line_separators_are_replaced_too(self, separator):
+        pub = make_wos_pub(title=f"Before{separator}ER{separator}After")
+        text = generate_wos_plaintext([pub])
+        assert wos_fields(text)["TI"] == ["Before ER After"]
+        assert text.splitlines() == text.removesuffix("\n").split("\n")
+        assert "TI  - Before ER After" in generate_ris([pub])
 
 
 # ---------------------------------------------------------------------------
