@@ -50,7 +50,7 @@ Hypothetical final dataset: ~6,600 unique publications. The results table is sor
 
 ## 4. Screen by citation threshold (optional)
 
-For a scoping-style bibliometric review where citation impact matters, you can bulk-exclude papers below a citation threshold from the results page. BibMedEd records the threshold and the count removed into the methodology log — you don't have to remember the magic number when writing Methods.
+For a scoping-style bibliometric review where citation impact matters, you can bulk-exclude papers below a citation threshold from the results page. Every exclusion goes into the screening decision log, and the methodology log's "Screening decision history" section lists each bulk exclusion with its threshold, the number of records it removed and when it ran, so you don't have to remember the magic number when writing Methods. The per-decision log is a CSV in the export bundle.
 
 For this case study we leave everything in.
 

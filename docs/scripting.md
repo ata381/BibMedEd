@@ -118,7 +118,8 @@ df = pd.json_normalize(payload["publications"])
 df.to_parquet("corpus.parquet")
 ```
 
-For the full submission bundle (CSV + RIS + JSON + methodology + PRISMA SVG + manifest in
+For the full submission bundle (CSV + RIS + JSON + methodology + PRISMA SVG + screening
+decision log CSV + manifest in
 one .zip), hit `/api/projects/{id}/export/bundle`.
 
 ## Batch over many queries
@@ -173,6 +174,32 @@ may want to split by year range and merge.
 `GET /api/projects/{id}/export/prisma` returns the SVG. Both reflect manual exclusions
 made through the toggle / bulk-exclude endpoints, so a fully programmatic workflow can
 still produce a journal-quality methodology section.
+
+### Screening decision log
+
+Every exclude, re-include and bulk-exclude appends one row per changed record to an
+append-only screening decision log, in the same transaction as the change. A row holds the
+UTC time, the endpoint (`toggle` or `bulk_exclude`, with the citation threshold for bulk
+exclusions), the record's exclusion state, reason and stage before and after, and an
+optional reviewer label. BibMedEd has no accounts, so the label is whatever the client
+sends in the `X-Reviewer` header. Use ASCII letters, digits, spaces and `. _ @ ' ( ) -`,
+start with a letter or digit, and keep it to 64 characters at most. Anything else is
+rejected with `422`. Without the header no reviewer is recorded, and none is invented.
+
+```python
+c.patch(f"/api/projects/{pid}/publications/{pub_id}/exclude",
+        json={"reason": "wrong_population"}, headers={"X-Reviewer": "Reviewer A"})
+```
+
+The methodology log has a "Screening decision history" section. It gives the number of
+decisions (exclusions, reversals where an excluded record is re-included, and reason or
+stage changes), the first and last decision times, exclusion decisions by stage and
+reason, each bulk exclusion with its threshold and record count, and the reviewer labels
+seen. The export bundle adds `<project>-screening-decisions-<date>.csv` with one row per
+decision. The log starts at Alembic revision `0006_screening_decisions` and is not
+backfilled, so the section also counts excluded records that have no logged decision.
+Downgrading that revision refuses to drop logged decisions unless
+`BIBMEDED_ALLOW_LOSSY_DOWNGRADE=1` is set.
 
 ## Screening stages
 
