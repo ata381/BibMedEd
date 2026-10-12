@@ -23,6 +23,7 @@
   <a href="https://ata381.github.io/BibMedEd/case-study/">Case Study</a> &bull;
   <a href="https://ata381.github.io/BibMedEd/">Documentation</a> &bull;
   <a href="https://ata381.github.io/BibMedEd/deploy/">Self-Hosting</a> &bull;
+  <a href="https://ata381.github.io/BibMedEd/troubleshooting/">Troubleshooting</a> &bull;
   <a href="https://ata381.github.io/BibMedEd/adapters/">Write an Adapter</a> &bull;
   <a href="https://render.com/deploy?repo=https://github.com/ata381/BibMedEd">Deploy to Cloud</a> &bull;
   <a href="ROADMAP.md">Roadmap</a> &bull;
@@ -101,7 +102,7 @@ it before choosing **Explore sample project** again restores the bundled dataset
 
 **CLI only, no Docker:** `pip install bibmeded` (Python 3.12+, [PyPI](https://pypi.org/project/bibmeded/)), then `bibmeded search "medical education" --dry-run` to estimate result counts from a terminal or notebook. See [Scripting](https://ata381.github.io/BibMedEd/scripting/#install-from-pypi-cli-only).
 
-See the full [Self-Hosting Guide](https://ata381.github.io/BibMedEd/deploy/) for configuration, reset, and dev setup.
+See the full [Self-Hosting Guide](https://ata381.github.io/BibMedEd/deploy/) for configuration, reset, and dev setup. Stuck on a port clash, a PubMed rate limit, a missing Lens key or a search that never starts? See [Troubleshooting & FAQ](https://ata381.github.io/BibMedEd/troubleshooting/).
 
 ## Deploy to Cloud
 

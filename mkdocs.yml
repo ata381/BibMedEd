@@ -29,6 +29,7 @@ nav:
   - What's New: whats-new.md
   - Case Study: case-study.md
   - Self-Hosting: deploy.md
+  - Troubleshooting & FAQ: troubleshooting.md
   - Scripting & API: scripting.md
   - Writing Adapters: adapters.md
   - Community: community.md
