@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from bibmeded.models.methodology import MethodologyStep
-from bibmeded.services.prisma import PrismaCounts, compute_counts, render_svg
+from bibmeded.services.prisma import PrismaCounts, compute_counts, render_svg, summarize_exclusions
 
 
 def _step(**kwargs):
@@ -374,6 +374,49 @@ def test_compute_counts_legacy_reason_only_summary_is_title_abstract():
     assert counts.excluded_in_screening == 4
     assert counts.excluded_full_text == 0
     assert counts.unrecorded_stage == 4
+    assert counts.unrecorded_not_retrieved == 0
+
+
+def test_summarize_exclusions_counts_stageless_fulltext_unavailable_as_not_retrieved():
+    staged = summarize_exclusions({(None, "fulltext_unavailable"): 2, (None, "non_english"): 1})
+    assert staged.not_retrieved == 2
+    assert staged.title_abstract_by_reason == {"non_english": 1}
+    assert staged.full_text_by_reason == {}
+    assert staged.unrecorded_stage == 3
+    assert staged.unrecorded_not_retrieved == 2
+
+
+def test_summarize_exclusions_reads_legacy_bare_fulltext_unavailable_as_not_retrieved():
+    staged = summarize_exclusions({"fulltext_unavailable": 1})
+    assert staged.not_retrieved == 1
+    assert staged.title_abstract_by_reason == {}
+    assert staged.unrecorded_stage == 1
+
+
+def test_compute_counts_counts_stageless_fulltext_unavailable_as_reports_not_retrieved():
+    summary = {
+        (None, "fulltext_unavailable"): 2,
+        ("full_text", "fulltext_unavailable"): 1,
+        (None, "non_english"): 4,
+    }
+    counts = compute_counts(_two_stage_steps(), exclusion_summary=summary)
+    assert counts.excluded_in_screening == 4
+    assert counts.excluded_by_reason == {"non_english": 4}
+    assert counts.reports_sought == 86
+    assert counts.reports_not_retrieved == 3
+    assert counts.reports_assessed == 83
+    assert counts.excluded_full_text == 0
+    assert counts.unrecorded_stage == 6
+    assert counts.unrecorded_not_retrieved == 2
+
+
+def test_render_svg_notes_stageless_exclusions_in_the_box_that_counts_them():
+    summary = {(None, "fulltext_unavailable"): 2, (None, "non_english"): 4}
+    svg = render_svg(compute_counts(_two_stage_steps(), exclusion_summary=summary), "P")
+    assert "Records excluded (4)" in svg
+    assert "incl. 4 without a recorded stage" in svg
+    assert "Reports not retrieved (2)" in svg
+    assert "incl. 2 without a recorded stage" in svg
 
 
 def test_screening_stage_literal_matches_model_constraint_values():

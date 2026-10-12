@@ -187,7 +187,8 @@ Both exclude endpoints accept an optional `screening_stage`. When it is omitted 
   existed keep their old meaning.
 
 Sending `fulltext_unavailable` with an explicit `"screening_stage": "title_abstract"` is a
-contradiction and returns `422`. The API rejects it rather than silently changing the stage.
+contradiction and returns `422` whenever the request would exclude. The API rejects it rather
+than silently changing the stage.
 
 ```python
 # Exclude a record at full-text assessment
@@ -201,7 +202,8 @@ c.post(f"/api/projects/{pid}/publications/bulk-exclude", json={"citation_thresho
 ```
 
 The endpoint is a toggle: calling it on an excluded record re-includes it and clears both
-`exclusion_reason` and `screening_stage`, whatever the body says. A record has one stage,
+`exclusion_reason` and `screening_stage`, whatever the body says (a re-include is never
+refused for the contradiction above). A record has one stage,
 the stage it was excluded at; to move an exclusion to the other stage, re-include it and
 exclude it again. `GET /api/projects/{id}/publications` returns `screening_stage` on every
 publication (`null` while it is included). The data exports (CSV, RIS, JSON) contain only
@@ -215,7 +217,8 @@ reports not retrieved. The methodology log lists both stages with per-reason cou
 Alembic revision `0004_screening_stage` backfills exclusions that existed before stages:
 `fulltext_unavailable` exclusions become `full_text` (so they appear under "Reports not
 retrieved"), and every other exclusion becomes `title_abstract`. If any excluded record still
-has no stage, both exports count it at title/abstract and say how many there are.
+has no stage, both exports count it by the same rule (`fulltext_unavailable` under "Reports
+not retrieved", anything else at title/abstract) and say how many there are.
 Downgrading the revision refuses to run while full-text exclusions exist, because it would
 erase their stage. Export the methodology log first, then set
 `BIBMEDED_ALLOW_LOSSY_DOWNGRADE=1` to proceed.
