@@ -46,7 +46,7 @@ Cross-source dedup keys on `external_ids.doi` and `external_ids.pmid` — both n
 
 Hypothetical final dataset: ~6,600 unique publications. The results table is sortable by year, citation count, journal, and source. Click any row for the full abstract and identifiers.
 
-> **Tip:** the default result cap is 2,000. API and CLI users can pass `max_results` up to 10,000; the UI currently uses the default. The results page tells you when the upstream count exceeded what was fetched.
+> **Tip:** the default result cap is 2,000. API and CLI users can pass `max_results` up to 10,000; the UI currently uses the default. For PubMed searches with a cap below 10,000, the results page tells you when the upstream count exceeded what was fetched. For the other sources, and for PubMed at 10,000, a truncated search currently shows no warning ([#151](https://github.com/ata381/BibMedEd/issues/151)): if "Records identified" equals the cap exactly, treat the set as truncated and check the full count with `bibmeded search --dry-run`. See [Troubleshooting](troubleshooting.md#did-my-search-hit-the-2000-record-cap).
 
 ## 4. Screen by citation threshold (optional)
 

@@ -61,7 +61,7 @@
 - **Standard exports** — .RIS (Zotero/EndNote), .CSV (Excel/Sheets), versioned .JSON, methodology log, PRISMA 2020 flow diagram (.svg), and a single-click `.zip` bundle of all five
 - **Programmatic access** — Auto-generated OpenAPI spec at `/openapi.json`, interactive Swagger UI at `/docs`, ReDoc at `/redoc`. Analysis responses carry a `schema_version` field for downstream pinning.
 - **Self-hostable** — Single `docker compose up` on any lab server, no cloud account needed
-- **Result cap** — Default 2,000 records (configurable up to 10,000); results page warns when upstream returned more than was fetched so truncation is never silent
+- **Result cap** — Default 2,000 records (configurable up to 10,000). For PubMed below 10,000 the results page warns when upstream returned more than was fetched; for other sources and for PubMed at 10,000 truncation is not yet flagged ([#151](https://github.com/ata381/BibMedEd/issues/151)), so treat a count equal to the cap as truncated and check it with `bibmeded search --dry-run`
 
 ## Architecture
 

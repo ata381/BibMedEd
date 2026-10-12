@@ -34,6 +34,8 @@ BibMedEd publishes four ports on your computer: `3000` (web app), `8000` (API), 
 
 If you cannot stop a local PostgreSQL or Redis, you can move BibMedEd's copy instead. In `docker-compose.yml`, change only the number on the left of the colon, for example `"5432:5432"` to `"5433:5432"`. The BibMedEd containers talk to the database and Redis inside Docker, so nothing else needs to change.
 
+`docker-compose.yml` is part of the downloaded code, so a later `git pull` refuses to run while your edit is in it. Before updating, run `git stash` to set the edit aside, then `git pull`, then `git stash pop` to put it back. Moving the port in `docker-compose.override.yml` does not avoid this: that file is also part of the download, and Docker Compose adds ports listed there to the original ones instead of replacing them.
+
 Ports `3000` and `8000` are harder to move: the web app has the API address (`NEXT_PUBLIC_API_URL`) built in, and the API only accepts requests from the web app's address (`BIBMEDED_CORS_ORIGINS`). Free those two ports rather than changing them.
 
 ### The `api` or `worker` container exits with "no such file or directory" (Windows)
@@ -133,28 +135,35 @@ Fix: get a Scholarly API token from Lens.org, add `BIBMEDED_LENS_API_KEY=your_to
 The search page shows `0 publications ready.` and the results page says "No publications found". Check these in order:
 
 1. **Publication years.** The Query Builder starts at 2022 to 2025. Widen the range if your topic is older.
-2. **PubMed syntax sent to another database.** Field tags such as `[Mesh]`, `[tiab]` and `[PDAT]` only work in PubMed. OpenAlex, CrossRef, Semantic Scholar and Lens.org take plain keywords with `AND`, `OR` and `NOT`. Remove the tags, or switch the source to PubMed.
+2. **PubMed syntax sent to another database.** Field tags such as `[Mesh]`, `[tiab]` and `[PDAT]` only work in PubMed. OpenAlex and Lens.org take plain keywords combined with `AND`, `OR` and `NOT`. Remove the tags, or switch the source to PubMed.
+
+CrossRef and Semantic Scholar are a different case: they run a free-text relevance search and do not apply `AND`, `OR` and `NOT` as Boolean logic. With them, the usual problem is the opposite of zero results: a broad set of loosely related records that fills the 2,000-record cap. For a precise Boolean strategy, use PubMed, OpenAlex or Lens.org.
 3. **Advanced Query (Raw) mode.** For PubMed, the year range is part of the query text: it is the `[PDAT]` clause the Query Builder adds. In raw mode, type it yourself. For the other sources, the year fields are hidden in raw mode, but the years you last set in the Query Builder are still applied. Switch back to the Query Builder to check them.
 4. **Test the count without fetching anything.** From the command line, `bibmeded search "your query" --source openalex --dry-run` prints `Estimated results: N`. The dry run ignores year limits, so a large number here and 0 in the app points to the years.
 
-### The results page says "only the first 2,000 were fetched"
+### Did my search hit the 2,000-record cap?
+
+Each search fetches at most 2,000 records by default, so one broad query cannot run for hours. For PubMed searches with a cap below 10,000, BibMedEd tells you when the database had more. The results page shows:
 
 ```text
 Search returned 5,400 records — only the first 2,000 were fetched.
 ```
 
-Each search fetches at most 2,000 records by default, so one broad query cannot run for hours. When the database had more, BibMedEd says so instead of truncating silently. The methodology log records the same thing:
+and the methodology log records:
 
 ```text
     Results: 5400 records (capped at max_results=2000; full set not retrieved)
 ```
+
+!!! warning "The warning is not reliable for other sources or at 10,000"
+    For OpenAlex, CrossRef, Semantic Scholar and Lens.org, and for PubMed with the cap at 10,000, a truncated search currently shows **no warning**, and the methodology log does not mark it as capped ([#151](https://github.com/ata381/BibMedEd/issues/151)). Until that is fixed, treat any search whose **Records identified** number equals the cap exactly (2,000, or the cap you set) as truncated. Check the real total with `bibmeded search "your query" --source openalex --dry-run`, which prints `Estimated results: N`. The dry run ignores year limits, so narrow the query until the count is below the cap.
 
 For a systematic review you need the full set. Either:
 
 - **Narrow the query** (fewer years, more specific terms) until it returns fewer than 2,000 records, or run it in parts, for example one search per range of years. Searches in the same project are deduplicated against each other.
 - **Raise the cap, up to 10,000.** The web app always asks for 2,000. Use the API page at <http://localhost:8000/docs>: open `POST /api/projects/{project_id}/search`, choose **Try it out**, and send `"max_results": 10000` with your query. See [Scripting](scripting.md) for a script that does the same. The API rejects values above 10,000. A search has 10 minutes to finish (the worker's time limit), so very large searches can also fail. Splitting by year avoids both limits.
 
-The "Records identified" number can be lower than the database's full total for very large searches, because BibMedEd stops collecting IDs once it has enough. `--dry-run` gives the full count.
+For very large searches, the "Records identified" number can be lower than the database's full total, because BibMedEd stops collecting IDs once it has enough. `--dry-run` gives the full count.
 
 ### My search stays on "Search dispatched..." and never progresses
 
@@ -189,13 +198,13 @@ So two records with the same title are both kept when:
 - one has a DOI and the other does not, or they have different DOIs, and
 - they do not share a PMID.
 
-Records with neither a DOI nor a PMID can never be matched. If you find a duplicate yourself, exclude one copy on the results page with the reason **Duplicate not caught by automated dedup**. The methodology log counts it under that reason.
+Records with neither a DOI nor a PMID can never be matched. If you find a duplicate yourself, exclude one copy on the results page with the reason **Duplicate (missed by automated dedup)**. The methodology log counts it as "Duplicate not caught by automated dedup".
 
 ### Which wins, DOI or PMID?
 
 Either one is enough. A record is a duplicate if its DOI or its PMID matches a record already seen, and the first copy is kept. When both match, the methodology log counts the removal under `doi`, otherwise under `pmid`.
 
-Within one project, BibMedEd also checks every new record against the records already saved, by PMID (or the source's own ID) and DOI. A paper that an earlier search already found is not saved twice, and the copy saved first is kept.
+Within one project, BibMedEd also checks every new record against the records already saved, by PMID (or the source's own ID) and DOI. A paper that an earlier search already found is usually not saved twice, and the copy saved first is kept. There is one known gap ([#153](https://github.com/ata381/BibMedEd/issues/153)): if a paper first arrives from OpenAlex (or another non-PubMed source) and a later PubMed search returns it without a DOI, the two are not matched and both are kept. Exclude the extra copy as a duplicate.
 
 ### Where do I find how many duplicates were removed?
 
@@ -212,7 +221,7 @@ DEDUPLICATION
     Removed: 5 duplicates (412 → 407)
 ```
 
-This section only appears when a search removed at least one duplicate. Records skipped because an earlier search in the same project already had them are not listed here. They count as unavailable in that search's DATA COLLECTION step:
+This section only appears when a search removed at least one duplicate. BibMedEd fetches records in batches of 200 and this count covers duplicates inside a batch. Two kinds of skipped records are not listed here: records an earlier search in the same project already had, and duplicates that fall in different batches of the same search. Both count as unavailable in that search's DATA COLLECTION step:
 
 ```text
     Retrieved: 380 of 400 (20 unavailable)
@@ -252,9 +261,22 @@ On the results page, click **Excluded** on the record. It goes back to included 
 
 ## Analysis
 
+### The dashboard does not change after I exclude records or run another search
+
+The first time you open the dashboard, BibMedEd calculates the six analyses and stores the results. Later visits show those stored results. Nothing recalculates them after you exclude records or run a new search ([#152](https://github.com/ata381/BibMedEd/issues/152)), so the dashboard can describe an older version of your corpus. This also affects the answers below.
+
+Until that is fixed, recalculate by hand:
+
+1. Note your project's number. It is in the address bar: `http://localhost:3000/projects/7/dashboard` is project 7.
+2. Open <http://localhost:8000/docs> and find `POST /api/projects/{project_id}/analysis/{analysis_type}`.
+3. Choose **Try it out**, enter the project number, and run it once for each of `publications`, `authors`, `countries`, `keywords`, `citations` and `journals`.
+4. Reload the dashboard.
+
+Do this again after every round of exclusions or new searches, and before you export figures or numbers for a paper.
+
 ### The dashboard says "No publications to analyze"
 
-The dashboard counts included records that have a publication year. This message means there are none. Either no search has finished, every record is excluded, or no record has a year. Go back to the results page and check the included count.
+The dashboard counts included records that have a publication year. This message means there were none when the analyses were stored. Either no search had finished, every record was excluded, or no record has a year. Check the included count on the results page. If you have included records with years now, the dashboard is showing old stored results: [recalculate them](#the-dashboard-does-not-change-after-i-exclude-records-or-run-another-search).
 
 ### The growth summary shows "—" instead of CAGR or doubling time
 
@@ -267,20 +289,24 @@ The publication trends figure shows compound annual growth (CAGR) and doubling t
 | `Doubling time is not defined for non-positive growth (CAGR <= 0).` | Output is flat or shrinking, so it never doubles. CAGR is still shown. |
 | `Current incomplete year excluded from growth calculations.` | Not an error. The current year is still in progress, so it is left out. |
 
+If the message no longer matches your corpus, the dashboard is showing old stored results. [Recalculate them](#the-dashboard-does-not-change-after-i-exclude-records-or-run-another-search).
+
 ### Field maturity is `null` or `"undetermined"`
 
-The field maturity classification is not shown on the dashboard. It is in the publications analysis returned by the API (`field_maturity` in `GET /api/projects/{id}/analysis/publications`). It fits a logistic growth curve to cumulative publication counts:
+The field maturity classification is not shown on the dashboard. It is in the publications analysis returned by the API (`field_maturity` in `GET /api/projects/{id}/analysis/publications`). That request returns `404` with `Analysis not found. Run it first.` until the analysis has been calculated once, by opening the dashboard or with `POST` on the same address. The `GET` returns the stored result, so [recalculate](#the-dashboard-does-not-change-after-i-exclude-records-or-run-another-search) after changing the corpus.
 
-- **`null`**: fewer than four years between the first and last publication year, or the curve could not be fitted.
+The classification fits a logistic growth curve to cumulative publication counts:
+
+- **`null`**: the first and last publication years span fewer than four calendar years, counting both ends (for example 2021 to 2023 is three), or the curve could not be fitted.
 - **`"phase": "undetermined"`**: a curve was fitted but explains the data poorly (fit quality below 0.85). BibMedEd does not guess a phase label in that case. Plateau-then-surge fields often end up here.
 
 ### The network says "No network data available", or a table is empty
 
-The dashboard network is the co-authorship network. It is empty when no included record lists its authors. Large networks (more than 200 authors) start by showing only about the 100 most productive authors. Lower the **Min. publications** slider to see more.
+The dashboard network is the co-authorship network. It is empty when no included record lists its authors, or when the stored analysis predates your search ([recalculate](#the-dashboard-does-not-change-after-i-exclude-records-or-run-another-search)). Large networks (more than 200 authors) start by showing only about the 100 most productive authors. Lower the **Min. publications** slider to see more.
 
 Other analyses depend on what each source provides:
 
-- **Countries** are read from the end of author affiliation text and match a fixed list of about 50 countries. Semantic Scholar gives no affiliations, so a Semantic Scholar-only project has no country or institution data.
+- **Countries** are read from the end of author affiliation text and match a fixed list of about 50 countries. Semantic Scholar gives no affiliations, so a Semantic Scholar-only project has no country or institution data. OpenAlex records store only the institution name, such as "Harvard University", without a country, so OpenAlex-only projects have almost no country data ([#154](https://github.com/ata381/BibMedEd/issues/154)).
 - **Citation counts** are only filled for PubMed searches (see [above](#exclude-0-citation-papers-wants-to-exclude-almost-everything)). Other sources show 0 citations, and author h-indices will be 0.
 - **MeSH terms** come from PubMed and Lens.org. For the other sources, keyword analyses use only the keywords that source supplies.
 
@@ -297,7 +323,7 @@ Other analyses depend on what each source provides:
 | **PRISMA diagram** (`.svg`) | Web browser, Word, PowerPoint, Inkscape | The PRISMA 2020 flow diagram with your counts. |
 | **Bundle** (`.zip`) | Your file manager | All five files above plus a manifest. |
 
-CSV, RIS and JSON contain **included records only**. Excluded records and their reasons appear in the methodology log and the PRISMA diagram.
+CSV, RIS and JSON contain **included records only**. The methodology log and the PRISMA diagram give the number of excluded records per stage and reason, but do not list which records they were. To keep a list of your exclusions, export the CSV before you exclude anything and again afterwards, and compare the two.
 
 ### Where does the methodology log go in my paper?
 
@@ -337,15 +363,17 @@ curl http://localhost:8000/api/config
 
 When the API answers `{"read_only":false}`, reload the page.
 
+If the API answers correctly but the banner stays, check the address in your browser. The API only accepts the web app at exactly `http://localhost:3000`. Opening it as `http://127.0.0.1:3000`, or from another computer through a network address, makes the configuration request fail, and the app stays read-only. Open exactly <http://localhost:3000>.
+
 ### A misspelled setting is being ignored
 
-At start-up the API log warns about any `BIBMEDED_` variable it does not recognise:
+If you run BibMedEd without Docker, or on Render, the API log warns at start-up about any `BIBMEDED_` variable it does not recognise:
 
 ```text
 ignoring unrecognised environment variable BIBMEDED_READONLY (typo of a BIBMEDED_* setting?)
 ```
 
-Fix the spelling and restart. Valid names are listed in `bibmeded/.env.example` and the [configuration table](deploy.md#configuration).
+With `docker compose` there is **no warning**. Docker Compose only passes a fixed list of variables from `bibmeded/.env` into the containers (see `docker-compose.yml`), so a misspelled name never reaches the API and is silently ignored. Several correctly spelled settings are not passed either ([#148](https://github.com/ata381/BibMedEd/issues/148)). Compare your `.env` with `bibmeded/.env.example` and the [configuration table](deploy.md#configuration), fix the spelling, and restart.
 
 ### Can I put my BibMedEd on the internet?
 
@@ -362,6 +390,17 @@ docker compose up --build
 
 When the containers start, they update the database structure automatically with `alembic upgrade head`. The log shows `Running Alembic migrations...` before the API starts. Your projects are kept. Let running searches finish before you upgrade.
 
+The web app's packages are kept in a separate Docker volume that is filled only the first time. If the web app fails to start or shows errors after an update (check `docker compose logs frontend`), remove that volume so it is rebuilt from the new version:
+
+```bash
+docker compose down
+docker volume rm bibmeded_frontend_node_modules
+docker compose up --build
+```
+
+!!! danger "Do not use `docker compose down -v` for this"
+    `-v` removes **every** volume, including the database. All your projects would be deleted.
+
 If you run BibMedEd without Docker, run `alembic upgrade head` from the `bibmeded/` folder after updating.
 
 ### A downgrade refuses to run because of full-text exclusions
@@ -372,18 +411,30 @@ Going back to a version from before screening stages existed would delete the st
 0004_screening_stage downgrade: 3 publication(s) were excluded at the full-text stage, and dropping publications.screening_stage would erase that stage (they would read as title/abstract exclusions after re-upgrading). Export the methodology log and PRISMA diagram for every affected project first, then re-run with BIBMEDED_ALLOW_LOSSY_DOWNGRADE=1 to accept the loss. Refusing to silently drop reproducibility-critical screening data.
 ```
 
-First export the methodology log and PRISMA diagram for every affected project. Then set `BIBMEDED_ALLOW_LOSSY_DOWNGRADE=1` for the downgrade command only, to accept the loss.
+First export the methodology log and PRISMA diagram for every affected project. Then, with the current version still checked out, run the downgrade with the setting given to that one command only:
+
+```bash
+docker compose run --rm -e BIBMEDED_ALLOW_LOSSY_DOWNGRADE=1 api alembic downgrade 0003_sample_project_key
+```
+
+Run the downgrade before you switch to the older code. An older release does not know the newer database revision, so starting it on an upgraded database fails with an Alembic `Can't locate revision` error instead.
 
 ## Where do I report a bug?
 
 Open an issue on GitHub with the [bug report template](https://github.com/ata381/BibMedEd/issues/new?template=bug_report.yml). It asks for:
 
 - what happened, how to reproduce it, and what you expected;
-- your version (`bibmeded --version`, plus `git rev-parse --short HEAD` if you run from a clone);
+- your version: `bibmeded --version`, or `docker compose exec api bibmeded --version` if you use Docker, plus `git rev-parse --short HEAD` if you run from a clone;
 - how you run BibMedEd (local Docker Compose, Render, or other);
 - the output of `docker compose logs api worker` around the failure.
 
-Every API response carries an `X-Request-ID` header. If you have it, include it so the matching log lines can be found.
+If the API answered with an internal error (status `500`), the response body contains a `request_id`:
+
+```json
+{"detail": "Internal server error", "request_id": "3f9c2a1b7d4e"}
+```
+
+Include it so the matching log lines can be found. Every other response carries the same id in its `X-Request-ID` header.
 
 Other routes:
 
