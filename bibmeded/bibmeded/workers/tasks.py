@@ -413,7 +413,8 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
         configuration_error = adapter_configuration_error(source)
         if configuration_error:
             raise RuntimeError(configuration_error)
-        adapter = get_adapter(source, **_adapter_kwargs(source))
+        source_kwargs = _adapter_kwargs(source)
+        adapter = get_adapter(source, **source_kwargs)
         query.status = QueryStatus.running
         db.commit()
         log.info("run_search started query_id=%d source=%s max_results=%d", query_id, source, max_results)
@@ -446,12 +447,15 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
             searched_at_iso = ca.astimezone(timezone.utc).isoformat()
         else:
             searched_at_iso = None
+        search_parameters = {"query": query.query_string, "database": source,
+                             "max_results": max_results, "capped": total_found > max_results,
+                             "searched_at": searched_at_iso, "request_id": request_id}
+        if "rate_limit" in source_kwargs:
+            search_parameters["rate_limit_per_second"] = source_kwargs["rate_limit"]
         _log_step(db, query_id, step_order=None, phase="search", source=source,
                   action=f"{adapter.methodology_label()} search",
                   records_in=0, records_out=total_found,
-                  parameters={"query": query.query_string, "database": source,
-                              "max_results": max_results, "capped": total_found > max_results,
-                              "searched_at": searched_at_iso, "request_id": request_id})
+                  parameters=search_parameters)
 
         # Phase 2: Fetch + cross-source dedup + persist in chunks
         persisted = 0

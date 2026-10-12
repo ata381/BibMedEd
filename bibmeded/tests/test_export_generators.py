@@ -429,6 +429,25 @@ class TestGenerateMethodologyStudiesIncluded:
         text = generate_methodology("Clean Project", steps)
         assert "Failed to persist" not in text
 
+    def test_search_step_reports_request_rate_limit(self):
+        steps = [
+            make_step(query_id=1, step_order=1, phase="search", records_out=5,
+                      parameters={"query": "x", "rate_limit_per_second": 10.0}),
+        ]
+        text = generate_methodology("Rate Project", steps)
+        assert "    Request rate limit: 10 requests/s" in text
+
+    def test_search_step_reports_fractional_rate_without_rounding(self):
+        steps = [
+            make_step(query_id=1, step_order=1, phase="search", records_out=5,
+                      parameters={"rate_limit_per_second": 0.5}),
+        ]
+        assert "Request rate limit: 0.5 requests/s" in generate_methodology("Slow Project", steps)
+
+    def test_search_step_without_rate_omits_rate_line(self):
+        steps = [make_step(query_id=1, step_order=1, phase="search", records_out=5, parameters={"query": "x"})]
+        assert "Request rate limit" not in generate_methodology("No Rate Project", steps)
+
     def test_no_steps_returns_placeholder_and_no_studies_line(self):
         text = generate_methodology("Empty Project", [])
         assert "No methodology steps recorded" in text

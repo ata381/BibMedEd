@@ -225,6 +225,9 @@ def generate_methodology(
             searched_at = step.parameters.get("searched_at")
             if searched_at:
                 lines.append(f"    Searched at: {searched_at}")
+            rate_limit = step.parameters.get("rate_limit_per_second")
+            if rate_limit:
+                lines.append(f"    Request rate limit: {rate_limit:g} requests/s")
             capped = step.parameters.get("capped", False)
             max_results = step.parameters.get("max_results")
             if capped and max_results:
