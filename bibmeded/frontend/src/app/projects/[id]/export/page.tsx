@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { exportApi } from "@/lib/api";
 import { Button, Card, CardHeader, EmptyState, Icon, LoadingState, PageHeader, Skeleton, Tabs, type IconName, type TabItem } from "@/components/ui";
 
-type DataFormat = "csv" | "ris" | "json";
+type DataFormat = "csv" | "ris" | "wos" | "json";
 type Tab = "data" | "methodology";
 
 const TABS: TabItem<Tab>[] = [
@@ -29,6 +29,13 @@ const FORMAT_DETAILS: Record<DataFormat, { title: string; subtitle: string; icon
     bullets: ["Standard interchange format for reference managers", "Authors, abstract, keywords, DOI preserved", "Imports cleanly into Zotero, EndNote, Mendeley"],
     url: exportApi.risUrl,
   },
+  wos: {
+    title: "Web of Science plain text — bibliometric tools",
+    subtitle: "VOSviewer · Bibliometrix (R)",
+    icon: "network",
+    bullets: ["Clarivate field-tagged format (AU, TI, SO, DE, C1, CR, TC, PY, DI)", "Field-tagged input for VOSviewer and bibliometrix::convert2df(dbsource = \"wos\")", "Cited references listed where a DOI is known"],
+    url: exportApi.wosUrl,
+  },
   json: {
     title: "JSON — programmatic",
     subtitle: "Versioned schema · scripts · notebooks",
@@ -41,6 +48,7 @@ const FORMAT_DETAILS: Record<DataFormat, { title: string; subtitle: string; icon
 const INDIVIDUAL: Array<{ label: string; url: (id: number) => string }> = [
   { label: "CSV", url: exportApi.csvUrl },
   { label: "RIS", url: exportApi.risUrl },
+  { label: "WoS", url: exportApi.wosUrl },
   { label: "JSON", url: exportApi.jsonUrl },
   { label: "Methodology", url: exportApi.methodologyUrl },
   { label: "PRISMA", url: exportApi.prismaUrl },
@@ -178,7 +186,7 @@ export default function ExportManager() {
                   Everything in one click
                 </h2>
                 <p className="text-sm text-on-surface-muted mt-1.5 leading-relaxed">
-                  One <code className="font-mono text-xs">.zip</code> with the CSV, RIS, JSON, methodology log, PRISMA SVG, and a manifest — drop it straight into your
+                  One <code className="font-mono text-xs">.zip</code> with the CSV, RIS, Web of Science, JSON, methodology log, PRISMA SVG, and a manifest — drop it straight into your
                   supplementary materials.
                 </p>
               </div>
