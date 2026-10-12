@@ -1,10 +1,12 @@
 import logging
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.orm import Session, joinedload
 from bibmeded.database import get_db
 from bibmeded.models import Publication, SearchProject
 from bibmeded.schemas.publication import (
+    STAGE_CONTRADICTION_MESSAGE,
     BulkExcludeRequest,
     BulkExcludeResponse,
     PublicationListResponse,
@@ -99,8 +101,9 @@ def toggle_exclude(
 ):
     """Toggle a publication between included and excluded. Excluding records the
     PRISMA reason (default ``other``) and screening stage (``full_text`` for
-    ``fulltext_unavailable``, else ``title_abstract``, unless given); re-including
-    clears both."""
+    ``fulltext_unavailable``, else ``title_abstract``, unless given) and rejects
+    ``fulltext_unavailable`` at ``title_abstract`` with 422; re-including clears
+    both and ignores the body."""
     project = db.get(SearchProject, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -111,6 +114,19 @@ def toggle_exclude(
     if pub.query_id not in project_query_ids:
         raise HTTPException(status_code=404, detail="Publication not found")
     body = body or ToggleExcludeRequest()
+    if not pub.excluded and body.contradicts_stage_rule:
+        # Same response shape as a Pydantic body error, which is what this check
+        # returned while it was a model validator.
+        raise RequestValidationError(
+            [
+                {
+                    "type": "value_error",
+                    "loc": ("body",),
+                    "msg": f"Value error, {STAGE_CONTRADICTION_MESSAGE}",
+                    "input": body.model_dump(exclude_unset=True),
+                }
+            ]
+        )
     pub.excluded = not pub.excluded
     if pub.excluded:
         pub.exclusion_reason = body.reason or "other"

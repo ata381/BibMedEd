@@ -34,6 +34,7 @@ class StagedExclusions:
     not_retrieved: int
     full_text_by_reason: dict[str, int]
     unrecorded_stage: int
+    unrecorded_not_retrieved: int = 0
 
     @property
     def title_abstract_total(self) -> int:
@@ -47,19 +48,27 @@ class StagedExclusions:
 def summarize_exclusions(summary: ExclusionSummary | None) -> StagedExclusions:
     """Group an exclusion summary by screening stage and reason.
 
-    Exclusions without a recorded stage are counted at title/abstract, the same
-    rule the 0004 migration applied to exclusions made before stages existed;
-    ``unrecorded_stage`` keeps their number so reports can disclose it.
+    Exclusions without a recorded stage follow the rule the 0004 migration
+    applied to exclusions made before stages existed: ``fulltext_unavailable``
+    is counted at full text ("Reports not retrieved"), every other reason at
+    title/abstract. ``unrecorded_stage`` keeps their total and
+    ``unrecorded_not_retrieved`` the part counted as not retrieved, so reports
+    can disclose both.
     """
     by_stage: dict[str, dict[str, int]] = {stage: {} for stage in SCREENING_STAGES}
     unrecorded = 0
+    unrecorded_not_retrieved = 0
     for key, n in (summary or {}).items():
         if n <= 0:
             continue
         stage, reason = key if isinstance(key, tuple) else (None, key)
         if stage is None:
             unrecorded += n
-            stage = TITLE_ABSTRACT
+            if reason == NOT_RETRIEVED_REASON:
+                unrecorded_not_retrieved += n
+                stage = FULL_TEXT
+            else:
+                stage = TITLE_ABSTRACT
         if stage not in by_stage:
             raise ValueError(f"Unknown screening stage {stage!r}; expected one of {SCREENING_STAGES}")
         reason_key = reason or "other"
@@ -72,6 +81,7 @@ def summarize_exclusions(summary: ExclusionSummary | None) -> StagedExclusions:
         not_retrieved=not_retrieved,
         full_text_by_reason=full_text,
         unrecorded_stage=unrecorded,
+        unrecorded_not_retrieved=unrecorded_not_retrieved,
     )
 
 
@@ -117,6 +127,7 @@ class PrismaCounts:
     excluded_full_text: int = 0
     excluded_full_text_by_reason: dict[str, int] = field(default_factory=dict)
     unrecorded_stage: int = 0
+    unrecorded_not_retrieved: int = 0
     included: int = 0
 
     @property
@@ -163,7 +174,7 @@ def compute_counts(
       - ``exclusion_summary`` (live per-stage, per-reason counts of excluded
         publications) raises each stage's total to at least its row count.
         Full-text exclusions for ``fulltext_unavailable`` become "Reports not
-        retrieved". Reports sought = records screened − records excluded;
+        retrieved", as do stage-less ones. Reports sought = records screened − records excluded;
         reports assessed = reports sought − reports not retrieved.
       - ``included_override``, when provided by the caller, overrides the
         post-screening count (it's the live ``excluded == False`` count and
@@ -218,6 +229,7 @@ def compute_counts(
     counts.excluded_full_text_by_reason = staged.full_text_by_reason
     counts.excluded_full_text = max(full_text_from_steps - staged.not_retrieved, staged.full_text_total)
     counts.unrecorded_stage = staged.unrecorded_stage
+    counts.unrecorded_not_retrieved = staged.unrecorded_not_retrieved
 
     pre_screening = (
         counts.total_identified
@@ -391,8 +403,14 @@ def _layout(counts: PrismaCounts) -> list[_MainBox]:
         "Below citation threshold or",
         "manual exclusion",
     ]
-    if counts.unrecorded_stage:
-        title_abstract_lines.append(f"incl. {counts.unrecorded_stage} without a recorded stage")
+    unrecorded_title_abstract = counts.unrecorded_stage - counts.unrecorded_not_retrieved
+    if unrecorded_title_abstract:
+        title_abstract_lines.append(f"incl. {unrecorded_title_abstract} without a recorded stage")
+    not_retrieved_lines = (
+        [f"incl. {counts.unrecorded_not_retrieved} without a recorded stage"]
+        if counts.unrecorded_not_retrieved
+        else []
+    )
     full_text_lines = _reason_lines(counts.excluded_full_text_by_reason) or ["Reasons not recorded"]
 
     return [
@@ -404,7 +422,7 @@ def _layout(counts: PrismaCounts) -> list[_MainBox]:
         ),
         main_box(
             f"Reports sought for retrieval ({counts.reports_sought})",
-            side_box("Reports not retrieved", counts.reports_not_retrieved, []),
+            side_box("Reports not retrieved", counts.reports_not_retrieved, not_retrieved_lines),
         ),
         main_box(
             f"Reports assessed for eligibility ({counts.reports_assessed})",

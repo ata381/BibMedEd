@@ -1,36 +1,58 @@
-# BibMedEd 0.3: a faster path from first look to reproducible search
+# BibMedEd 0.4: install from PyPI, a redesigned interface, and a read-only demo mode
 
-BibMedEd 0.3 makes the platform easier to evaluate, easier to automate, and broader in its bibliographic coverage. It also includes the project's first substantial features contributed by developers outside the original maintainer team.
+BibMedEd 0.4.0, released on 2026-09-30, is the first version published to PyPI. It also brings a redesigned frontend, a read-only mode for showing a seeded project safely, and two CLI commands from first-time contributors. One change is breaking: the Python import package was renamed from `app` to `bibmeded`.
 
-## Explore without configuring an API
+## Install the CLI from PyPI
 
-A new **Explore sample project** action opens a deterministic synthetic corpus with meaningful author, country, keyword, and citation networks. It makes the full analysis and export workflow available immediately, without an API key or network request.
-
-The sample is clearly labelled and behaves like an ordinary editable project. Delete it and load it again whenever you want to restore the bundled data.
-
-## Run searches from the command line
-
-The new `bibmeded search` command supports two workflows:
+`pip install bibmeded` now installs a lightweight command-line tool, with no Docker and no web UI ([#84](https://github.com/ata381/BibMedEd/pull/84)):
 
 ```bash
-# Estimate the upstream result count without fetching records
-bibmeded search "simulation in medical education" --source pubmed --dry-run
+python -m venv .venv && source .venv/bin/activate   # Python 3.12 or newer
+pip install bibmeded
 
-# Run a complete search through the same database and Celery pipeline as the UI
-bibmeded search "simulation in medical education" \
-  --source pubmed \
-  --year-start 2020 \
-  --year-end 2026 \
-  --max-results 500
+bibmeded --version
+bibmeded sources
+bibmeded search "medical education" --source openalex --dry-run
 ```
 
-Unknown sources and network failures now produce concise terminal errors instead of Python tracebacks. Full searches require the BibMedEd database and Celery worker to be running.
+The base install covers `--version`, `sources` and `search --dry-run`. Fetching and storing records still runs through the Celery pipeline, so a full `bibmeded search` needs the `server` extra (`pip install "bibmeded[server]"`) plus Redis and a database, or the Docker stack. See [Scripting & API](scripting.md).
 
-This workflow was built through community contributions: [@BaygeldiAza](https://github.com/BaygeldiAza) contributed dry-run estimates and full search execution, and [@landon-personal](https://github.com/landon-personal) improved error handling.
+Two of these commands are community contributions:
 
-## Search Lens.org Scholarly
+- `bibmeded --version` prints the installed version ([#72](https://github.com/ata381/BibMedEd/pull/72), by [@Sandro850](https://github.com/Sandro850)).
+- `bibmeded sources` lists the registered adapters and whether each one's API key is configured; add `--json` for machine-readable output ([#71](https://github.com/ata381/BibMedEd/pull/71), by [@DYNOSuprovo](https://github.com/DYNOSuprovo)). Key values are never printed.
 
-Lens.org joins PubMed, OpenAlex, CrossRef, and Semantic Scholar as the fifth built-in source. Configure a Lens Scholarly API token with `BIBMEDED_LENS_API_KEY`; the adapter handles pagination, maps scholarly records into BibMedEd's common schema, and participates in the same DOI/PMID deduplication pipeline as every other source.
+## Breaking: the import package is now `bibmeded`
+
+The Python package was renamed from `app` to `bibmeded`, so the wheel no longer installs a generic top-level `app` package ([#97](https://github.com/ata381/BibMedEd/pull/97)). If you run BibMedEd outside the provided Docker Compose files, update your commands:
+
+```bash
+uvicorn bibmeded.main:app
+celery -A bibmeded.workers.celery_app worker
+```
+
+Celery task names are now `bibmeded.workers.tasks.*`. Drain queued tasks before you upgrade, because tasks queued under the old names will not be picked up.
+
+## A redesigned interface
+
+The frontend has a new journal-editorial look, and the redesign includes WCAG 2.2 accessibility fixes ([#75](https://github.com/ata381/BibMedEd/pull/75)). The screenshots on the [home page](index.md#user-interface-tour) show the new interface with the bundled sample corpus.
+
+## Show a project without letting anyone change it
+
+Setting `BIBMEDED_READ_ONLY=true` rejects every mutating request with `403` and shows a read-only banner in the UI ([#81](https://github.com/ata381/BibMedEd/pull/81)). Visitors can browse a seeded project, its analyses and its exports, but cannot create, delete, search or exclude.
+
+You can try this mode locally with one command, with no Postgres, Redis or worker ([#86](https://github.com/ata381/BibMedEd/pull/86)):
+
+```bash
+cd bibmeded
+docker compose -f docker-compose.demo.yml up --build
+```
+
+Then open <http://localhost:3100>. The same release ships a free-plan Render Blueprint, `deploy/render-demo.yaml`, for hosting your own demo. The project does not run a hosted public demo yet; that is deliberately deferred. Read [Public read-only demo](deploy.md#public-read-only-demo) before exposing an instance, since everything in a read-only instance's database is publicly readable.
+
+## Fresh installs work on SQLAlchemy 2.1
+
+SQLAlchemy 2.1 changed the default driver for bare `postgresql://` URLs to psycopg v3, so fresh installs failed with `ModuleNotFoundError: No module named 'psycopg'`. `BIBMEDED_DATABASE_URL` values of `postgres://` or `postgresql://` are now normalised to `postgresql+psycopg2://` ([#76](https://github.com/ata381/BibMedEd/pull/76)). URLs that name a driver, and non-Postgres URLs, are left as they are.
 
 ## Try it or help shape it
 
@@ -39,4 +61,6 @@ Lens.org joins PubMed, OpenAlex, CrossRef, and Semantic Scholar as the fifth bui
 - Share a real workflow or question in [GitHub Discussions](https://github.com/ata381/BibMedEd/discussions).
 - Claim a focused task from the [good first contributions list](https://github.com/ata381/BibMedEd/blob/master/GOOD_FIRST_ISSUES.md).
 
-BibMedEd remains a single-tenant, self-hosted tool without built-in authentication. Do not expose a deployment directly to the public internet; review the [security model](deploy.md#security-model) first.
+The full list of changes in 0.4.0, and in every earlier release, is in the [CHANGELOG](https://github.com/ata381/BibMedEd/blob/master/CHANGELOG.md).
+
+BibMedEd remains a single-tenant, self-hosted tool without built-in authentication. Do not expose a writable deployment directly to the public internet; review the [security model](deploy.md#security-model) first.

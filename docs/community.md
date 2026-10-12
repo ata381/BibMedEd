@@ -28,10 +28,13 @@ Documentation, reproducible case studies, bug reports, and usability feedback ar
 
 ## Contributors
 
-Recent community contributions added the command-line search workflow and improved its failure handling:
+Community contributions built the command-line workflow, added growth metrics to the publication-trends analysis, gave the sample project a real search strategy, and fixed pagination in the publication list:
 
 - [@BaygeldiAza](https://github.com/BaygeldiAza) contributed dry-run result estimates and the full CLI search pipeline ([#46](https://github.com/ata381/BibMedEd/pull/46), [#52](https://github.com/ata381/BibMedEd/pull/52)).
 - [@landon-personal](https://github.com/landon-personal) contributed clean CLI handling for unknown sources and network failures ([#50](https://github.com/ata381/BibMedEd/pull/50)).
+- [@Sandro850](https://github.com/Sandro850) contributed `bibmeded --version` ([#72](https://github.com/ata381/BibMedEd/pull/72)), the CAGR and doubling-time growth summary ([#111](https://github.com/ata381/BibMedEd/pull/111)), the request-context refactor that removed an import cycle ([#112](https://github.com/ata381/BibMedEd/pull/112)), and the sample project's stored search strategy ([#125](https://github.com/ata381/BibMedEd/pull/125)).
+- [@DYNOSuprovo](https://github.com/DYNOSuprovo) contributed the `bibmeded sources` command, which lists adapters and their configuration status ([#71](https://github.com/ata381/BibMedEd/pull/71)).
+- [@HeaTTap](https://github.com/HeaTTap) contributed the unique tie-breaker that keeps publication-list pagination from skipping or repeating records ([#123](https://github.com/ata381/BibMedEd/pull/123)).
 
 GitHub maintains the complete [contributors graph](https://github.com/ata381/BibMedEd/graphs/contributors).
 
