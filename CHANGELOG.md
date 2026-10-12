@@ -10,6 +10,8 @@ All notable changes to BibMedEd are recorded here. This project follows [Keep a 
 - The publication-trends analysis now returns a `growth_summary` with the compound annual growth rate and doubling time ([#111](https://github.com/ata381/BibMedEd/pull/111), closes [#62](https://github.com/ata381/BibMedEd/issues/62), thanks @Sandro850). Its fields are `cagr` (a percentage), `doubling_time_years`, `start_year`, `end_year`, `excluded_current_year` and `reason`. Growth is measured from the first to the last full calendar year, so the incomplete current year is left out of the calculation but stays in the yearly series. When a value cannot be computed (fewer than two full years, a first year with zero publications, or growth of zero or less for the doubling time), it is `null` and `reason` says why. `yearly_counts`, `growth_rates`, `cumulative` and `field_maturity` are unchanged. The field is additive, so `schema_version` stays `"1.0"`.
 - The bundled sample project now stores a real PubMed-style search strategy instead of placeholder text, and the Search page loads it into the raw query editor, labelled as synthetic sample data ([#125](https://github.com/ata381/BibMedEd/pull/125), closes [#94](https://github.com/ata381/BibMedEd/issues/94), thanks @Sandro850). `GET /api/projects/{id}/search/latest` now also returns `query_string` and `database`. Only a stored search whose database is `sample` is loaded this way; other projects keep the existing Search page defaults.
 
+- The dashboard shows the growth summary next to the publication-trends chart: compound annual growth rate and doubling time, with the window of full years used and the backend's reason when a value is not available ([#139](https://github.com/ata381/BibMedEd/pull/139), closes [#113](https://github.com/ata381/BibMedEd/issues/113), thanks @Sandro850).
+
 ### Changed
 
 - In the text methodology export, the section "MANUAL EXCLUSIONS BY REASON (PRISMA 2020 item 17)" is replaced by "SCREENING DECISIONS BY STAGE (PRISMA 2020 item 16a)" ([#122](https://github.com/ata381/BibMedEd/pull/122)). The old section appeared only when the project had manual exclusions. The new one is printed for every project that has methodology steps, with zero counts when nothing is excluded. Scripts that find a section of the export by its heading need updating.
@@ -30,10 +32,14 @@ All notable changes to BibMedEd are recorded here. This project follows [Keep a 
 - The PRISMA diagram and the methodology log now count an exclusion with reason `fulltext_unavailable` and no recorded screening stage under "Reports not retrieved" instead of "Records excluded", the same rule the `0004_screening_stage` migration applies, and the "without a recorded stage" disclosure names the box each such record is counted in ([#132](https://github.com/ata381/BibMedEd/pull/132)).
 - `PATCH /api/projects/{id}/publications/{pub_id}/exclude` on an already excluded record now re-includes it even when the body is `{"reason": "fulltext_unavailable", "screening_stage": "title_abstract"}`, as documented; it previously returned 422. The 422 for that contradiction still applies when the request excludes ([#132](https://github.com/ata381/BibMedEd/pull/132)).
 
+### Security
+
+- `X-Request-ID` headers sent by clients are now echoed back and attached to logs only when they match `[A-Za-z0-9._-]{1,64}`; any other value is replaced by a server-generated id ([#130](https://github.com/ata381/BibMedEd/pull/130)). API clients that relied on an arbitrary request id round-tripping unchanged should switch to that character set.
+
 ### Community
 
 - Thank you to [@HeaTTap](https://github.com/HeaTTap) for the pagination tie-breaker fix ([#123](https://github.com/ata381/BibMedEd/pull/123)), a first contribution.
-- Thank you to [@Sandro850](https://github.com/Sandro850) for the publication growth summary ([#111](https://github.com/ata381/BibMedEd/pull/111)), the request-context refactor ([#112](https://github.com/ata381/BibMedEd/pull/112)) and the stored sample search strategy ([#125](https://github.com/ata381/BibMedEd/pull/125)).
+- Thank you to [@Sandro850](https://github.com/Sandro850) for the publication growth summary ([#111](https://github.com/ata381/BibMedEd/pull/111)), the request-context refactor ([#112](https://github.com/ata381/BibMedEd/pull/112)), the stored sample search strategy ([#125](https://github.com/ata381/BibMedEd/pull/125)) and the dashboard growth summary ([#139](https://github.com/ata381/BibMedEd/pull/139)).
 
 ## [0.4.0] - 2026-09-30
 

@@ -5,7 +5,7 @@ A living document. Items move up and down as the community contributes adapters 
 ## Merged since 0.4.0 (unreleased)
 
 - [x] Title/abstract vs full-text screening stages in exclusions, the PRISMA diagram and the methodology log ([#91](https://github.com/ata381/BibMedEd/issues/91))
-- [x] CAGR and doubling time in the publication-trends analysis ([#62](https://github.com/ata381/BibMedEd/issues/62))
+- [x] CAGR and doubling time in the publication-trends analysis and on the dashboard ([#62](https://github.com/ata381/BibMedEd/issues/62), [#113](https://github.com/ata381/BibMedEd/issues/113))
 - [x] Table-driven required-key adapter configuration ([#88](https://github.com/ata381/BibMedEd/issues/88))
 - [x] Accessible ConfirmDialog replacing native `confirm()` ([#90](https://github.com/ata381/BibMedEd/issues/90))
 - [x] Sample project ships a stored search query ([#94](https://github.com/ata381/BibMedEd/issues/94))
@@ -50,7 +50,6 @@ A hosted public demo is deliberately deferred; the Blueprint ships, but no publi
 - [ ] Additional adapters: [Europe PMC #7](https://github.com/ata381/BibMedEd/issues/7), [arXiv #9](https://github.com/ata381/BibMedEd/issues/9), [DOAJ #10](https://github.com/ata381/BibMedEd/issues/10), [OpenCitations #11](https://github.com/ata381/BibMedEd/issues/11), [CORE #12](https://github.com/ata381/BibMedEd/issues/12), [BASE #13](https://github.com/ata381/BibMedEd/issues/13)
 - [ ] [Frontend i18n + Turkish locale #16](https://github.com/ata381/BibMedEd/issues/16)
 - [ ] Screening follow-ups: decision audit trail in the methodology export ([#120](https://github.com/ata381/BibMedEd/issues/120)), idempotent set-screening endpoint ([#121](https://github.com/ata381/BibMedEd/issues/121))
-- [ ] CAGR and doubling time on the publication-trends dashboard ([#113](https://github.com/ata381/BibMedEd/issues/113))
 - [ ] Project sharing — read-only public project URLs
 - [ ] Saved query alerts (cron re-runs notify on new matching records)
 - [ ] Author disambiguation using ORCID + co-author network

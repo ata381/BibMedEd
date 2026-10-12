@@ -44,7 +44,6 @@ Read the [adapter guide](https://ata381.github.io/BibMedEd/adapters/) first. Ref
 - **i18n scaffold + Turkish locale** — [#16](https://github.com/ata381/BibMedEd/issues/16)
 - **BibTeX export** — [#60](https://github.com/ata381/BibMedEd/issues/60)
 - **Robust country extraction from affiliations** — [#63](https://github.com/ata381/BibMedEd/issues/63)
-- **Show CAGR and doubling time on the publication-trends dashboard** — [#113](https://github.com/ata381/BibMedEd/issues/113)
 - **Lotka's law for author productivity** — [#61](https://github.com/ata381/BibMedEd/issues/61)
 - **Web of Science plain-text export for VOSviewer / Bibliometrix** — [#68](https://github.com/ata381/BibMedEd/issues/68)
 - **Troubleshooting / FAQ docs page** — [#67](https://github.com/ata381/BibMedEd/issues/67)
