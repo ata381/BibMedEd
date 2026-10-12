@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { analysisApi, projectsApi, Project } from "@/lib/api";
@@ -22,7 +22,7 @@ const TABS: TabItem<DashboardTab>[] = [
 ];
 const TOP_N = 8;
 const KEYWORD_LIMIT = 24;
-const GROWTH_REASON_ID = "growth-summary-reason";
+const GROWTH_NUMBER_FORMAT = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2, signDisplay: "negative" });
 
 interface YearCount {
   year: number;
@@ -261,6 +261,7 @@ export default function Dashboard() {
 }
 
 function GrowthSummaryStats({ summary }: { summary: GrowthSummary }) {
+  const reasonId = useId();
   const growthWindow =
     summary.start_year == null || summary.end_year == null
       ? null
@@ -270,8 +271,9 @@ function GrowthSummaryStats({ summary }: { summary: GrowthSummary }) {
   const reason = summary.reason ?? "Growth summary is unavailable for this corpus.";
   const hasUnavailableMetric = cagrUnavailable || doublingUnavailable;
   const unavailableValue = (
-    <span aria-describedby={GROWTH_REASON_ID}>
-      —<span className="sr-only"> not available</span>
+    <span aria-describedby={reasonId}>
+      <span aria-hidden="true">—</span>
+      <span className="sr-only">not available</span>
     </span>
   );
   const doublingText = summary.doubling_time_years == null ? null : formatGrowthNumber(summary.doubling_time_years);
@@ -295,7 +297,7 @@ function GrowthSummaryStats({ summary }: { summary: GrowthSummary }) {
           value={doublingValue}
         />
       </div>
-      {hasUnavailableMetric ? <p id={GROWTH_REASON_ID} className="mt-3 text-xs text-on-surface-subtle leading-snug">{reason}</p> : null}
+      {hasUnavailableMetric ? <p id={reasonId}className="mt-3 text-xs text-on-surface-subtle leading-snug">{reason}</p> : null}
       {growthWindow ? <p className="mt-3 text-xs text-on-surface-subtle leading-snug">Growth window {growthWindow}</p> : null}
       {summary.excluded_current_year ? (
         <p className="mt-3 text-xs text-on-surface-subtle leading-snug">Current incomplete year excluded from growth calculations.</p>
@@ -305,9 +307,7 @@ function GrowthSummaryStats({ summary }: { summary: GrowthSummary }) {
 }
 
 function formatGrowthNumber(value: number) {
-  // Rounding first lets a tiny negative value collapse to 0 instead of rendering as "-0".
-  const rounded = Math.round(value * 100) / 100;
-  return (rounded === 0 ? 0 : rounded).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  return GROWTH_NUMBER_FORMAT.format(value);
 }
 
 function PageTitle({ project }: { project: Project | null }) {

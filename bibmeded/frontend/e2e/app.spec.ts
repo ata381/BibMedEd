@@ -141,7 +141,7 @@ test("publication trends shows CAGR null reasons without hiding zero doubling ti
 
   await page.goto("/projects/1/dashboard");
 
-  await expect(page.getByText("0 years")).toBeVisible();
+  await expect(page.getByText("0 years", { exact: true })).toBeVisible();
   await expect(page.getByText("CAGR is undefined because the first full calendar year has zero publications.")).toBeVisible();
   await expect(page.locator("[aria-describedby]", { hasText: "not available" })).toHaveAccessibleDescription(
     "CAGR is undefined because the first full calendar year has zero publications.",
