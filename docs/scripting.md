@@ -152,8 +152,8 @@ start a new tag or record.
 | `DE` | Author keywords, separated by `; ` | keywords the source supplied (not MeSH) |
 | `ID` | MeSH terms, separated by `; ` | MeSH terms |
 | `AB` | Abstract | abstract |
-| `C1` | One address per line, `[Authors] Affiliation` | author affiliations, verbatim |
-| `CR` | One cited reference per line, `DOI <doi>` | reference list (see below) |
+| `C1` | One address per line, `[Authors] Affiliation, Country.` | author affiliations (see below) |
+| `CR` | One cited reference per line, `SURNAME I, YEAR, SOURCE, DOI <doi>` or `DOI <doi>` | reference list (see below) |
 | `NR` | Number of references the source reported | reference list |
 | `TC` | Times cited | citation count |
 | `SN`, `EI` | ISSN, eISSN | journal |
@@ -166,20 +166,35 @@ Known gaps:
 
 - **Cited references.** BibMedEd stores each record's references as identifiers, not as
   the `Author, Year, Source, Volume, Page, DOI` strings Web of Science writes. A reference
-  that is a DOI is written as `DOI <doi>`. A reference given as another identifier (an
-  OpenAlex ID, a Lens ID, a PMID) is written only when it matches a record in the same export
-  that has a DOI, using the same matching as the citation analysis. Other references are left
-  out of `CR`, `NR` still gives the full count, and the bundle's `MANIFEST.txt` states how many
-  of the references reached `CR`. PubMed does not return reference lists, so PubMed records
-  have no `CR` or `NR`. Co-citation and local-citation analyses in VOSviewer and Bibliometrix
-  therefore only see DOI-resolvable references.
+  that resolves to a record in the same export, by DOI or by source-native id (an OpenAlex
+  ID, a Lens ID, a PMID) using the same matching as the citation analysis, is written in WoS
+  cited-reference form from that record: first-author surname and initials, year and journal
+  name, all upper case, then the DOI, for example
+  `DEMIR SA, 2019, MEDICAL EDUCATION, DOI 10.1111/medu.13900`. Parts the cited record lacks are
+  left out. Any other reference that is a DOI is written as bare `DOI <doi>`, because BibMedEd
+  holds nothing else about it. References that are neither are left out of `CR`; `NR` still
+  gives the full count, and the bundle's `MANIFEST.txt` states how many of the references
+  reached `CR`. PubMed does not return reference lists, so PubMed records have no `CR` or `NR`.
+- **What this means in each tool.** Bibliometrix's local-citation analysis (`histNetwork`,
+  `localCitations`) matches a `CR` entry against each record's first author, year and source
+  plus its DOI, so it counts citations between records of the same export and nothing else;
+  a bare `DOI <doi>` never matches. VOSviewer's co-citation maps of cited sources and cited
+  authors read the source and author out of each `CR` entry, so they are only populated by
+  the full-form, in-corpus references; bare `DOI <doi>` entries contribute neither. Both
+  tools see a citation network limited to the exported corpus.
 - **Author names.** PubMed names arrive as `Surname, Given`; a PubMed author without a comma
   is a collective author and is written unchanged. Other sources give `Given Surname`, and
   the last word is taken as the surname. Surnames with particles (`van der Berg`) and
   organisation names from those sources are split at the last word too.
-- **Addresses.** Affiliations are stored per author, not per paper, so `C1` lists every
-  affiliation BibMedEd holds for each author. The country is whatever the affiliation text
-  ends with; it is not added or rewritten.
+- **Addresses.** Affiliations belong to an author record, not to a paper, and author
+  records are shared across the whole database by normalised name (all projects, all
+  sources). `C1` therefore lists every affiliation BibMedEd holds for that name, which can
+  include affiliations seen on other papers, or on another person with the same normalised
+  name. Each address is the stored affiliation text; when the text does not already end with
+  the stored country (aliases such as `England` for `UK` count as ending with it), the
+  country is appended, because VOSviewer takes the last comma-separated part as the country.
+  Every address ends with a period, because Bibliometrix splits addresses and matches
+  countries on it.
 - **`ID` holds MeSH terms**, not Clarivate's KeyWords Plus, and `UT` is not a Web of Science
   accession number. Bibliometrix reads both as plain text, so analyses run, but
   results labelled "Keywords Plus" are MeSH-based.
