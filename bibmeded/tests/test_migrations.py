@@ -253,3 +253,104 @@ def test_0005_downgrade_and_reupgrade_leave_the_strategy_in_place(sqlite_db):
 def test_0005_is_a_no_op_on_an_empty_database(sqlite_db):
     command.upgrade(_alembic_config(), "head")
     assert not sa.inspect(sqlite_db).has_table("search_queries")
+
+
+DECISIONS_REVISION = "0006_screening_decisions"
+DECISIONS_TABLE = "screening_decisions"
+DECISION_COLUMNS = {
+    "id", "project_id", "publication_id", "decided_at", "reviewer", "source", "criteria",
+    "previous_excluded", "previous_exclusion_reason", "previous_screening_stage",
+    "excluded", "exclusion_reason", "screening_stage",
+}
+INSERT_DECISION = sa.text(
+    "INSERT INTO screening_decisions (project_id, publication_id, decided_at, source, previous_excluded, "
+    "excluded, exclusion_reason, screening_stage) "
+    "VALUES (1, 1, '2026-10-12 09:00:00', 'toggle', 0, 1, 'non_english', :stage)"
+)
+
+
+def _upgrade_seeded_db_to_decisions(sqlite_db) -> Config:
+    _seed_pre_0004(sqlite_db)
+    config = _alembic_config()
+    command.stamp(config, "0003_sample_project_key")
+    command.upgrade(config, DECISIONS_REVISION)
+    return config
+
+
+def test_0006_module_imports_and_chains_onto_the_screening_stage_revision():
+    import importlib.util
+
+    path = ALEMBIC_DIR / "versions" / "0006_screening_decisions.py"
+    spec = importlib.util.spec_from_file_location("migration_0006", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    assert module.revision == DECISIONS_REVISION
+    assert module.down_revision == "0004_screening_stage"
+    assert callable(module.upgrade) and callable(module.downgrade)
+
+
+def test_0006_creates_an_empty_decision_table_on_an_existing_database(sqlite_db):
+    _upgrade_seeded_db_to_decisions(sqlite_db)
+
+    inspector = sa.inspect(sqlite_db)
+    assert _columns(sqlite_db, DECISIONS_TABLE) == DECISION_COLUMNS
+    foreign_tables = {fk["referred_table"] for fk in inspector.get_foreign_keys(DECISIONS_TABLE)}
+    assert foreign_tables == {"publications", "search_projects"}
+    with sqlite_db.connect() as conn:
+        assert conn.execute(sa.text("SELECT COUNT(*) FROM screening_decisions")).scalar() == 0
+
+
+def test_0006_rejects_an_unknown_screening_stage(sqlite_db):
+    _upgrade_seeded_db_to_decisions(sqlite_db)
+
+    with pytest.raises(sa.exc.IntegrityError):
+        with sqlite_db.begin() as conn:
+            conn.execute(INSERT_DECISION, {"stage": "abstract"})
+
+
+def test_0006_is_a_no_op_on_an_empty_database(sqlite_db):
+    command.upgrade(_alembic_config(), "head")
+    assert not sa.inspect(sqlite_db).has_table(DECISIONS_TABLE)
+
+
+def test_0006_is_idempotent_on_a_create_all_schema(sqlite_db):
+    from bibmeded.database import Base
+    import bibmeded.models  # noqa: F401
+
+    Base.metadata.create_all(sqlite_db)
+    config = _alembic_config()
+    command.stamp(config, "0004_screening_stage")
+
+    command.upgrade(config, "head")
+    command.downgrade(config, "0004_screening_stage")
+    assert not sa.inspect(sqlite_db).has_table(DECISIONS_TABLE)
+    command.upgrade(config, "head")
+
+    assert _columns(sqlite_db, DECISIONS_TABLE) == DECISION_COLUMNS
+
+
+def test_0006_downgrade_refuses_to_drop_logged_decisions(sqlite_db, monkeypatch):
+    monkeypatch.delenv(LOSSY_DOWNGRADE_ENV_VAR, raising=False)
+    config = _upgrade_seeded_db_to_decisions(sqlite_db)
+    with sqlite_db.begin() as conn:
+        conn.execute(INSERT_DECISION, {"stage": "title_abstract"})
+
+    with pytest.raises(RuntimeError, match="methodology log") as excinfo:
+        command.downgrade(config, "0004_screening_stage")
+
+    assert LOSSY_DOWNGRADE_ENV_VAR in str(excinfo.value)
+    assert "1 screening decision(s)" in str(excinfo.value)
+    assert sa.inspect(sqlite_db).has_table(DECISIONS_TABLE)
+
+
+def test_0006_downgrade_drops_the_table_when_loss_is_allowed(sqlite_db, monkeypatch):
+    monkeypatch.setenv(LOSSY_DOWNGRADE_ENV_VAR, "1")
+    config = _upgrade_seeded_db_to_decisions(sqlite_db)
+    with sqlite_db.begin() as conn:
+        conn.execute(INSERT_DECISION, {"stage": "title_abstract"})
+
+    command.downgrade(config, "0004_screening_stage")
+
+    assert not sa.inspect(sqlite_db).has_table(DECISIONS_TABLE)
+    assert "screening_stage" in _columns(sqlite_db)

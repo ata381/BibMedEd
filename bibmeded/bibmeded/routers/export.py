@@ -20,6 +20,7 @@ from bibmeded.services.export_generators import (
     generate_ris,
     slugify,
 )
+from bibmeded.services.screening import ScreeningDecisionLog, load_decision_log
 
 router = APIRouter(prefix="/api/projects/{project_id}/export", tags=["export"])
 
@@ -72,6 +73,10 @@ def _get_project_and_steps(project_id: int, db: Session) -> tuple[SearchProject,
         .all()
     )
     return project, steps
+
+
+def _get_decision_log(project: SearchProject, db: Session) -> ScreeningDecisionLog:
+    return load_decision_log(db, project.id, [q.id for q in project.queries])
 
 
 def _attachment(filename: str) -> dict[str, str]:
@@ -143,9 +148,10 @@ def export_prisma(project_id: int, db: Session = Depends(get_db)):
 def export_methodology(project_id: int, db: Session = Depends(get_db)):
     project, steps = _get_project_and_steps(project_id, db)
     exclusion_summary = _get_exclusion_summary(project_id, db)
+    decision_log = _get_decision_log(project, db)
     filename = f"{slugify(project.name)}-methodology-{date.today().isoformat()}.txt"
     return StreamingResponse(
-        iter([generate_methodology(project.name, steps, exclusion_summary)]),
+        iter([generate_methodology(project.name, steps, exclusion_summary, decision_log)]),
         media_type="text/plain",
         headers=_attachment(filename),
     )
@@ -153,7 +159,8 @@ def export_methodology(project_id: int, db: Session = Depends(get_db)):
 
 @router.get("/bundle")
 def export_bundle(project_id: int, db: Session = Depends(get_db)):
-    """Single .zip with CSV + RIS + JSON + methodology + PRISMA SVG + manifest.
+    """Single .zip with CSV + RIS + JSON + methodology + PRISMA SVG + screening decision
+    log CSV + manifest.
 
     Intended for journal submission: bundles everything a JOSS / systematic review reviewer
     needs to reproduce the methodology in one download.
@@ -161,9 +168,10 @@ def export_bundle(project_id: int, db: Session = Depends(get_db)):
     project, pubs = _get_project_and_pubs(project_id, db)
     _, steps = _get_project_and_steps(project_id, db)
     exclusion_summary = _get_exclusion_summary(project_id, db)
+    decision_log = _get_decision_log(project, db)
     filename = f"{slugify(project.name)}-bundle-{date.today().isoformat()}.zip"
     return StreamingResponse(
-        iter([generate_bundle(project.name, pubs, steps, exclusion_summary)]),
+        iter([generate_bundle(project.name, pubs, steps, exclusion_summary, decision_log)]),
         media_type="application/zip",
         headers=_attachment(filename),
     )
