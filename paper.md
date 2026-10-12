@@ -51,6 +51,10 @@ Analysis modules use NetworkX [@hagberg2008networkx] for graph computations and 
 
 **Programmatic access.** The FastAPI app exposes an OpenAPI specification at `/openapi.json` with interactive Swagger UI at `/docs` and ReDoc at `/redoc`. Analysis responses are stamped with a `schema_version` field so downstream pipelines can pin against a known shape; bulk-export endpoints include CSV, RIS, JSON (versioned schema), the PRISMA SVG, a plain-text methodology log, and a single-click `.zip` bundle of all five plus a `MANIFEST.txt`.
 
+# AI usage disclosure
+
+Generative AI coding assistants were used in the development of `BibMedEd`. Since October 2026 the repository has been maintained with Anthropic Claude (via Claude Code), which drafts code, tests and documentation and triages issues and pull requests under the author's direction; automated pull-request review is performed by OpenAI Codex. Every AI-generated change is reviewed and tested in continuous integration before merge, and the author is responsible for the design, correctness and scientific content of the software. The bibliometric methods implemented (identifier normalisation and deduplication, h-, g- and e-index, bibliographic coupling, co-citation, burst detection, logistic field-maturity fitting) follow the cited literature rather than AI-suggested formulations. The text of this manuscript was written by the author; AI tools were used for copy-editing and for checking consistency between the manuscript and the code base.
+
 # Acknowledgements
 
 We thank the maintainers of the bibliographic APIs that make `BibMedEd` possible and the contributors of the open-source libraries on which the platform is built. We also thank `@BaygeldiAza` for contributing the command-line search workflow and `@landon-personal` for improving its error handling.
