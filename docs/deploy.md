@@ -104,14 +104,18 @@ cp .env.example .env
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `BIBMEDED_PUBMED_API_KEY` | *(empty)* | Optional. Register free at [NCBI](https://www.ncbi.nlm.nih.gov/account/) for 10 req/s (default is 3 req/s) |
+| `BIBMEDED_PUBMED_API_KEY` | *(empty)* | Optional. Register free at [NCBI](https://www.ncbi.nlm.nih.gov/account/). With a key, PubMed requests run at 10 req/s; without one, at 3 req/s |
+| `BIBMEDED_PUBMED_RATE_LIMIT` | *(empty)* | Optional. PubMed requests per second. Empty means 10 with a key and 3 without. A value here always wins and is not capped, so stay within NCBI's limits |
+| `BIBMEDED_OPENALEX_EMAIL` | *(empty)* | Optional. Sent to OpenAlex as `mailto=` |
+| `BIBMEDED_CROSSREF_EMAIL` | *(empty)* | Optional. Sent to CrossRef as `mailto=` |
+| `BIBMEDED_SEMANTIC_SCHOLAR_API_KEY` | *(empty)* | Optional. Semantic Scholar keyed tier (1 req/s sustained) |
 | `BIBMEDED_LENS_API_KEY` | *(empty)* | Required only for Lens.org searches. Scholarly API bearer token |
 | `BIBMEDED_READ_ONLY` | `false` | Public demo mode — see [Public read-only demo](#public-read-only-demo) |
 | `POSTGRES_USER` | `bibmeded` | Database username |
 | `POSTGRES_PASSWORD` | `bibmeded` | Database password |
 | `POSTGRES_DB` | `bibmeded` | Database name |
 
-All defaults work out of the box — no `.env` file is required.
+All defaults work out of the box — no `.env` file is required. `docker-compose.yml` passes the `BIBMEDED_*` source settings above into both the `api` and `worker` containers; `BIBMEDED_READ_ONLY` goes to the `api` only. The PubMed rate a search used is recorded in its methodology step and printed in the methodology export as "Request rate limit".
 
 ## Stopping
 

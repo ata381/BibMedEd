@@ -159,6 +159,11 @@ BIBMEDED_SEMANTIC_SCHOLAR_API_KEY=...
 BIBMEDED_LENS_API_KEY=...
 ```
 
+`docker compose up` passes these into the `api` and `worker` containers. PubMed requests run at
+10 per second when `BIBMEDED_PUBMED_API_KEY` is set and 3 per second otherwise;
+`BIBMEDED_PUBMED_RATE_LIMIT` overrides both. The rate used is recorded in the search step of the
+methodology log.
+
 The Celery soft time limit is 600 seconds per task — for very large windowed searches you
 may want to split by year range and merge.
 

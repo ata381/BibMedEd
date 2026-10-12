@@ -101,7 +101,7 @@ A sample project created by an earlier version receives the bundled search strat
 when the database is migrated (`alembic upgrade head`, which the Docker entrypoint runs)
 or the next time you choose **Explore sample project**; searches you ran yourself are untouched.
 
-> **Optional:** Create a free [NCBI API key](https://www.ncbi.nlm.nih.gov/account/) and add it to `.env` as `BIBMEDED_PUBMED_API_KEY=your_key` for 10 req/s instead of 3 req/s. Lens.org searches require a Lens Scholarly API token in `BIBMEDED_LENS_API_KEY`.
+> **Optional:** Create a free [NCBI API key](https://www.ncbi.nlm.nih.gov/account/) and add it to `.env` as `BIBMEDED_PUBMED_API_KEY=your_key`. BibMedEd then queries PubMed at 10 req/s instead of 3 req/s; `BIBMEDED_PUBMED_RATE_LIMIT` overrides the rate. Lens.org searches require a Lens Scholarly API token in `BIBMEDED_LENS_API_KEY`.
 
 **CLI only, no Docker:** `pip install bibmeded` (Python 3.12+, [PyPI](https://pypi.org/project/bibmeded/)), then `bibmeded search "medical education" --dry-run` to estimate result counts from a terminal or notebook. See [Scripting](https://ata381.github.io/BibMedEd/scripting/#install-from-pypi-cli-only).
 
