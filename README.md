@@ -97,6 +97,9 @@ Choose **Explore sample project** on the empty workspace to open a fully populat
 clearly labeled synthetic corpus without making any external API calls.
 The sample behaves like a normal editable project: your changes persist, and deleting
 it before choosing **Explore sample project** again restores the bundled dataset.
+A sample project created by an earlier version receives the bundled search strategy
+when the database is migrated (`alembic upgrade head`, which the Docker entrypoint runs)
+or the next time you choose **Explore sample project**; searches you ran yourself are untouched.
 
 > **Optional:** Create a free [NCBI API key](https://www.ncbi.nlm.nih.gov/account/) and add it to `.env` as `BIBMEDED_PUBMED_API_KEY=your_key` for 10 req/s instead of 3 req/s. Lens.org searches require a Lens Scholarly API token in `BIBMEDED_LENS_API_KEY`.
 
@@ -108,7 +111,7 @@ See the full [Self-Hosting Guide](https://ata381.github.io/BibMedEd/deploy/) for
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ata381/BibMedEd)
 
-One click provisions PostgreSQL, Redis, FastAPI, Celery, and the Next.js frontend on Render.com's free tier.
+The Blueprint provisions PostgreSQL, Redis, FastAPI, Celery, and the Next.js frontend on Render.com's free tier. The frontend-to-API wiring of this one-click path has not yet been verified end to end; see [#93](https://github.com/ata381/BibMedEd/issues/93) before relying on it.
 
 > **Security model:** BibMedEd has **no built-in authentication**. It is a single-tenant tool meant for one research team, and every API endpoint trusts the numeric ID in the URL with no notion of an "owner" — there is no login, no per-project access control, nothing. The one-click deploy above provisions a **publicly reachable** `*.onrender.com` URL with zero credentials required, so anyone who has (or guesses) that link can list every project, export or bulk-edit their data, or delete them. Read the [Security model](https://ata381.github.io/BibMedEd/deploy/#security-model) section of the Self-Hosting Guide before deploying publicly, and put an IP allowlist or auth proxy in front — or just keep it on `localhost` / a private network, which is how BibMedEd is designed to be run.
 
