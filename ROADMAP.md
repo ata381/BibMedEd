@@ -2,6 +2,15 @@
 
 A living document. Items move up and down as the community contributes adapters and bug reports.
 
+## Merged since 0.4.0 (unreleased)
+
+- [x] Title/abstract vs full-text screening stages in exclusions, the PRISMA diagram and the methodology log ([#91](https://github.com/ata381/BibMedEd/issues/91))
+- [x] CAGR and doubling time in the publication-trends analysis and on the dashboard ([#62](https://github.com/ata381/BibMedEd/issues/62), [#113](https://github.com/ata381/BibMedEd/issues/113))
+- [x] Table-driven required-key adapter configuration ([#88](https://github.com/ata381/BibMedEd/issues/88))
+- [x] Accessible ConfirmDialog replacing native `confirm()` ([#90](https://github.com/ata381/BibMedEd/issues/90))
+- [x] Sample project ships a stored search query ([#94](https://github.com/ata381/BibMedEd/issues/94))
+- [x] Engineering hygiene: e2e mock contract check ([#78](https://github.com/ata381/BibMedEd/issues/78)), persist-loop SAWarning ([#87](https://github.com/ata381/BibMedEd/issues/87)), `request_id_ctx` import cycle ([#98](https://github.com/ata381/BibMedEd/issues/98)), publication-list pagination tie-breaker ([#118](https://github.com/ata381/BibMedEd/issues/118))
+
 ## 0.4.0 — shipped 2026-09-30
 
 - [x] Journal-editorial frontend redesign with WCAG 2.2 fixes (#75)
@@ -40,16 +49,14 @@ A hosted public demo is deliberately deferred; the Blueprint ships, but no publi
 
 - [ ] Additional adapters: [Europe PMC #7](https://github.com/ata381/BibMedEd/issues/7), [arXiv #9](https://github.com/ata381/BibMedEd/issues/9), [DOAJ #10](https://github.com/ata381/BibMedEd/issues/10), [OpenCitations #11](https://github.com/ata381/BibMedEd/issues/11), [CORE #12](https://github.com/ata381/BibMedEd/issues/12), [BASE #13](https://github.com/ata381/BibMedEd/issues/13)
 - [ ] [Frontend i18n + Turkish locale #16](https://github.com/ata381/BibMedEd/issues/16)
-- [ ] Title/abstract vs full-text screening-stage distinction ([#91](https://github.com/ata381/BibMedEd/issues/91); PRISMA 2020 splits these, currently one binary excluded flag)
+- [ ] Screening follow-ups: decision audit trail in the methodology export ([#120](https://github.com/ata381/BibMedEd/issues/120)), idempotent set-screening endpoint ([#121](https://github.com/ata381/BibMedEd/issues/121))
 - [ ] Project sharing — read-only public project URLs
 - [ ] Saved query alerts (cron re-runs notify on new matching records)
 - [ ] Author disambiguation using ORCID + co-author network
 - [ ] Dual-reviewer screening workflow (Covidence parity)
-- [ ] Table-driven required-key adapter configuration ([#88](https://github.com/ata381/BibMedEd/issues/88)), unblocking keyed adapters such as Dimensions ([#69](https://github.com/ata381/BibMedEd/issues/69)) and CORE ([#12](https://github.com/ata381/BibMedEd/issues/12))
-- [ ] Accessibility: axe scans across dashboard tabs and read-only mode ([#89](https://github.com/ata381/BibMedEd/issues/89)), accessible ConfirmDialog ([#90](https://github.com/ata381/BibMedEd/issues/90)), network-graph label overlap fix ([#95](https://github.com/ata381/BibMedEd/issues/95))
-- [ ] Sample project ships a stored search query ([#94](https://github.com/ata381/BibMedEd/issues/94))
+- [ ] Keyed adapters built on the required-key table: Dimensions ([#69](https://github.com/ata381/BibMedEd/issues/69)) and CORE ([#12](https://github.com/ata381/BibMedEd/issues/12))
+- [ ] Accessibility: axe scans across dashboard tabs and read-only mode ([#89](https://github.com/ata381/BibMedEd/issues/89)), network-graph label overlap fix ([#95](https://github.com/ata381/BibMedEd/issues/95))
 - [ ] Verify the one-click Render deploy wires the frontend to the public API URL ([#93](https://github.com/ata381/BibMedEd/issues/93))
-- [ ] Engineering hygiene: e2e mock contract check ([#78](https://github.com/ata381/BibMedEd/issues/78)), persist-loop SAWarning ([#87](https://github.com/ata381/BibMedEd/issues/87)), `request_id_ctx` import cycle ([#98](https://github.com/ata381/BibMedEd/issues/98))
 - [ ] Prometheus metrics endpoint (`/api/metrics`) once a Grafana dashboard ships alongside
 - [ ] Strategic-diagram (thematic quadrants) plot in the dashboard ([#92](https://github.com/ata381/BibMedEd/issues/92))
 - [ ] LLM-assisted PICO extraction and abstract screening (opt-in, bring-your-own key)

@@ -1,4 +1,10 @@
-<!-- Thanks for contributing to BibMedEd. -->
+<!-- Thanks for contributing to BibMedEd.
+
+Three things that are normal here:
+- CI on a first PR may wait for a maintainer to approve the run.
+- You do not need to rebase after every merge to master. A maintainer will update your branch.
+- Do not edit CHANGELOG.md. Maintainers add the entry at release time.
+-->
 
 ## Summary
 

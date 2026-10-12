@@ -96,6 +96,9 @@ Choose **Explore sample project** on the empty workspace to open a fully populat
 clearly labeled synthetic corpus without making any external API calls.
 The sample behaves like a normal editable project: your changes persist, and deleting
 it before choosing **Explore sample project** again restores the bundled dataset.
+A sample project created by an earlier version receives the bundled search strategy
+when the database is migrated (`alembic upgrade head`, which the Docker entrypoint runs)
+or the next time you choose **Explore sample project**; searches you ran yourself are untouched.
 
 > **Optional:** Create a free [NCBI API key](https://www.ncbi.nlm.nih.gov/account/) and add it to `.env` as `BIBMEDED_PUBMED_API_KEY=your_key` for 10 req/s instead of 3 req/s. Lens.org searches require a Lens Scholarly API token in `BIBMEDED_LENS_API_KEY`.
 
