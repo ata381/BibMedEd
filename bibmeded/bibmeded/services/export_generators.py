@@ -371,9 +371,13 @@ def _lotka_lines(lotka: dict) -> list[str]:
         f"  Method: {lotka['method']}",
         f"  Parameters: {params['counting']} counting over included records; "
         f"at least {params['min_productivity_levels']} productivity levels; "
-        f"K-S critical value {params['ks_coefficient']}/sqrt(N), used only above {params['ks_min_authors'] - 1} authors",
+        f"K-S at the {params['significance_level']} level, critical value {params['ks_coefficient']}/sqrt(N), "
+        f"used only above {params['ks_min_authors'] - 1} authors",
         f"  Authors: {lotka['total_authors']} across {lotka['productivity_levels']} productivity levels",
     ]
+    if lotka["distribution"]:
+        levels = ", ".join(f"{level['papers']}: {level['authors']}" for level in lotka["distribution"])
+        lines.append(f"  Distribution (papers: authors): {levels}")
     fit = lotka["fit"]
     if fit is None:
         lines.extend([f"  Fit: not computed. {lotka['reason']}", ""])

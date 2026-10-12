@@ -219,7 +219,8 @@ def test_lotka_names_its_method_and_sources():
 
 def _seed_productivity_corpus(db):
     """Ames, Bell and Cole have 1 included paper, Dunn 2, Eyre 3. Fox's only paper is
-    excluded, so Fox must not be counted."""
+    excluded, so Fox must not be counted. Eyre also has an excluded fourth paper, which
+    must not raise her count to 4."""
     project = SearchProject(name="Lotka")
     db.add(project)
     db.flush()
@@ -235,6 +236,10 @@ def _seed_productivity_corpus(db):
                            excluded=True, exclusion_reason="other", screening_stage="title_abstract")
     excluded.authors.append(authors["Fox"])
     db.add(excluded)
+    excluded_for_eyre = Publication(pmid="lky", title="LY", year=2024, query_id=query.id, project_id=project.id,
+                                    excluded=True, exclusion_reason="other", screening_stage="full_text")
+    excluded_for_eyre.authors.append(authors["Eyre"])
+    db.add(excluded_for_eyre)
     db.commit()
     return project
 
@@ -248,11 +253,18 @@ def test_author_analysis_includes_lotka_reconciled_with_total_authors(db):
     ]
     assert lotka["total_authors"] == result["total_authors"] == 5
     assert sum(level["authors"] for level in lotka["distribution"]) == result["total_authors"]
+    eyre = next(a for a in result["top_authors"] if a["name"] == "Eyre")
+    assert eyre["pub_count"] == 3
 
 
 def test_author_productivity_query_matches_the_authors_analysis(db):
     project = _seed_productivity_corpus(db)
-    assert analyze_author_productivity(db, project.id) == analyze_authors(db, project.id)["lotka"]
+    productivity = analyze_author_productivity(db, project.id)
+    assert productivity["distribution"] == [
+        {"papers": 1, "authors": 3}, {"papers": 2, "authors": 1}, {"papers": 3, "authors": 1},
+    ]
+    assert productivity["total_authors"] == 5
+    assert productivity == analyze_authors(db, project.id)["lotka"]
 
 
 def test_author_analysis_empty_project_still_reports_lotka(db):

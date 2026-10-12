@@ -193,8 +193,9 @@ with alpha close to 2 in many fields.
   an exponent from them would mean nothing.
 
 The methodology export recomputes the fit from the included records and logs the method,
-its parameters and the result, or the reason no fit was made, under "AUTHOR PRODUCTIVITY
-(Lotka's law)". The `lotka` block is an additive field, so `schema_version` stays `"1.0"`.
+its parameters, the distribution and the result, or the reason no fit was made, under
+"AUTHOR PRODUCTIVITY (Lotka's law)". The distribution line is enough to recompute alpha,
+C, R² and D from the log alone. The `lotka` block is an additive field, so `schema_version` stays `"1.0"`.
 
 ## Methodology export from scripts
 

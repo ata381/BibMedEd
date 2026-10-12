@@ -525,8 +525,9 @@ class TestGenerateMethodologyAuthorProductivity:
         assert self._section(text) == [
             f"  Method: {LOTKA_METHOD}",
             "  Parameters: complete counting over included records; at least 3 productivity levels; "
-            "K-S critical value 1.63/sqrt(N), used only above 35 authors",
+            "K-S at the 0.01 level, critical value 1.63/sqrt(N), used only above 35 authors",
             "  Authors: 5369 across 6 productivity levels",
+            "  Distribution (papers: authors): 1: 3600, 2: 900, 3: 400, 4: 225, 5: 144, 6: 100",
             "  Fit: alpha = 2.0, C = 3600.0, R^2 = 1.0",
             "  Kolmogorov-Smirnov: D = 0.0933, critical value = 0.0222 at the 0.01 level; "
             "consistent with Lotka's law: no",
@@ -536,8 +537,14 @@ class TestGenerateMethodologyAuthorProductivity:
         text = generate_methodology("Small", self.STEPS, {}, author_productivity=fit_lotka([1, 1, 2]))
         section = self._section(text)
         assert "  Authors: 3 across 2 productivity levels" in section
+        assert "  Distribution (papers: authors): 1: 2, 2: 1" in section
         assert any(line.startswith("  Fit: not computed. ") and "3 distinct" in line for line in section)
         assert not any(line.startswith("  Kolmogorov-Smirnov:") for line in section)
+
+    def test_omits_the_distribution_line_without_authors(self):
+        section = self._section(generate_methodology("None", self.STEPS, {}, author_productivity=fit_lotka([])))
+        assert "  Authors: 0 across 0 productivity levels" in section
+        assert not any(line.startswith("  Distribution") for line in section)
 
     def test_states_why_the_ks_verdict_is_missing(self):
         counts = [n for n, a in {1: 20, 2: 5, 3: 2, 4: 1}.items() for _ in range(a)]
