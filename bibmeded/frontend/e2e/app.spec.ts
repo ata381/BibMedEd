@@ -51,10 +51,11 @@ test("sample project opens a complete dashboard", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Analysis Overview" })).toBeVisible();
   await expect(page.getByText("AI in Medical Education — Sample Project")).toBeVisible();
   await expect(page.getByText("Marcus Chen Sample — 5")).toBeAttached();
+  await expect(page.getByRole("group", { name: "Publication growth summary" })).toBeVisible();
   await expect(page.getByText("CAGR")).toBeVisible();
   await expect(page.getByText("41.42%")).toBeVisible();
   await expect(page.getByText("Doubling time")).toBeVisible();
-  await expect(page.getByText("2 years")).toBeVisible();
+  await expect(page.getByText("2 years", { exact: true })).toBeVisible();
   await expect(page.getByText("Growth window 2018–2020")).toBeVisible();
   expect(errors).toEqual([]);
 });
@@ -88,9 +89,43 @@ test("publication trends shows null metric reasons without hiding zero values", 
 
   await page.goto("/projects/1/dashboard");
 
-  await expect(page.getByText("0%")).toBeVisible();
+  await expect(page.getByText("0%", { exact: true })).toBeVisible();
   await expect(page.getByText("Doubling time is not defined for non-positive growth (CAGR <= 0).")).toBeVisible();
   await expect(page.getByText("NaN")).toHaveCount(0);
+});
+
+test("publication trends uses the singular unit for a one-year doubling time", async ({ page }) => {
+  await installMockApi(page);
+  await overridePublicationGrowthSummary(page, {
+    cagr: 100,
+    doubling_time_years: 1,
+    start_year: 2018,
+    end_year: 2020,
+    excluded_current_year: false,
+    reason: null,
+  });
+
+  await page.goto("/projects/1/dashboard");
+
+  await expect(page.getByText("1 year", { exact: true })).toBeVisible();
+  await expect(page.getByText("1 years")).toHaveCount(0);
+});
+
+test("publication trends never shows a negative zero CAGR", async ({ page }) => {
+  await installMockApi(page);
+  await overridePublicationGrowthSummary(page, {
+    cagr: -0.001,
+    doubling_time_years: null,
+    start_year: 2018,
+    end_year: 2020,
+    excluded_current_year: false,
+    reason: "Doubling time is not defined for non-positive growth (CAGR <= 0).",
+  });
+
+  await page.goto("/projects/1/dashboard");
+
+  await expect(page.getByText("0%", { exact: true })).toBeVisible();
+  await expect(page.getByText("-0%")).toHaveCount(0);
 });
 
 test("publication trends shows CAGR null reasons without hiding zero doubling time", async ({ page }) => {
@@ -106,8 +141,11 @@ test("publication trends shows CAGR null reasons without hiding zero doubling ti
 
   await page.goto("/projects/1/dashboard");
 
-  await expect(page.getByText("0 years")).toBeVisible();
+  await expect(page.getByText("0 years", { exact: true })).toBeVisible();
   await expect(page.getByText("CAGR is undefined because the first full calendar year has zero publications.")).toBeVisible();
+  await expect(page.locator("[aria-describedby]", { hasText: "not available" })).toHaveAccessibleDescription(
+    "CAGR is undefined because the first full calendar year has zero publications.",
+  );
   await expect(page.getByText("NaN")).toHaveCount(0);
 });
 
