@@ -8,13 +8,14 @@ attributes/relationships that are already populated in memory.
 import csv
 import io
 import json
+import re
 import zipfile
 from datetime import datetime, timezone
 
 import pytest
 
 from bibmeded.analysis.lotka import LOTKA_METHOD, fit_lotka
-from bibmeded.models.author import Author
+from bibmeded.models.author import Affiliation, Author
 from bibmeded.models.journal import Journal
 from bibmeded.models.keyword import Keyword, KeywordType
 from bibmeded.models.methodology import MethodologyStep
@@ -29,6 +30,7 @@ from bibmeded.services.export_generators import (
     generate_prisma_svg,
     generate_ris,
     generate_screening_decisions_csv,
+    generate_wos_plaintext,
 )
 from bibmeded.services.screening import ScreeningDecisionLog
 
@@ -330,6 +332,275 @@ class TestGenerateRis:
 
 
 # ---------------------------------------------------------------------------
+# generate_wos_plaintext
+# ---------------------------------------------------------------------------
+
+WOS_HEADER = ("FN Clarivate Analytics Web of Science", "VR 1.0")
+_WOS_TAG_LINE = re.compile(r"^([A-Z][A-Z0-9]) (\S.*)$")
+_WOS_CONTINUATION_LINE = re.compile(r"^   (\S.*)$")
+
+
+def parse_wos(text: str) -> list[list[tuple[str, list[str]]]]:
+    """Parse WoS tagged plain text by the published rules, failing on any deviation.
+
+    Rules: optional UTF-8 BOM, ``FN`` then ``VR 1.0``; each record opens with ``PT``,
+    every line is a two-character tag plus one space plus a value, or a 3-space
+    continuation of the previous tag; ``ER`` closes a record and is followed by one
+    blank line; the file ends with ``EF``.
+    """
+    lines = text.removeprefix("\ufeff").split("\n")
+    assert tuple(lines[:2]) == WOS_HEADER
+    assert lines[-2:] == ["EF", ""]
+    records: list[list[tuple[str, list[str]]]] = []
+    current: list[tuple[str, list[str]]] | None = None
+    body = iter(lines[2:-2])
+    for line in body:
+        if current is None:
+            assert line.startswith("PT "), f"record must open with PT, got {line!r}"
+            current = []
+        if line == "ER":
+            assert next(body, None) == "", "ER must be followed by a blank line"
+            records.append(current)
+            current = None
+            continue
+        continuation = _WOS_CONTINUATION_LINE.match(line)
+        if continuation:
+            assert current, "continuation line with no open tag"
+            current[-1][1].append(continuation.group(1))
+            continue
+        tag_line = _WOS_TAG_LINE.match(line)
+        assert tag_line, f"not a WoS tag line: {line!r}"
+        current.append((tag_line.group(1), [tag_line.group(2)]))
+    assert current is None, "last record not closed by ER"
+    return records
+
+
+def wos_fields(text: str, index: int = 0) -> dict[str, list[str]]:
+    return dict(parse_wos(text)[index])
+
+
+def make_wos_pub(**overrides):
+    defaults = dict(
+        pmid="31234567",
+        doi="10.1111/medu.13900",
+        title="Feedback in clinical training",
+        abstract="We studied feedback.",
+        year=2019,
+        citation_count=12,
+        journal_name="Medical Education",
+        source_database="pubmed",
+        authors=[
+            Author(
+                name="Demir, Sofia Ayse",
+                affiliations=[Affiliation(name="Hacettepe University, Ankara, Turkey", country="Turkey")],
+            ),
+            Author(
+                name="Kaya, Ali",
+                affiliations=[Affiliation(name="Hacettepe University, Ankara, Turkey", country="Turkey")],
+            ),
+            Author(
+                name="Smith, John",
+                affiliations=[Affiliation(name="University of Michigan, Ann Arbor, MI, USA", country="United States")],
+            ),
+        ],
+        keywords=[
+            Keyword(term="feedback", type=KeywordType.author_keyword),
+            Keyword(term="simulation", type=KeywordType.author_keyword),
+            Keyword(term="Education, Medical", type=KeywordType.mesh_term),
+            Keyword(term="Humans", type=KeywordType.mesh_term),
+        ],
+    )
+    external_references = overrides.pop("external_references", None)
+    issn = overrides.pop("issn", "0308-0110")
+    e_issn = overrides.pop("e_issn", "1365-2923")
+    defaults.update(overrides)
+    pub = make_pub(**defaults)
+    if pub.journal is not None:
+        pub.journal.issn = issn
+        pub.journal.e_issn = e_issn
+    pub.external_references = external_references
+    return pub
+
+
+class TestGenerateWosPlaintext:
+    @pytest.mark.parametrize(
+        "malformed",
+        [
+            "FN Clarivate Analytics Web of Science\nVR 1.0\nPT J\nTI \nER\n\nEF\n",
+            "FN Clarivate Analytics Web of Science\nVR 1.0\nPT J\n  two-space continuation\nER\n\nEF\n",
+            "FN Clarivate Analytics Web of Science\nVR 1.0\nPT J\nER\nPT J\nER\n\nEF\n",
+            "FN Clarivate Analytics Web of Science\nVR 1.0\nPT J\nER\n\n",
+        ],
+    )
+    def test_format_checker_rejects_malformed_files(self, malformed):
+        with pytest.raises(AssertionError):
+            parse_wos(malformed)
+
+    def test_header_and_footer_follow_the_published_format(self):
+        text = generate_wos_plaintext([make_wos_pub()])
+        assert text.startswith("\ufeffFN Clarivate Analytics Web of Science\nVR 1.0\nPT J\n")
+        assert text.endswith("\nER\n\nEF\n")
+
+    def test_empty_corpus_is_a_valid_file_with_no_records(self):
+        text = generate_wos_plaintext([])
+        assert parse_wos(text) == []
+
+    def test_tags_are_emitted_in_web_of_science_order(self):
+        pub = make_wos_pub(
+            external_references=["10.1000/cited-one"],
+            publication_type="Journal Article",
+        )
+        tags = [tag for tag, _ in parse_wos(generate_wos_plaintext([pub]))[0]]
+        assert tags == [
+            "PT", "AU", "AF", "TI", "SO", "DT", "DE", "ID", "AB", "C1", "CR", "NR",
+            "TC", "SN", "EI", "PY", "DI", "UT", "PM",
+        ]
+
+    def test_one_author_per_line_in_surname_initials_form(self):
+        text = generate_wos_plaintext([make_wos_pub()])
+        assert "\nAU Demir, SA\n   Kaya, A\n   Smith, J\n" in text
+        assert wos_fields(text)["AU"] == ["Demir, SA", "Kaya, A", "Smith, J"]
+        assert wos_fields(text)["AF"] == ["Demir, Sofia Ayse", "Kaya, Ali", "Smith, John"]
+
+    def test_given_family_names_are_reordered_to_surname_first(self):
+        pub = make_wos_pub(
+            source_database="openalex",
+            authors=[Author(name="Jean-Pierre Dupont"), Author(name="Mary J. Watson")],
+        )
+        fields = wos_fields(generate_wos_plaintext([pub]))
+        assert fields["AU"] == ["Dupont, JP", "Watson, MJ"]
+        assert fields["AF"] == ["Dupont, Jean-Pierre", "Watson, Mary J."]
+
+    def test_pubmed_collective_and_single_token_names_are_kept_verbatim(self):
+        pub = make_wos_pub(authors=[Author(name="STARD Study Group"), Author(name="Plato")])
+        fields = wos_fields(generate_wos_plaintext([pub]))
+        assert fields["AU"] == ["STARD Study Group", "Plato"]
+        assert fields["AF"] == ["STARD Study Group", "Plato"]
+
+    def test_c1_groups_authors_by_affiliation_and_keeps_the_country(self):
+        fields = wos_fields(generate_wos_plaintext([make_wos_pub()]))
+        assert fields["C1"] == [
+            "[Demir, SA; Kaya, A] Hacettepe University, Ankara, Turkey",
+            "[Smith, J] University of Michigan, Ann Arbor, MI, USA",
+        ]
+
+    def test_doi_references_become_cited_references(self):
+        pub = make_wos_pub(external_references=["10.1000/cited-one", "10.1000/CITED-two"])
+        fields = wos_fields(generate_wos_plaintext([pub]))
+        assert fields["CR"] == ["DOI 10.1000/cited-one", "DOI 10.1000/cited-two"]
+        assert fields["NR"] == ["2"]
+
+    def test_in_corpus_references_resolve_to_the_cited_record_doi(self):
+        cited = make_wos_pub(pmid="W100", doi="10.1000/in-corpus", source_database="openalex")
+        citing = make_wos_pub(
+            pmid="W200",
+            doi="10.1000/citing",
+            source_database="openalex",
+            external_references=["W100", "W999"],
+        )
+        fields = wos_fields(generate_wos_plaintext([citing, cited]))
+        assert fields["CR"] == ["DOI 10.1000/in-corpus"]
+        assert fields["NR"] == ["2"]
+
+    def test_unresolvable_references_leave_cr_out_but_nr_counts_them(self):
+        pub = make_wos_pub(source_database="sample", external_references=["sample-001", "sample-002"])
+        fields = wos_fields(generate_wos_plaintext([pub]))
+        assert "CR" not in fields
+        assert fields["NR"] == ["2"]
+
+    def test_no_cr_or_nr_when_the_source_gave_no_references(self):
+        fields = wos_fields(generate_wos_plaintext([make_wos_pub(external_references=None)]))
+        assert "CR" not in fields
+        assert "NR" not in fields
+
+    def test_times_cited_comes_from_citation_count(self):
+        assert wos_fields(generate_wos_plaintext([make_wos_pub(citation_count=12)]))["TC"] == ["12"]
+        assert wos_fields(generate_wos_plaintext([make_wos_pub(citation_count=0)]))["TC"] == ["0"]
+        assert "TC" not in wos_fields(generate_wos_plaintext([make_wos_pub(citation_count=None)]))
+
+    def test_identifiers_year_and_source(self):
+        fields = wos_fields(generate_wos_plaintext([make_wos_pub()]))
+        assert fields["PY"] == ["2019"]
+        assert fields["DI"] == ["10.1111/medu.13900"]
+        assert fields["PM"] == ["31234567"]
+        assert fields["UT"] == ["PUBMED:31234567"]
+        assert fields["SO"] == ["Medical Education"]
+        assert fields["SN"] == ["0308-0110"]
+        assert fields["EI"] == ["1365-2923"]
+
+    def test_pm_only_for_pubmed_records_because_other_sources_store_their_own_id(self):
+        pub = make_wos_pub(pmid="W123", source_database="openalex")
+        fields = wos_fields(generate_wos_plaintext([pub]))
+        assert "PM" not in fields
+        assert fields["UT"] == ["OPENALEX:W123"]
+
+    def test_author_keywords_in_de_and_mesh_in_id(self):
+        fields = wos_fields(generate_wos_plaintext([make_wos_pub()]))
+        assert fields["DE"] == ["feedback; simulation"]
+        assert fields["ID"] == ["Education, Medical; Humans"]
+
+    def test_utf8_text_round_trips(self):
+        pub = make_wos_pub(
+            title="Tıp eğitiminde geri bildirim: 医学教育",
+            authors=[Author(name="Çelik, Ömer", affiliations=[Affiliation(name="Ege Üniversitesi, İzmir, Türkiye")])],
+        )
+        text = generate_wos_plaintext([pub])
+        decoded = text.encode("utf-8").decode("utf-8")
+        fields = wos_fields(decoded)
+        assert fields["TI"] == ["Tıp eğitiminde geri bildirim: 医学教育"]
+        assert fields["AU"] == ["Çelik, Ö"]
+        assert fields["C1"] == ["[Çelik, Ö] Ege Üniversitesi, İzmir, Türkiye"]
+
+    def test_missing_fields_produce_no_empty_tags(self):
+        pub = make_wos_pub(
+            doi=None,
+            abstract=None,
+            year=None,
+            citation_count=None,
+            journal_name=None,
+            publication_type=None,
+            keywords=[],
+            authors=[],
+            source_database="sample",
+        )
+        fields = wos_fields(generate_wos_plaintext([pub]))
+        assert set(fields) == {"PT", "TI", "UT"}
+
+    def test_blank_values_are_skipped_rather_than_written_as_empty_lines(self):
+        pub = make_wos_pub(
+            authors=[
+                Author(name="  ", affiliations=[Affiliation(name="Orphan University, Turkey")]),
+                Author(name="Kaya, Ali", affiliations=[Affiliation(name=" ")]),
+            ],
+            keywords=[Keyword(term=" ", type=KeywordType.author_keyword)],
+        )
+        fields = wos_fields(generate_wos_plaintext([pub]))
+        assert fields["AU"] == ["Kaya, A"]
+        assert "DE" not in fields
+        assert "C1" not in fields
+
+    def test_records_are_separated_by_er_and_a_blank_line(self):
+        pubs = [make_wos_pub(pmid="1", doi="10.1/a"), make_wos_pub(pmid="2", doi="10.1/b")]
+        text = generate_wos_plaintext(pubs)
+        records = parse_wos(text)
+        assert [dict(r)["UT"] for r in records] == [["PUBMED:1"], ["PUBMED:2"]]
+        assert "\nER\n\nPT J\n" in text
+
+    def test_newlines_in_values_cannot_inject_tags_or_records(self):
+        pub = make_wos_pub(
+            title="Normal\nER\n\nPT J\nTI injected",
+            abstract="Line one\r\nLine two",
+            authors=[Author(name="Evil\nER", affiliations=[Affiliation(name="Univ\nEF")])],
+        )
+        text = generate_wos_plaintext([pub])
+        records = parse_wos(text)
+        assert len(records) == 1
+        fields = dict(records[0])
+        assert fields["TI"] == ["Normal ER PT J TI injected"]
+        assert fields["AB"] == ["Line one Line two"]
+
+
+# ---------------------------------------------------------------------------
 # generate_bundle
 # ---------------------------------------------------------------------------
 
@@ -345,8 +616,18 @@ class TestGenerateBundle:
         assert any(name.endswith(".ris") for name in names)
         assert any(name.endswith(".json") for name in names)
         assert any("methodology" in name and name.endswith(".txt") for name in names)
+        assert any("-wos-" in name and name.endswith(".txt") for name in names)
         assert any(name.endswith(".svg") for name in names)
         assert "MANIFEST.txt" in names
+
+    def test_bundle_wos_file_matches_the_standalone_export(self):
+        pub = make_wos_pub(external_references=["10.1000/cited-one", "sample-x"])
+        bundle_bytes = generate_bundle("Bundle Project", [pub], [make_step()], {})
+        zf = zipfile.ZipFile(io.BytesIO(bundle_bytes))
+        wos_name = next(name for name in zf.namelist() if "-wos-" in name)
+        assert zf.read(wos_name).decode("utf-8") == generate_wos_plaintext([pub])
+        manifest = zf.read("MANIFEST.txt").decode("utf-8")
+        assert f"{wos_name} (1 records, Web of Science plain text; CR lists 1 of 2 cited references" in manifest
 
     def test_manifest_mentions_schema_version_and_counts(self):
         pubs = [make_pub(pmid="1"), make_pub(pmid="2")]

@@ -13,6 +13,8 @@ from collections import Counter
 from datetime import date, datetime, timezone
 
 from bibmeded.models import Publication, ScreeningDecision
+from bibmeded.models import Publication
+from bibmeded.models.keyword import KeywordType
 from bibmeded.models.methodology import MethodologyStep
 from bibmeded.services.prisma import ExclusionSummary, compute_counts, render_svg, summarize_exclusions
 from bibmeded.services.screening import BULK_EXCLUDE_PHASE, BULK_EXCLUDE_SOURCE, ScreeningDecisionLog
@@ -145,6 +147,144 @@ def generate_ris(pubs: list[Publication]) -> str:
         lines.append("ER  - ")
         lines.append("")
     return "\n".join(lines)
+
+
+# Genuine Web of Science plain-text exports start with a UTF-8 BOM. Writing one keeps
+# the file in the shape VOSviewer and bibliometrix already parse, and stops tools that
+# fall back to the platform code page from misreading non-ASCII names.
+_WOS_BOM = "\ufeff"
+_WOS_HEADER = ("FN Clarivate Analytics Web of Science", "VR 1.0")
+_WOS_CONTINUATION = "   "
+_DOI_PATTERN = re.compile(r"^10\.\d{4,9}/\S+$", re.IGNORECASE)
+
+
+def _wos_tag(tag: str, values: list[str]) -> list[str]:
+    cleaned = [v for v in (_ris_safe(value) for value in values) if v]
+    if not cleaned:
+        return []
+    return [f"{tag} {cleaned[0]}", *(f"{_WOS_CONTINUATION}{v}" for v in cleaned[1:])]
+
+
+def _wos_name_parts(name: str, source_database: str) -> tuple[str, str]:
+    """Split a stored author name into (surname, given names).
+
+    PubMed stores persons as "Surname, Given" and collective authors without a
+    comma, so a comma-less PubMed name is kept whole. Other adapters store
+    "Given Surname", where the last token is taken as the surname.
+    """
+    name = " ".join(_ris_safe(name).split())
+    if "," in name:
+        surname, given = name.split(",", 1)
+        return surname.strip(), given.strip()
+    if source_database == "pubmed" or " " not in name:
+        return name, ""
+    given, surname = name.rsplit(" ", 1)
+    return surname, given
+
+
+def _wos_short_name(surname: str, given: str) -> str:
+    initials = "".join(token[0].upper() for token in re.split(r"[\s.\-]+", given) if token)
+    return f"{surname}, {initials}" if initials else surname
+
+
+def _wos_full_name(surname: str, given: str) -> str:
+    return f"{surname}, {given}" if given else surname
+
+
+def _wos_addresses(pub: Publication, short_names: list[str]) -> list[str]:
+    authors_by_address: dict[str, list[str]] = {}
+    for author, short_name in zip(pub.authors, short_names):
+        if not short_name:
+            continue
+        for affiliation in author.affiliations:
+            address = _ris_safe(affiliation.name or "")
+            if not address:
+                continue
+            names = authors_by_address.setdefault(address, [])
+            if short_name not in names:
+                names.append(short_name)
+    return [f"[{'; '.join(names)}] {address}" for address, names in authors_by_address.items()]
+
+
+def _wos_keywords(pub: Publication, kind: KeywordType) -> str:
+    terms = (_ris_safe(k.term or "") for k in pub.keywords if k.type == kind)
+    return "; ".join(term for term in terms if term)
+
+
+def _wos_doi_by_source_id(pubs: list[Publication]) -> dict[str, str]:
+    return {pub.pmid.lower(): pub.doi.lower() for pub in pubs if pub.pmid and pub.doi}
+
+
+def _wos_cited_references(pub: Publication, doi_by_source_id: dict[str, str]) -> list[str]:
+    """Cited references as WoS ``DOI <doi>`` entries.
+
+    ``external_references`` holds source-native identifiers. A DOI is written as is;
+    any other identifier is written only when it names an in-corpus record with a
+    DOI, the same matching the citation analysis uses. The rest have no WoS form,
+    so ``NR`` carries the full count and the bundle manifest reports the shortfall.
+    """
+    cited: list[str] = []
+    for raw_ref in pub.external_references or []:
+        ref = str(raw_ref).strip().lower()
+        doi = ref if _DOI_PATTERN.match(ref) else doi_by_source_id.get(ref)
+        if doi and f"DOI {doi}" not in cited:
+            cited.append(f"DOI {doi}")
+    return cited
+
+
+def wos_reference_coverage(pubs: list[Publication]) -> tuple[int, int]:
+    """(cited references written to CR, references the sources reported)."""
+    doi_by_source_id = _wos_doi_by_source_id(pubs)
+    written = sum(len(_wos_cited_references(pub, doi_by_source_id)) for pub in pubs)
+    reported = sum(len(pub.external_references or []) for pub in pubs)
+    return written, reported
+
+
+def _wos_record(pub: Publication, doi_by_source_id: dict[str, str]) -> list[str]:
+    name_parts = [_wos_name_parts(author.name or "", pub.source_database) for author in pub.authors]
+    short_names = [_wos_short_name(surname, given) for surname, given in name_parts]
+    references = pub.external_references or []
+    journal = pub.journal
+    return [
+        "PT J",
+        *_wos_tag("AU", short_names),
+        *_wos_tag("AF", [_wos_full_name(surname, given) for surname, given in name_parts]),
+        *_wos_tag("TI", [pub.title or ""]),
+        *_wos_tag("SO", [journal.name if journal else ""]),
+        *_wos_tag("DT", [pub.publication_type or ""]),
+        *_wos_tag("DE", [_wos_keywords(pub, KeywordType.author_keyword)]),
+        *_wos_tag("ID", [_wos_keywords(pub, KeywordType.mesh_term)]),
+        *_wos_tag("AB", [pub.abstract or ""]),
+        *_wos_tag("C1", _wos_addresses(pub, short_names)),
+        *_wos_tag("CR", _wos_cited_references(pub, doi_by_source_id)),
+        *_wos_tag("NR", [str(len(references))] if references else []),
+        *_wos_tag("TC", [str(pub.citation_count)] if pub.citation_count is not None else []),
+        *_wos_tag("SN", [journal.issn or ""] if journal else []),
+        *_wos_tag("EI", [journal.e_issn or ""] if journal else []),
+        *_wos_tag("PY", [str(pub.year)] if pub.year else []),
+        *_wos_tag("DI", [pub.doi or ""]),
+        *_wos_tag("UT", [f"{pub.source_database.upper()}:{pub.pmid}"] if pub.pmid else []),
+        *_wos_tag("PM", [pub.pmid] if pub.source_database == "pubmed" else []),
+        "ER",
+        "",
+    ]
+
+
+def generate_wos_plaintext(pubs: list[Publication]) -> str:
+    """Web of Science tagged plain text, the input VOSviewer and bibliometrix
+    (``convert2df(dbsource="wos", format="plaintext")``) read.
+
+    Every value is one line; multi-valued fields (AU, AF, C1, CR) put one value per
+    line with 3-space continuation lines, records end with ``ER`` and a blank line,
+    and the file ends with ``EF``. Field mapping and known gaps are documented in
+    ``docs/scripting.md``.
+    """
+    doi_by_source_id = _wos_doi_by_source_id(pubs)
+    lines = [*_WOS_HEADER]
+    for pub in pubs:
+        lines.extend(_wos_record(pub, doi_by_source_id))
+    lines.append("EF")
+    return _WOS_BOM + "\n".join(lines) + "\n"
 
 
 EXCLUSION_REASON_LABELS = {
@@ -574,18 +714,20 @@ def generate_bundle(
     decision_log: ScreeningDecisionLog | None = None,
     author_productivity: dict | None = None,
 ) -> bytes:
-    """Produce a single .zip containing CSV, RIS, JSON, methodology .txt, PRISMA .svg, the
-    screening decision log CSV (when ``decision_log`` is given), and a manifest."""
+    """Produce a single .zip containing CSV, RIS, WoS plain text, JSON, methodology .txt, PRISMA .svg,
+    the screening decision log CSV (when ``decision_log`` is given), and a manifest."""
     stamp = date.today().isoformat()
     slug = slugify(project_name) or "project"
     # pubs is already filtered to excluded == False by the caller (_get_project_and_pubs),
     # so len(pubs) is the authoritative "included" count.
     included_count = len(pubs)
     decisions_name = f"{slug}-screening-decisions-{stamp}.csv"
+    cited_written, cited_reported = wos_reference_coverage(pubs)
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         zf.writestr(f"{slug}-{stamp}.csv", generate_csv(pubs))
         zf.writestr(f"{slug}-{stamp}.ris", generate_ris(pubs))
+        zf.writestr(f"{slug}-wos-{stamp}.txt", generate_wos_plaintext(pubs))
         zf.writestr(f"{slug}-{stamp}.json", generate_json(project_name, pubs))
         zf.writestr(
             f"{slug}-methodology-{stamp}.txt",
@@ -602,6 +744,9 @@ def generate_bundle(
             f"Included files:\n"
             f"  - {slug}-{stamp}.csv ({len(pubs)} records)\n"
             f"  - {slug}-{stamp}.ris ({len(pubs)} records)\n"
+            f"  - {slug}-wos-{stamp}.txt ({len(pubs)} records, Web of Science plain text; "
+            f"CR lists {cited_written} of {cited_reported} cited references, "
+            f"only those with a DOI or matching an in-corpus record with a DOI)\n"
             f"  - {slug}-{stamp}.json ({len(pubs)} records, schema_version={EXPORT_SCHEMA_VERSION})\n"
             f"  - {slug}-methodology-{stamp}.txt ({len(steps)} steps)\n"
             f"  - {slug}-prisma-{stamp}.svg\n"

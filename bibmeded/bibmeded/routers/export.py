@@ -4,13 +4,13 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 logger = logging.getLogger(__name__)
 
 from bibmeded.analysis.authors import analyze_author_productivity
 from bibmeded.database import get_db
-from bibmeded.models import Publication, SearchProject
+from bibmeded.models import Author, Publication, SearchProject
 from bibmeded.models.methodology import MethodologyStep
 from bibmeded.services.export_generators import (
     generate_bundle,
@@ -19,6 +19,7 @@ from bibmeded.services.export_generators import (
     generate_methodology,
     generate_prisma_svg,
     generate_ris,
+    generate_wos_plaintext,
     slugify,
 )
 from bibmeded.services.screening import ScreeningDecisionLog, load_decision_log
@@ -26,16 +27,21 @@ from bibmeded.services.screening import ScreeningDecisionLog, load_decision_log
 router = APIRouter(prefix="/api/projects/{project_id}/export", tags=["export"])
 
 
-def _get_project_and_pubs(project_id: int, db: Session) -> tuple[SearchProject, list[Publication]]:
+def _get_project_and_pubs(
+    project_id: int, db: Session, *, with_affiliations: bool = False
+) -> tuple[SearchProject, list[Publication]]:
     project = db.get(SearchProject, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     query_ids = [q.id for q in project.queries]
     if not query_ids:
         return project, []
+    authors = joinedload(Publication.authors)
+    if with_affiliations:
+        authors = authors.selectinload(Author.affiliations)
     pubs = (
         db.query(Publication)
-        .options(joinedload(Publication.authors), joinedload(Publication.journal), joinedload(Publication.keywords))
+        .options(authors, joinedload(Publication.journal), joinedload(Publication.keywords))
         .filter(Publication.query_id.in_(query_ids), Publication.excluded == False)
         .order_by(Publication.year.desc())
         .all()
@@ -108,6 +114,18 @@ def export_ris(project_id: int, db: Session = Depends(get_db)):
     )
 
 
+@router.get("/wos")
+def export_wos(project_id: int, db: Session = Depends(get_db)):
+    """Web of Science tagged plain text for VOSviewer and bibliometrix."""
+    project, pubs = _get_project_and_pubs(project_id, db, with_affiliations=True)
+    filename = f"{slugify(project.name)}-wos-{date.today().isoformat()}.txt"
+    return StreamingResponse(
+        iter([generate_wos_plaintext(pubs)]),
+        media_type="text/plain; charset=utf-8",
+        headers=_attachment(filename),
+    )
+
+
 @router.get("/json")
 def export_json(project_id: int, db: Session = Depends(get_db)):
     """Versioned JSON export for programmatic / notebook consumers."""
@@ -163,13 +181,13 @@ def export_methodology(project_id: int, db: Session = Depends(get_db)):
 
 @router.get("/bundle")
 def export_bundle(project_id: int, db: Session = Depends(get_db)):
-    """Single .zip with CSV + RIS + JSON + methodology + PRISMA SVG + screening decision
-    log CSV + manifest.
+    """Single .zip with CSV + RIS + WoS plain text + JSON + methodology + PRISMA SVG + screening
+    decision log CSV + manifest.
 
     Intended for journal submission: bundles everything a JOSS / systematic review reviewer
     needs to reproduce the methodology in one download.
     """
-    project, pubs = _get_project_and_pubs(project_id, db)
+    project, pubs = _get_project_and_pubs(project_id, db, with_affiliations=True)
     _, steps = _get_project_and_steps(project_id, db)
     exclusion_summary = _get_exclusion_summary(project_id, db)
     author_productivity = analyze_author_productivity(db, project_id)
