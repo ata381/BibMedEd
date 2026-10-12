@@ -5,6 +5,8 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    cooldown:
+      semver-patch-days: 3
     open-pull-requests-limit: 5
     groups:
       python-minor-and-patch:
@@ -19,6 +21,8 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    cooldown:
+      semver-patch-days: 3
     open-pull-requests-limit: 5
     groups:
       js-minor-and-patch:
@@ -46,6 +50,8 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    cooldown:
+      semver-patch-days: 3
     labels: [dependencies, ci]
     commit-message:
       prefix: "chore(ci)"
