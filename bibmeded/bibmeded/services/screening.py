@@ -118,7 +118,7 @@ def exclude_by_citation_threshold(
         .where(
             Publication.query_id.in_(query_ids),
             Publication.excluded == False,
-            (Publication.citation_count == None) | (Publication.citation_count <= citation_threshold),
+            Publication.citation_count.is_(None) | (Publication.citation_count <= citation_threshold),
         )
         .order_by(Publication.id)
         # FOR NO KEY UPDATE on Postgres: only non-key columns change, and plain
@@ -128,18 +128,26 @@ def exclude_by_citation_threshold(
     ).all()
     run_id = str(uuid.uuid4())
     decided_at = _now_utc()
+    # The UPDATE re-checks ``excluded`` so that on SQLite, where the row lock is
+    # a no-op, a concurrent request that already excluded a selected row is not
+    # overwritten and gets no second decision; those rows count as skipped.
+    updated_ids: set[int] = set()
     for batch in batched([row.id for row in rows], UPDATE_BATCH_SIZE):
-        db.execute(
-            update(Publication)
-            .where(Publication.id.in_(batch))
-            .values(
-                excluded=target.excluded,
-                exclusion_reason=target.exclusion_reason,
-                screening_stage=target.screening_stage,
+        updated_ids.update(
+            db.scalars(
+                update(Publication)
+                .where(Publication.id.in_(batch), Publication.excluded.is_(False))
+                .values(
+                    excluded=target.excluded,
+                    exclusion_reason=target.exclusion_reason,
+                    screening_stage=target.screening_stage,
+                )
+                .returning(Publication.id)
+                .execution_options(synchronize_session="fetch")
             )
-            .execution_options(synchronize_session="fetch")
         )
-    if rows:
+    excluded_rows = [row for row in rows if row.id in updated_ids]
+    if excluded_rows:
         db.execute(
             insert(ScreeningDecision),
             [
@@ -153,7 +161,7 @@ def exclude_by_citation_threshold(
                     "criteria": {"citation_threshold": citation_threshold},
                     **_decision_values(ScreeningState(False, row.exclusion_reason, row.screening_stage), target),
                 }
-                for row in rows
+                for row in excluded_rows
             ],
         )
     db.add(_bulk_exclude_step(
@@ -162,14 +170,16 @@ def exclude_by_citation_threshold(
         run_id=run_id,
         decided_at=decided_at,
         citation_threshold=citation_threshold,
-        # Every matched row is still included (the select filters on it), so
-        # nothing is skipped yet; #147 may add matches it leaves alone.
-        counts={"matched": len(rows), "excluded": len(rows), "skipped": 0},
+        counts={
+            "matched": len(rows),
+            "excluded": len(excluded_rows),
+            "skipped": len(rows) - len(excluded_rows),
+        },
         included_before=included_before,
         target=target,
         reviewer=reviewer,
     ))
-    return len(rows)
+    return len(excluded_rows)
 
 
 def _bulk_exclude_step(

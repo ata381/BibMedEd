@@ -129,7 +129,7 @@ def test_rejected_toggle_writes_no_decision(client, db):
 
 def test_bulk_exclude_appends_one_decision_per_affected_publication(client, db):
     project, pubs = _project_with_pubs(db, "audit-bulk", count=3, citation_count=0)
-    _, (high,) = _project_with_pubs(db, "audit-bulk-other", count=1, citation_count=0)
+    _project_with_pubs(db, "audit-bulk-other", count=1, citation_count=0)
     cited = Publication(pmid="audit-bulk-cited", title="Cited", year=2024, citation_count=9,
                         query_id=pubs[0].query_id, project_id=project.id)
     db.add(cited)
@@ -303,7 +303,7 @@ def test_apply_screening_state_records_a_reason_change(db):
 
 
 def test_apply_screening_state_records_a_stage_change(db):
-    project, (pub,) = _project_with_pubs(db, "audit-stage-change")
+    _, (pub,) = _project_with_pubs(db, "audit-stage-change")
     apply_screening_state(db, pub, ScreeningState(True, "wrong_outcome", "title_abstract"), reviewer=None, source="toggle")
 
     decision = apply_screening_state(
@@ -335,7 +335,7 @@ def test_apply_screening_state_writes_nothing_for_a_no_op(db, state):
 
 
 def test_apply_screening_state_keeps_unknown_legacy_values_verbatim(db):
-    project, (pub,) = _project_with_pubs(db, "audit-legacy")
+    _, (pub,) = _project_with_pubs(db, "audit-legacy")
     pub.excluded = True
     pub.exclusion_reason = "legacy_reason"
     pub.screening_stage = None
@@ -404,7 +404,8 @@ def test_deleting_a_project_deletes_its_decisions(client, db):
     client.patch(_exclude_url(project, pub))
     project_id = project.id
 
-    assert client.delete(f"/api/projects/{project_id}").status_code == 204
+    response = client.delete(f"/api/projects/{project_id}")
+    assert response.status_code == 204
 
     db.expire_all()
     assert _decisions(db, project_id) == []

@@ -613,8 +613,10 @@ class TestScreeningDecisionHistory:
             "      Full-text not retrievable: 1",
             "      Wrong outcome: 1",
             "  Bulk exclusions:",
-            "    2026-10-01T09:05:00Z (run id not recorded): 2 records excluded with citation count missing "
-            "or at most 0 (reason: Other / unspecified; stage: Title/abstract; reviewer: none recorded)",
+            (
+                "    2026-10-01T09:05:00Z (run id not recorded): 2 records excluded with citation count missing "
+                "or at most 0 (reason: Other / unspecified; stage: Title/abstract; reviewer: none recorded)"
+            ),
             "  Reviewer labels: MB, Reviewer A",
             "  Decisions without a reviewer label: 2",
             "  Per-decision log: the screening-decisions CSV in the export bundle.",
