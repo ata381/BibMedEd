@@ -80,7 +80,7 @@ Well-done contributions are merged, not rewritten. If a PR needs changes of roug
 
 ## Reviewer setup
 
-Automatic PR review is not configured. Maintainers run an on-demand agent review from the diff (`gh pr diff <n>`) and write the human review themselves. Do not add a CI review workflow without the owner's approval.
+Codex Cloud (`chatgpt-codex-connector`) posts an automatic review on every PR; its inline threads count as review conversations and must be answered and resolved before master's required conversation resolution lets the PR merge. Maintainers additionally run an on-demand agent review from the diff (`gh pr diff <n>`) and write the human review themselves. Do not add a second CI review workflow without the owner's approval.
 
 ## Trusted developers
 
