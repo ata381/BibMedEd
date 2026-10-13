@@ -357,6 +357,8 @@ def _screening_decision_lines(decision_log: ScreeningDecisionLog, bulk_steps: li
     if unlogged:
         verb = "has" if unlogged == 1 else "have"
         lines.append(f"    {_plural(unlogged, 'currently excluded record')} {verb} no logged decision.")
+    lines.append("")
+    return lines
 
 
 def _yes_no(value: bool) -> str:
