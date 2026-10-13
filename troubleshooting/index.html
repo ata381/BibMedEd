@@ -1,0 +1,2165 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Bibliometric Analysis Platform for Medical Education">
+      
+      
+      
+        <link rel="canonical" href="https://ata381.github.io/BibMedEd/troubleshooting/">
+      
+      
+        <link rel="prev" href="../deploy/">
+      
+      
+        <link rel="next" href="../scripting/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Troubleshooting & FAQ - BibMedEd</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#troubleshooting-and-faq" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="BibMedEd" class="md-header__button md-logo" aria-label="BibMedEd" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            BibMedEd
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Troubleshooting & FAQ
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ata381/BibMedEd" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ata381/BibMedEd
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../why-bibmeded/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Why BibMedEd?
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../whats-new/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  What's New
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../case-study/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Case Study
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../deploy/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Self-Hosting
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Troubleshooting & FAQ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../scripting/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Scripting & API
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../adapters/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Writing Adapters
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../community/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Community
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="https://github.com/ata381/BibMedEd/blob/master/CONTRIBUTING.md" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Contribute
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="BibMedEd" class="md-nav__button md-logo" aria-label="BibMedEd" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    BibMedEd
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ata381/BibMedEd" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ata381/BibMedEd
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../why-bibmeded/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Why BibMedEd?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../whats-new/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    What's New
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../case-study/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case Study
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Self-Hosting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting & FAQ
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting & FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install-and-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install and start
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Install and start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docker-compose-up-says-it-cannot-connect-to-docker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        docker compose up says it cannot connect to Docker
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-port-is-already-in-use-3000-8000-5432-or-6379" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A port is already in use (3000, 8000, 5432 or 6379)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-api-or-worker-container-exits-with-no-such-file-or-directory-windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The api or worker container exits with "no such file or directory" (Windows)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#does-it-run-on-an-apple-silicon-mac-m1-and-later" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does it run on an Apple Silicon Mac (M1 and later)?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#i-started-the-demo-and-it-is-on-port-3100-not-3000" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        I started the demo and it is on port 3100, not 3000
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-do-i-start-over-with-an-empty-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How do I start over with an empty database?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#searches" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Searches
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Searches">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pubmed-searches-fail-with-429-too-many-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PubMed searches fail with "429 Too Many Requests"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lensorg-searches-fail-lens-searches-require-bibmeded_lens_api_key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lens.org searches fail: "Lens searches require BIBMEDED_LENS_API_KEY"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#my-search-finished-with-0-results-but-the-query-is-correct" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        My search finished with 0 results, but the query is correct
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#did-my-search-hit-the-2000-record-cap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Did my search hit the 2,000-record cap?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#my-search-stays-on-search-dispatched-and-never-progresses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        My search stays on "Search dispatched..." and never progresses
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deduplication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deduplication
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deduplication">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-are-two-records-with-the-same-title-both-kept" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why are two records with the same title both kept?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#which-wins-doi-or-pmid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which wins, DOI or PMID?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-do-i-find-how-many-duplicates-were-removed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where do I find how many duplicates were removed?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#screening-and-prisma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Screening and PRISMA
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Screening and PRISMA">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#which-screening-stage-does-an-exclusion-get" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which screening stage does an exclusion get?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exclude-0-citation-papers-wants-to-exclude-almost-everything" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Exclude 0-citation papers" wants to exclude almost everything
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-api-returns-422-when-i-exclude-with-fulltext_unavailable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The API returns 422 when I exclude with fulltext_unavailable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-do-i-re-include-a-record-or-move-it-to-the-other-stage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How do I re-include a record, or move it to the other stage?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Analysis
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-dashboard-does-not-change-after-i-exclude-records-or-run-another-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The dashboard does not change after I exclude records or run another search
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-dashboard-says-no-publications-to-analyze" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The dashboard says "No publications to analyze"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-growth-summary-shows-instead-of-cagr-or-doubling-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The growth summary shows "—" instead of CAGR or doubling time
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#field-maturity-is-null-or-undetermined" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Field maturity is null or "undetermined"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-network-says-no-network-data-available-or-a-table-is-empty" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The network says "No network data available", or a table is empty
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exports
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Exports">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#which-file-do-i-open-in-which-program" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which file do I open in which program?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-does-the-methodology-log-go-in-my-paper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where does the methodology log go in my paper?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#read-only-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read-only mode
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Read-only mode">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#every-change-fails-with-403-read-only-public-demo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Every change fails with 403 "read-only public demo"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#my-own-install-shows-the-read-only-demo-banner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        My own install shows the "Read-only demo" banner
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-misspelled-setting-is-being-ignored" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A misspelled setting is being ignored
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#can-i-put-my-bibmeded-on-the-internet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Can I put my BibMedEd on the internet?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#upgrading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upgrading
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Upgrading">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-do-i-upgrade-to-a-new-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How do I upgrade to a new version?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-downgrade-refuses-to-run-because-of-full-text-exclusions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A downgrade refuses to run because of full-text exclusions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-do-i-report-a-bug" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where do I report a bug?
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scripting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scripting & API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adapters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../community/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Community
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/ata381/BibMedEd/blob/master/CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contribute
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install-and-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install and start
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Install and start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docker-compose-up-says-it-cannot-connect-to-docker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        docker compose up says it cannot connect to Docker
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-port-is-already-in-use-3000-8000-5432-or-6379" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A port is already in use (3000, 8000, 5432 or 6379)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-api-or-worker-container-exits-with-no-such-file-or-directory-windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The api or worker container exits with "no such file or directory" (Windows)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#does-it-run-on-an-apple-silicon-mac-m1-and-later" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does it run on an Apple Silicon Mac (M1 and later)?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#i-started-the-demo-and-it-is-on-port-3100-not-3000" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        I started the demo and it is on port 3100, not 3000
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-do-i-start-over-with-an-empty-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How do I start over with an empty database?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#searches" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Searches
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Searches">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pubmed-searches-fail-with-429-too-many-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PubMed searches fail with "429 Too Many Requests"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lensorg-searches-fail-lens-searches-require-bibmeded_lens_api_key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lens.org searches fail: "Lens searches require BIBMEDED_LENS_API_KEY"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#my-search-finished-with-0-results-but-the-query-is-correct" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        My search finished with 0 results, but the query is correct
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#did-my-search-hit-the-2000-record-cap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Did my search hit the 2,000-record cap?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#my-search-stays-on-search-dispatched-and-never-progresses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        My search stays on "Search dispatched..." and never progresses
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deduplication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deduplication
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deduplication">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-are-two-records-with-the-same-title-both-kept" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why are two records with the same title both kept?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#which-wins-doi-or-pmid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which wins, DOI or PMID?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-do-i-find-how-many-duplicates-were-removed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where do I find how many duplicates were removed?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#screening-and-prisma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Screening and PRISMA
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Screening and PRISMA">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#which-screening-stage-does-an-exclusion-get" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which screening stage does an exclusion get?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exclude-0-citation-papers-wants-to-exclude-almost-everything" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Exclude 0-citation papers" wants to exclude almost everything
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-api-returns-422-when-i-exclude-with-fulltext_unavailable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The API returns 422 when I exclude with fulltext_unavailable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-do-i-re-include-a-record-or-move-it-to-the-other-stage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How do I re-include a record, or move it to the other stage?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Analysis
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-dashboard-does-not-change-after-i-exclude-records-or-run-another-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The dashboard does not change after I exclude records or run another search
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-dashboard-says-no-publications-to-analyze" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The dashboard says "No publications to analyze"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-growth-summary-shows-instead-of-cagr-or-doubling-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The growth summary shows "—" instead of CAGR or doubling time
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#field-maturity-is-null-or-undetermined" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Field maturity is null or "undetermined"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-network-says-no-network-data-available-or-a-table-is-empty" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The network says "No network data available", or a table is empty
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exports
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Exports">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#which-file-do-i-open-in-which-program" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which file do I open in which program?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-does-the-methodology-log-go-in-my-paper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where does the methodology log go in my paper?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#read-only-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read-only mode
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Read-only mode">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#every-change-fails-with-403-read-only-public-demo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Every change fails with 403 "read-only public demo"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#my-own-install-shows-the-read-only-demo-banner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        My own install shows the "Read-only demo" banner
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-misspelled-setting-is-being-ignored" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A misspelled setting is being ignored
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#can-i-put-my-bibmeded-on-the-internet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Can I put my BibMedEd on the internet?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#upgrading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upgrading
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Upgrading">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-do-i-upgrade-to-a-new-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How do I upgrade to a new version?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-downgrade-refuses-to-run-because-of-full-text-exclusions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A downgrade refuses to run because of full-text exclusions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-do-i-report-a-bug" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where do I report a bug?
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="troubleshooting-and-faq">Troubleshooting and FAQ</h1>
+<p>This page collects the problems people run into most often, with the message you will see and what to do about it. It is written for researchers, not developers. You do not need to read any code.</p>
+<p>Most fixes need a terminal open in the <code>bibmeded/</code> folder of your BibMedEd download, the folder that holds <code>docker-compose.yml</code>. Every <code>docker compose</code> command below is run from there.</p>
+<p>If your problem is not here, see <a href="#where-do-i-report-a-bug">Where do I report a bug?</a> at the end.</p>
+<h2 id="install-and-start">Install and start</h2>
+<h3 id="docker-compose-up-says-it-cannot-connect-to-docker"><code>docker compose up</code> says it cannot connect to Docker</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?
+</code></pre></div>
+<p>On Windows the same problem usually mentions <code>dockerDesktopLinuxEngine</code> and ends with <code>The system cannot find the file specified.</code></p>
+<p>Docker is installed but its background service is not running. Open <strong>Docker Desktop</strong>, wait until it reports that the engine is running, then run <code>docker compose up</code> again. Docker Desktop has to be open whenever you use BibMedEd. See the <a href="../deploy/">Self-Hosting Guide</a> if you have not installed Docker yet.</p>
+<h3 id="a-port-is-already-in-use-3000-8000-5432-or-6379">A port is already in use (3000, 8000, 5432 or 6379)</h3>
+<p>Docker's wording varies by system, but it names the port, for example:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Bind for 0.0.0.0:5432 failed: port is already allocated
+</code></pre></div>
+<p>BibMedEd publishes four ports on your computer: <code>3000</code> (web app), <code>8000</code> (API), <code>5432</code> (PostgreSQL) and <code>6379</code> (Redis). Another program, or a second copy of BibMedEd, is already using one of them.</p>
+<ol>
+<li>Find the program using the port. On Windows: <code>netstat -ano | findstr :5432</code>. On macOS or Linux: <code>lsof -i :5432</code>.</li>
+<li>If it is an old BibMedEd stack, stop it with <code>docker compose down</code>.</li>
+<li>If it is another program, such as a PostgreSQL you installed yourself, stop that program while you use BibMedEd.</li>
+</ol>
+<p>If you cannot stop a local PostgreSQL or Redis, you can move BibMedEd's copy instead. In <code>docker-compose.yml</code>, change only the number on the left of the colon, for example <code>"5432:5432"</code> to <code>"5433:5432"</code>. The BibMedEd containers talk to the database and Redis inside Docker, so nothing else needs to change.</p>
+<p><code>docker-compose.yml</code> is part of the downloaded code, so a later <code>git pull</code> refuses to run while your edit is in it. Before updating, run <code>git stash</code> to set the edit aside, then <code>git pull</code>, then <code>git stash pop</code> to put it back. Moving the port in <code>docker-compose.override.yml</code> does not avoid this: that file is also part of the download, and Docker Compose adds ports listed there to the original ones instead of replacing them.</p>
+<p>Ports <code>3000</code> and <code>8000</code> are harder to move: the web app has the API address (<code>NEXT_PUBLIC_API_URL</code>) built in, and the API only accepts requests from the web app's address (<code>BIBMEDED_CORS_ORIGINS</code>). Free those two ports rather than changing them.</p>
+<h3 id="the-api-or-worker-container-exits-with-no-such-file-or-directory-windows">The <code>api</code> or <code>worker</code> container exits with "no such file or directory" (Windows)</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>no such file or directory
+</code></pre></div>
+<p>If this mentions <code>scripts/entrypoint.sh</code>, the start-up script was checked out with Windows line endings. Linux containers cannot run it that way. The repository now forces Unix line endings for shell scripts, but a copy cloned before that fix keeps the old file.</p>
+<p>Clone the repository again into a new folder, then rebuild:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/ata381/BibMedEd
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">cd</span><span class="w"> </span>BibMedEd/bibmeded
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>--build
+</code></pre></div>
+<p><code>--build</code> matters: without it Docker reuses the image that contains the broken file.</p>
+<h3 id="does-it-run-on-an-apple-silicon-mac-m1-and-later">Does it run on an Apple Silicon Mac (M1 and later)?</h3>
+<p>Nothing in BibMedEd is specific to Intel or ARM. The compose files do not pin a CPU platform, and every image is built from an official base image (<code>postgres:16-alpine</code>, <code>redis:7-alpine</code>, <code>python:3.12-slim</code>, <code>node:20-alpine</code>) that is published for both. Plain <code>docker compose up</code> is all you need, with no extra flags.</p>
+<p>BibMedEd's automated tests do not run on ARM. If a build fails on a Mac, please <a href="#where-do-i-report-a-bug">report it</a> with the full output.</p>
+<h3 id="i-started-the-demo-and-it-is-on-port-3100-not-3000">I started the demo and it is on port 3100, not 3000</h3>
+<p>That is intended. The read-only demo (<code>docker compose -f docker-compose.demo.yml up --build</code>) uses <a href="http://localhost:3100">http://localhost:3100</a> for the web app and <a href="http://localhost:8100/docs">http://localhost:8100/docs</a> for the API, so it can run next to your normal BibMedEd on 3000 and 8000. It has no database server, no Redis and no worker. It shows only the bundled synthetic sample and does not let you create projects or run searches. See <a href="../deploy/#run-the-demo-locally">Run the demo locally</a>.</p>
+<p>Stop it and discard its data with:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.demo.yml<span class="w"> </span>down<span class="w"> </span>-v
+</code></pre></div>
+<h3 id="how-do-i-start-over-with-an-empty-database">How do I start over with an empty database?</h3>
+<p>This deletes every project:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>down<span class="w"> </span>-v
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>up
+</code></pre></div>
+<p><code>-v</code> removes the PostgreSQL data volume. See <a href="../deploy/#resetting-the-database">Resetting the Database</a>. Contributors can also run <code>docker compose exec api python scripts/reset_db.py</code>, which drops and recreates every table. That script is meant for development only.</p>
+<h2 id="searches">Searches</h2>
+<h3 id="pubmed-searches-fail-with-429-too-many-requests">PubMed searches fail with "429 Too Many Requests"</h3>
+<p>In the web app the search stops and you see:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>Search failed. Please try again.
+</code></pre></div>
+<p>The worker log (<code>docker compose logs worker</code>) shows the reason:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>run_search failed query_id=12
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>...
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>httpx.HTTPStatusError: Client error '429 Too Many Requests' for url 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?...'
+</code></pre></div>
+<p>NCBI limits how many requests one computer may send to PubMed: 3 per second without an API key and 10 per second with one. BibMedEd paces each search at 3 requests per second. The worker runs up to two searches at the same time, so two PubMed searches together, or other PubMed tools on the same network, can go over the keyless limit.</p>
+<p>Fix:</p>
+<ol>
+<li>Create a free API key in your <a href="https://www.ncbi.nlm.nih.gov/account/">NCBI account settings</a>.</li>
+<li>Copy <code>.env.example</code> to <code>.env</code> in the <code>bibmeded/</code> folder if you have not already, and set <code>BIBMEDED_PUBMED_API_KEY=your_key</code>.</li>
+<li>Restart so the containers pick it up: <code>docker compose down</code>, then <code>docker compose up</code>.</li>
+<li>Run the search again.</li>
+</ol>
+<p>The key raises NCBI's limit for you. BibMedEd still sends at most 3 requests per second per search, so it does not search faster. It does stop two searches at once from going over the limit. Without a key, run one PubMed search at a time.</p>
+<h3 id="lensorg-searches-fail-lens-searches-require-bibmeded_lens_api_key">Lens.org searches fail: "Lens searches require BIBMEDED_LENS_API_KEY"</h3>
+<p>Lens.org is the only built-in source that needs a key. Without one, BibMedEd refuses the search before contacting Lens. The API answers with status <code>503</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span><span class="nt">"detail"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Lens searches require BIBMEDED_LENS_API_KEY"</span><span class="p">}</span>
+</code></pre></div>
+<p>The web app only shows a general message:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Could not start search. Is the backend running?
+</code></pre></div>
+<p>The command line prints <code>Lens searches require BIBMEDED_LENS_API_KEY</code>, and <code>bibmeded sources</code> lists Lens as <code>missing BIBMEDED_LENS_API_KEY</code>.</p>
+<p>Fix: get a Scholarly API token from Lens.org, add <code>BIBMEDED_LENS_API_KEY=your_token</code> to <code>bibmeded/.env</code>, then run <code>docker compose down</code> and <code>docker compose up</code>. The Lens chip on the search page is marked "(API key)" as a reminder.</p>
+<h3 id="my-search-finished-with-0-results-but-the-query-is-correct">My search finished with 0 results, but the query is correct</h3>
+<p>The search page shows <code>0 publications ready.</code> and the results page says "No publications found". Check these in order:</p>
+<ol>
+<li><strong>Publication years.</strong> The Query Builder starts at 2022 to 2025. Widen the range if your topic is older.</li>
+<li><strong>PubMed syntax sent to another database.</strong> Field tags such as <code>[Mesh]</code>, <code>[tiab]</code> and <code>[PDAT]</code> only work in PubMed. OpenAlex and Lens.org take plain keywords combined with <code>AND</code>, <code>OR</code> and <code>NOT</code>. Remove the tags, or switch the source to PubMed.</li>
+</ol>
+<p>CrossRef and Semantic Scholar are a different case: they run a free-text relevance search and do not apply <code>AND</code>, <code>OR</code> and <code>NOT</code> as Boolean logic. With them, the usual problem is the opposite of zero results: a broad set of loosely related records that fills the 2,000-record cap. For a precise Boolean strategy, use PubMed, OpenAlex or Lens.org.
+3. <strong>Advanced Query (Raw) mode.</strong> For PubMed, the year range is part of the query text: it is the <code>[PDAT]</code> clause the Query Builder adds. In raw mode, type it yourself. For the other sources, the year fields are hidden in raw mode, but the years you last set in the Query Builder are still applied. Switch back to the Query Builder to check them.
+4. <strong>Test the count without fetching anything.</strong> From the command line, <code>bibmeded search "your query" --source openalex --dry-run</code> prints <code>Estimated results: N</code>. The dry run ignores year limits, so a large number here and 0 in the app points to the years.</p>
+<h3 id="did-my-search-hit-the-2000-record-cap">Did my search hit the 2,000-record cap?</h3>
+<p>Each search fetches at most 2,000 records by default, so one broad query cannot run for hours. For PubMed searches with a cap below 10,000, BibMedEd tells you when the database had more. The results page shows:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Search returned 5,400 records — only the first 2,000 were fetched.
+</code></pre></div>
+<p>and the methodology log records:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>    Results: 5400 records (capped at max_results=2000; full set not retrieved)
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">The warning is not reliable for other sources or at 10,000</p>
+<p>For OpenAlex, CrossRef, Semantic Scholar and Lens.org, and for PubMed with the cap at 10,000, a truncated search currently shows <strong>no warning</strong>, and the methodology log does not mark it as capped (<a href="https://github.com/ata381/BibMedEd/issues/151">#151</a>). Until that is fixed, treat any search whose <strong>Records identified</strong> number equals the cap exactly (2,000, or the cap you set) as truncated. Check the real total with <code>bibmeded search "your query" --source openalex --dry-run</code>, which prints <code>Estimated results: N</code>. The dry run ignores year limits, so narrow the query until the count is below the cap.</p>
+</div>
+<p>For a systematic review you need the full set. Either:</p>
+<ul>
+<li><strong>Narrow the query</strong> (fewer years, more specific terms) until it returns fewer than 2,000 records, or run it in parts, for example one search per range of years. Searches in the same project are deduplicated against each other.</li>
+<li><strong>Raise the cap, up to 10,000.</strong> The web app always asks for 2,000. Use the API page at <a href="http://localhost:8000/docs">http://localhost:8000/docs</a>: open <code>POST /api/projects/{project_id}/search</code>, choose <strong>Try it out</strong>, and send <code>"max_results": 10000</code> with your query. See <a href="../scripting/">Scripting</a> for a script that does the same. The API rejects values above 10,000. A search has 10 minutes to finish (the worker's time limit), so very large searches can also fail. Splitting by year avoids both limits.</li>
+</ul>
+<p>For very large searches, the "Records identified" number can be lower than the database's full total, because BibMedEd stops collecting IDs once it has enough. <code>--dry-run</code> gives the full count.</p>
+<h3 id="my-search-stays-on-search-dispatched-and-never-progresses">My search stays on "Search dispatched..." and never progresses</h3>
+<p>Searches run in the separate <strong>worker</strong> container. If the worker is not running, the search waits in the queue with status <code>pending</code> and nothing moves. The command line shows the same thing:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>Status: pending
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>Status: pending
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>...
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>Search timed out. Check worker logs
+</code></pre></div>
+<p>Check the containers:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>ps
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"> </span>worker
+</code></pre></div>
+<p>If <code>worker</code> is missing or has exited, start it with <code>docker compose up -d worker</code>. Searches waiting in the Redis queue are picked up when the worker starts. If a search is still <code>pending</code> after that, for example because Redis was restarted in the meantime, run it again. If the worker log shows an error, include it in a bug report.</p>
+<p>A search that has been <code>running</code> for more than 15 minutes is reported as <code>failed</code>, so it does not appear stuck forever. Run it again once the worker is healthy.</p>
+<h2 id="deduplication">Deduplication</h2>
+<h3 id="why-are-two-records-with-the-same-title-both-kept">Why are two records with the same title both kept?</h3>
+<p>BibMedEd only treats two records as duplicates when they share the same <strong>DOI</strong> or the same <strong>PMID</strong>, exactly. It never compares titles. Titles are not unique: corrections, conference abstracts and preprints often repeat a title word for word, and merging those automatically would hide real records from your PRISMA counts. DOIs are compared without letter case and without a leading <code>https://doi.org/</code>, <code>http://doi.org/</code> or <code>doi:</code>.</p>
+<p>So two records with the same title are both kept when:</p>
+<ul>
+<li>one has a DOI and the other does not, or they have different DOIs, and</li>
+<li>they do not share a PMID.</li>
+</ul>
+<p>Records with neither a DOI nor a PMID can never be matched. If you find a duplicate yourself, exclude one copy on the results page with the reason <strong>Duplicate (missed by automated dedup)</strong>. The methodology log counts it as "Duplicate not caught by automated dedup".</p>
+<h3 id="which-wins-doi-or-pmid">Which wins, DOI or PMID?</h3>
+<p>Either one is enough. A record is a duplicate if its DOI or its PMID matches a record already seen, and the first copy is kept. When both match, the methodology log counts the removal under <code>doi</code>, otherwise under <code>pmid</code>.</p>
+<p>Within one project, BibMedEd also checks every new record against the records already saved, by PMID (or the source's own ID) and DOI. A paper that an earlier search already found is usually not saved twice, and the copy saved first is kept. There is one known gap (<a href="https://github.com/ata381/BibMedEd/issues/153">#153</a>): if a paper first arrives from OpenAlex (or another non-PubMed source) and a later PubMed search returns it without a DOI, the two are not matched and both are kept. Exclude the extra copy as a duplicate.</p>
+<h3 id="where-do-i-find-how-many-duplicates-were-removed">Where do I find how many duplicates were removed?</h3>
+<p>There are two places:</p>
+<ul>
+<li><strong>The results page</strong>: the "Duplicates removed" box in the PRISMA flow, for the latest search.</li>
+<li><strong>The methodology log</strong> (Export page, Methodology &amp; PRISMA), in the DEDUPLICATION section of each search:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>DEDUPLICATION
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>  Step 3: Cross-source deduplication on DOI and PMID
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>    Method: exact-match on doi,pmid
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>    Removed by field: doi=4, pmid=1
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>    Removed: 5 duplicates (412 → 407)
+</code></pre></div>
+<p>This section only appears when a search removed at least one duplicate. BibMedEd fetches records in batches of 200 and this count covers duplicates inside a batch. Two kinds of skipped records are not listed here: records an earlier search in the same project already had, and duplicates that fall in different batches of the same search. Both count as unavailable in that search's DATA COLLECTION step:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>    Retrieved: 380 of 400 (20 unavailable)
+</code></pre></div>
+<p>The "unavailable" count also includes records the database listed but did not return, and records that failed to save. Failed records are listed one by one under <code>Failed to persist</code>.</p>
+<h2 id="screening-and-prisma">Screening and PRISMA</h2>
+<h3 id="which-screening-stage-does-an-exclusion-get">Which screening stage does an exclusion get?</h3>
+<p>PRISMA 2020 separates title/abstract screening of records from full-text assessment of reports. Each exclusion records one of the two:</p>
+<ul>
+<li>In the web app, the exclusion menu has a <strong>PRISMA screening stage</strong> choice, Title / abstract or Full text. It starts at Title / abstract on each visit and stays on your last choice while you work. <strong>Full-text not retrievable</strong> is always recorded at the full-text stage, because PRISMA reports it as "Reports not retrieved".</li>
+<li><strong>Exclude 0-citation papers</strong> records its exclusions at title/abstract with the reason "Other / unspecified".</li>
+<li>Through the API, the stage is optional. When you leave it out, <code>fulltext_unavailable</code> goes to <code>full_text</code> and every other reason goes to <code>title_abstract</code>. Details are in <a href="../scripting/#screening-stages">Screening stages</a>.</li>
+</ul>
+<h3 id="exclude-0-citation-papers-wants-to-exclude-almost-everything">"Exclude 0-citation papers" wants to exclude almost everything</h3>
+<p>Citation counts come from NIH iCite, and BibMedEd only fetches them for <strong>PubMed</strong> searches. Records from OpenAlex, CrossRef, Semantic Scholar and Lens.org have no citation count. The bulk exclusion counts "no citation count" as 0, so it would remove every one of them. The confirmation dialog shows how many publications will be excluded. Read that number before confirming.</p>
+<p>If a PubMed search's records all show 0 citations, check the methodology log for <code>iCite citation count enrichment (failed)</code>. iCite was unreachable during that search. The search itself still succeeded.</p>
+<p>The methodology log records how many records were excluded and why, not the threshold you used. State the threshold in your Methods section.</p>
+<h3 id="the-api-returns-422-when-i-exclude-with-fulltext_unavailable">The API returns 422 when I exclude with <code>fulltext_unavailable</code></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>Value error, reason 'fulltext_unavailable' records a report that could not be retrieved, which PRISMA 2020 counts at the full-text stage; use screening_stage 'full_text' or omit it
+</code></pre></div>
+<p>You asked for reason <code>fulltext_unavailable</code> at stage <code>title_abstract</code>. Those two contradict each other, and BibMedEd refuses rather than quietly changing the stage. Send <code>"screening_stage": "full_text"</code>, or leave the stage out. The web app never sends this combination, so you only see this from scripts.</p>
+<h3 id="how-do-i-re-include-a-record-or-move-it-to-the-other-stage">How do I re-include a record, or move it to the other stage?</h3>
+<p>On the results page, click <strong>Excluded</strong> on the record. It goes back to included and its reason and stage are cleared. Through the API, calling the exclude endpoint again on an excluded record does the same. A record has only one stage. To move an exclusion to the other stage, re-include it, then exclude it again at the stage you want.</p>
+<h2 id="analysis">Analysis</h2>
+<h3 id="the-dashboard-does-not-change-after-i-exclude-records-or-run-another-search">The dashboard does not change after I exclude records or run another search</h3>
+<p>The first time you open the dashboard, BibMedEd calculates the six analyses and stores the results. Later visits show those stored results. Nothing recalculates them after you exclude records or run a new search (<a href="https://github.com/ata381/BibMedEd/issues/152">#152</a>), so the dashboard can describe an older version of your corpus. This also affects the answers below.</p>
+<p>Until that is fixed, recalculate by hand:</p>
+<ol>
+<li>Note your project's number. It is in the address bar: <code>http://localhost:3000/projects/7/dashboard</code> is project 7.</li>
+<li>Open <a href="http://localhost:8000/docs">http://localhost:8000/docs</a> and find <code>POST /api/projects/{project_id}/analysis/{analysis_type}</code>.</li>
+<li>Choose <strong>Try it out</strong>, enter the project number, and run it once for each of <code>publications</code>, <code>authors</code>, <code>countries</code>, <code>keywords</code>, <code>citations</code> and <code>journals</code>.</li>
+<li>Reload the dashboard.</li>
+</ol>
+<p>Do this again after every round of exclusions or new searches, and before you export figures or numbers for a paper.</p>
+<h3 id="the-dashboard-says-no-publications-to-analyze">The dashboard says "No publications to analyze"</h3>
+<p>The dashboard counts included records that have a publication year. This message means there were none when the analyses were stored. Either no search had finished, every record was excluded, or no record has a year. Check the included count on the results page. If you have included records with years now, the dashboard is showing old stored results: <a href="#the-dashboard-does-not-change-after-i-exclude-records-or-run-another-search">recalculate them</a>.</p>
+<h3 id="the-growth-summary-shows-instead-of-cagr-or-doubling-time">The growth summary shows "—" instead of CAGR or doubling time</h3>
+<p>The publication trends figure shows compound annual growth (CAGR) and doubling time, measured over full calendar years only. When one cannot be calculated, the card says why:</p>
+<table>
+<thead>
+<tr>
+<th>Message</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>At least two full calendar years of data are required to compute CAGR.</code></td>
+<td>The included records span fewer than two complete years.</td>
+</tr>
+<tr>
+<td><code>CAGR is undefined because the first full calendar year has zero publications.</code></td>
+<td>Growth from zero cannot be expressed as a rate. Start the search at a later year.</td>
+</tr>
+<tr>
+<td><code>Doubling time is not defined for non-positive growth (CAGR &lt;= 0).</code></td>
+<td>Output is flat or shrinking, so it never doubles. CAGR is still shown.</td>
+</tr>
+<tr>
+<td><code>Current incomplete year excluded from growth calculations.</code></td>
+<td>Not an error. The current year is still in progress, so it is left out.</td>
+</tr>
+</tbody>
+</table>
+<p>If the message no longer matches your corpus, the dashboard is showing old stored results. <a href="#the-dashboard-does-not-change-after-i-exclude-records-or-run-another-search">Recalculate them</a>.</p>
+<h3 id="field-maturity-is-null-or-undetermined">Field maturity is <code>null</code> or <code>"undetermined"</code></h3>
+<p>The field maturity classification is not shown on the dashboard. It is in the publications analysis returned by the API (<code>field_maturity</code> in <code>GET /api/projects/{id}/analysis/publications</code>). That request returns <code>404</code> with <code>Analysis not found. Run it first.</code> until the analysis has been calculated once, by opening the dashboard or with <code>POST</code> on the same address. The <code>GET</code> returns the stored result, so <a href="#the-dashboard-does-not-change-after-i-exclude-records-or-run-another-search">recalculate</a> after changing the corpus.</p>
+<p>The classification fits a logistic growth curve to cumulative publication counts:</p>
+<ul>
+<li><strong><code>null</code></strong>: the first and last publication years span fewer than four calendar years, counting both ends (for example 2021 to 2023 is three), or the curve could not be fitted.</li>
+<li><strong><code>"phase": "undetermined"</code></strong>: a curve was fitted but explains the data poorly (fit quality below 0.85). BibMedEd does not guess a phase label in that case. Plateau-then-surge fields often end up here.</li>
+</ul>
+<h3 id="the-network-says-no-network-data-available-or-a-table-is-empty">The network says "No network data available", or a table is empty</h3>
+<p>The dashboard network is the co-authorship network. It is empty when no included record lists its authors, or when the stored analysis predates your search (<a href="#the-dashboard-does-not-change-after-i-exclude-records-or-run-another-search">recalculate</a>). Large networks (more than 200 authors) start by showing only about the 100 most productive authors. Lower the <strong>Min. publications</strong> slider to see more.</p>
+<p>Other analyses depend on what each source provides:</p>
+<ul>
+<li><strong>Countries</strong> are read from the end of author affiliation text and match a fixed list of about 50 countries. Semantic Scholar gives no affiliations, so a Semantic Scholar-only project has no country or institution data. OpenAlex records store only the institution name, such as "Harvard University", without a country, so OpenAlex-only projects have almost no country data (<a href="https://github.com/ata381/BibMedEd/issues/154">#154</a>).</li>
+<li><strong>Citation counts</strong> are only filled for PubMed searches (see <a href="#exclude-0-citation-papers-wants-to-exclude-almost-everything">above</a>). Other sources show 0 citations, and author h-indices will be 0.</li>
+<li><strong>MeSH terms</strong> come from PubMed and Lens.org. For the other sources, keyword analyses use only the keywords that source supplies.</li>
+</ul>
+<h2 id="exports">Exports</h2>
+<h3 id="which-file-do-i-open-in-which-program">Which file do I open in which program?</h3>
+<table>
+<thead>
+<tr>
+<th>Export</th>
+<th>Opens in</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>RIS</strong> (<code>.ris</code>)</td>
+<td>Zotero, EndNote, Mendeley</td>
+<td>Title, authors, journal, year, DOI, abstract and keywords.</td>
+</tr>
+<tr>
+<td><strong>CSV</strong> (<code>.csv</code>)</td>
+<td>Excel, Google Sheets, R, pandas</td>
+<td>One row per record: PMID, DOI, title, authors, journal, year, citations, keywords and abstract. Cells that start with <code>=</code>, <code>+</code>, <code>-</code> or <code>@</code> get a leading <code>'</code> so the spreadsheet does not treat them as formulas.</td>
+</tr>
+<tr>
+<td><strong>JSON</strong> (<code>.json</code>)</td>
+<td>Scripts and notebooks</td>
+<td>A <code>schema_version</code> field (currently <code>"1.0"</code>), the project name, the date, a <code>count</code> and the <code>publications</code>. Check <code>schema_version</code> before relying on field names. See <a href="../scripting/#versioning-contract">Scripting</a>.</td>
+</tr>
+<tr>
+<td><strong>Methodology log</strong> (<code>.txt</code>)</td>
+<td>Any text editor</td>
+<td>The record of every pipeline step. See below.</td>
+</tr>
+<tr>
+<td><strong>PRISMA diagram</strong> (<code>.svg</code>)</td>
+<td>Web browser, Word, PowerPoint, Inkscape</td>
+<td>The PRISMA 2020 flow diagram with your counts.</td>
+</tr>
+<tr>
+<td><strong>Bundle</strong> (<code>.zip</code>)</td>
+<td>Your file manager</td>
+<td>All five files above plus a manifest.</td>
+</tr>
+</tbody>
+</table>
+<p>CSV, RIS and JSON contain <strong>included records only</strong>. The methodology log and the PRISMA diagram give the number of excluded records per stage and reason, but do not list which records they were. To keep a list of your exclusions, export the CSV before you exclude anything and again afterwards, and compare the two.</p>
+<h3 id="where-does-the-methodology-log-go-in-my-paper">Where does the methodology log go in my paper?</h3>
+<p>The log is a plain-text record of what BibMedEd did. It lists, for each search, the exact query, the database, the date and time it ran, how many records were found and retrieved, any cap that was hit, duplicates removed by field, and citation enrichment. After the searches it lists screening decisions by PRISMA stage and reason, then the final number of included studies.</p>
+<p>A common pattern:</p>
+<ul>
+<li>In <strong>Methods</strong>, report the databases, the exact queries and search dates, and the deduplication rule (exact match on DOI and PMID). Copy these from the log rather than retyping them.</li>
+<li>Attach the <strong>full log as a supplementary file</strong> and refer to it from Methods.</li>
+<li>Use the <strong>PRISMA SVG</strong> as your flow diagram figure.</li>
+<li>Cite BibMedEd itself. The <a href="../case-study/#7-write-up">case study</a> has an example sentence, and the citation is on the <a href="../#cite">home page</a>.</li>
+</ul>
+<h2 id="read-only-mode">Read-only mode</h2>
+<h3 id="every-change-fails-with-403-read-only-public-demo">Every change fails with 403 "read-only public demo"</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="p">{</span><span class="nt">"detail"</span><span class="p">:</span><span class="w"> </span><span class="s2">"This BibMedEd instance is a read-only public demo. Install BibMedEd locally to create projects and run your own searches."</span><span class="p">,</span><span class="w"> </span><span class="nt">"read_only"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">}</span>
+</code></pre></div>
+<p>The instance runs with <code>BIBMEDED_READ_ONLY=true</code>. That setting blocks every request that would change something: creating or deleting projects, searching, excluding and running analyses. Exports still work. This is deliberate for public demos. See <a href="../deploy/#public-read-only-demo">Public read-only demo</a>.</p>
+<p>On your own install, check <code>bibmeded/.env</code> and your environment for <code>BIBMEDED_READ_ONLY=true</code>. Set it to <code>false</code>, then run <code>docker compose down</code> and <code>docker compose up</code>. The API log prints <code>BibMedEd mode: read_only=False</code> at start-up when writes are allowed.</p>
+<h3 id="my-own-install-shows-the-read-only-demo-banner">My own install shows the "Read-only demo" banner</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>Read-only demo — install locally to run your own searches.
+</code></pre></div>
+<p>If <code>BIBMEDED_READ_ONLY</code> is not set to <code>true</code>, the web app could not reach the API to ask, and it stays read-only to be safe. The search button then does nothing. Usually the API is still starting or has stopped. Check with:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>ps
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>curl<span class="w"> </span>http://localhost:8000/api/config
+</code></pre></div>
+<p>When the API answers <code>{"read_only":false}</code>, reload the page.</p>
+<p>If the API answers correctly but the banner stays, check the address in your browser. The API only accepts the web app at exactly <code>http://localhost:3000</code>. Opening it as <code>http://127.0.0.1:3000</code>, or from another computer through a network address, makes the configuration request fail, and the app stays read-only. Open exactly <a href="http://localhost:3000">http://localhost:3000</a>.</p>
+<h3 id="a-misspelled-setting-is-being-ignored">A misspelled setting is being ignored</h3>
+<p>If you run BibMedEd without Docker, or on Render, the API log warns at start-up about any <code>BIBMEDED_</code> variable it does not recognise:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>ignoring unrecognised environment variable BIBMEDED_READONLY (typo of a BIBMEDED_* setting?)
+</code></pre></div>
+<p>With <code>docker compose</code> there is <strong>no warning</strong>. Docker Compose only passes a fixed list of variables from <code>bibmeded/.env</code> into the containers (see <code>docker-compose.yml</code>), so a misspelled name never reaches the API and is silently ignored. Several correctly spelled settings are not passed either (<a href="https://github.com/ata381/BibMedEd/issues/148">#148</a>). Compare your <code>.env</code> with <code>bibmeded/.env.example</code> and the <a href="../deploy/#configuration">configuration table</a>, fix the spelling, and restart.</p>
+<h3 id="can-i-put-my-bibmeded-on-the-internet">Can I put my BibMedEd on the internet?</h3>
+<p>Not as it is. BibMedEd has no login: anyone who can reach it can read, change or delete every project. Keep it on your own computer or a private network, or put an IP allowlist or a password-protecting proxy in front. Read the <a href="../deploy/#security-model">Security model</a> first.</p>
+<h2 id="upgrading">Upgrading</h2>
+<h3 id="how-do-i-upgrade-to-a-new-version">How do I upgrade to a new version?</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>git<span class="w"> </span>pull
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>--build
+</code></pre></div>
+<p>When the containers start, they update the database structure automatically with <code>alembic upgrade head</code>. The log shows <code>Running Alembic migrations...</code> before the API starts. Your projects are kept. Let running searches finish before you upgrade.</p>
+<p>The web app's packages are kept in a separate Docker volume that is filled only the first time. If the web app fails to start or shows errors after an update (check <code>docker compose logs frontend</code>), remove that volume so it is rebuilt from the new version:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>down
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>docker<span class="w"> </span>volume<span class="w"> </span>rm<span class="w"> </span>bibmeded_frontend_node_modules
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>--build
+</code></pre></div>
+<div class="admonition danger">
+<p class="admonition-title">Do not use <code>docker compose down -v</code> for this</p>
+<p><code>-v</code> removes <strong>every</strong> volume, including the database. All your projects would be deleted.</p>
+</div>
+<p>If you run BibMedEd without Docker, run <code>alembic upgrade head</code> from the <code>bibmeded/</code> folder after updating.</p>
+<h3 id="a-downgrade-refuses-to-run-because-of-full-text-exclusions">A downgrade refuses to run because of full-text exclusions</h3>
+<p>Going back to a version from before screening stages existed would delete the stage of every full-text exclusion. Those exclusions would then read as title/abstract exclusions. The downgrade stops with:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>0004_screening_stage downgrade: 3 publication(s) were excluded at the full-text stage, and dropping publications.screening_stage would erase that stage (they would read as title/abstract exclusions after re-upgrading). Export the methodology log and PRISMA diagram for every affected project first, then re-run with BIBMEDED_ALLOW_LOSSY_DOWNGRADE=1 to accept the loss. Refusing to silently drop reproducibility-critical screening data.
+</code></pre></div>
+<p>First export the methodology log and PRISMA diagram for every affected project. Then, with the current version still checked out, run the downgrade with the setting given to that one command only:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-e<span class="w"> </span><span class="nv">BIBMEDED_ALLOW_LOSSY_DOWNGRADE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>api<span class="w"> </span>alembic<span class="w"> </span>downgrade<span class="w"> </span>0003_sample_project_key
+</code></pre></div>
+<p>Run the downgrade before you switch to the older code. An older release does not know the newer database revision, so starting it on an upgraded database fails with an Alembic <code>Can't locate revision</code> error instead.</p>
+<h2 id="where-do-i-report-a-bug">Where do I report a bug?</h2>
+<p>Open an issue on GitHub with the <a href="https://github.com/ata381/BibMedEd/issues/new?template=bug_report.yml">bug report template</a>. It asks for:</p>
+<ul>
+<li>what happened, how to reproduce it, and what you expected;</li>
+<li>your version: <code>bibmeded --version</code>, or <code>docker compose exec api bibmeded --version</code> if you use Docker, plus <code>git rev-parse --short HEAD</code> if you run from a clone;</li>
+<li>how you run BibMedEd (local Docker Compose, Render, or other);</li>
+<li>the output of <code>docker compose logs api worker</code> around the failure.</li>
+</ul>
+<p>If the API answered with an internal error (status <code>500</code>), the response body contains a <code>request_id</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="p">{</span><span class="nt">"detail"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Internal server error"</span><span class="p">,</span><span class="w"> </span><span class="nt">"request_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"3f9c2a1b7d4e"</span><span class="p">}</span>
+</code></pre></div>
+<p>Include it so the matching log lines can be found. Every other response carries the same id in its <code>X-Request-ID</code> header.</p>
+<p>Other routes:</p>
+<ul>
+<li><strong>Questions and ideas:</strong> <a href="https://github.com/ata381/BibMedEd/discussions">GitHub Discussions</a>.</li>
+<li><strong>A new data source:</strong> the <a href="https://github.com/ata381/BibMedEd/issues/new?template=adapter_request.yml">adapter request template</a>.</li>
+<li><strong>A feature request:</strong> the <a href="https://github.com/ata381/BibMedEd/issues/new?template=feature_request.yml">feature request template</a>.</li>
+<li><strong>Security problems:</strong> do not open a public issue. Follow <a href="https://github.com/ata381/BibMedEd/blob/master/SECURITY.md">SECURITY.md</a> to report privately.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "content.code.copy", "search.suggest"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../javascripts/accessibility.js"></script>
+      
+    
+  </body>
+</html>
