@@ -50,8 +50,9 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    # github-actions only supports default-days; the semver-* keys are rejected.
     cooldown:
-      semver-patch-days: 3
+      default-days: 3
     labels: [dependencies, ci]
     commit-message:
       prefix: "chore(ci)"
