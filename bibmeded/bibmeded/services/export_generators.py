@@ -273,6 +273,12 @@ def _wos_cited_reference_form(cited: Publication) -> str:
     return ", ".join(parts)
 
 
+def _wos_references(pub: Publication) -> list:
+    """The JSON column only means something as a list; a legacy string or scalar
+    value would otherwise be iterated character by character."""
+    return pub.external_references if isinstance(pub.external_references, list) else []
+
+
 def _wos_cited_references(pub: Publication, corpus_index: dict[str, Publication]) -> list[str]:
     """CR entries for ``pub``.
 
@@ -284,7 +290,7 @@ def _wos_cited_references(pub: Publication, corpus_index: dict[str, Publication]
     """
     cited: list[str] = []
     seen_dois: set[str] = set()
-    for raw_ref in pub.external_references or []:
+    for raw_ref in _wos_references(pub):
         ref = str(raw_ref).strip().lower()
         target = corpus_index.get(ref)
         if target is not None:
@@ -304,14 +310,14 @@ def wos_reference_coverage(pubs: list[Publication]) -> tuple[int, int]:
     """(cited references written to CR, references the sources reported)."""
     corpus_index = _wos_corpus_index(pubs)
     written = sum(len(_wos_cited_references(pub, corpus_index)) for pub in pubs)
-    reported = sum(len(pub.external_references or []) for pub in pubs)
+    reported = sum(len(_wos_references(pub)) for pub in pubs)
     return written, reported
 
 
 def _wos_record(pub: Publication, corpus_index: dict[str, Publication]) -> list[str]:
     name_parts = [_wos_name_parts(author.name or "", pub.source_database) for author in pub.authors]
     short_names = [_wos_short_name(surname, given) for surname, given in name_parts]
-    references = pub.external_references or []
+    references = _wos_references(pub)
     journal = pub.journal
     return [
         "PT J",

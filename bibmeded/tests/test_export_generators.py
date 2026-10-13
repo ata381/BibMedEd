@@ -31,6 +31,7 @@ from bibmeded.services.export_generators import (
     generate_ris,
     generate_screening_decisions_csv,
     generate_wos_plaintext,
+    wos_reference_coverage,
 )
 from bibmeded.services.screening import ScreeningDecisionLog
 
@@ -549,6 +550,13 @@ class TestGenerateWosPlaintext:
         fields = wos_fields(generate_wos_plaintext([make_wos_pub(external_references=None)]))
         assert "CR" not in fields
         assert "NR" not in fields
+
+    def test_a_legacy_non_list_reference_value_is_not_iterated_as_characters(self):
+        pub = make_wos_pub(external_references="10.1000/legacy-string")
+        fields = wos_fields(generate_wos_plaintext([pub]))
+        assert "CR" not in fields
+        assert "NR" not in fields
+        assert wos_reference_coverage([pub]) == (0, 0)
 
     def test_times_cited_comes_from_citation_count(self):
         assert wos_fields(generate_wos_plaintext([make_wos_pub(citation_count=12)]))["TC"] == ["12"]
