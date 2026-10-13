@@ -400,7 +400,7 @@ def test_run_search_logs_effective_pubmed_rate_in_search_step(
     monkeypatch.setattr(settings, "pubmed_rate_limit", explicit_rate)
     monkeypatch.setattr(tasks, "get_adapter", fake_get_adapter)
     monkeypatch.setattr(tasks, "SessionLocal", task_session_factory)
-    monkeypatch.setattr(tasks, "ICiteClient", lambda: _EmptyICiteClient())
+    monkeypatch.setattr(tasks, "ICiteClient", _EmptyICiteClient)
 
     asyncio.run(
         tasks._run_search(_StubTask(), query.id, "pubmed", None, None, tasks.DEFAULT_MAX_RESULTS)
@@ -419,7 +419,7 @@ def test_run_search_omits_rate_for_sources_without_a_rate_setting(
 
     monkeypatch.setattr(tasks, "get_adapter", lambda source, **kwargs: stub_adapter)
     monkeypatch.setattr(tasks, "SessionLocal", task_session_factory)
-    monkeypatch.setattr(tasks, "ICiteClient", lambda: _EmptyICiteClient())
+    monkeypatch.setattr(tasks, "ICiteClient", _EmptyICiteClient)
 
     asyncio.run(
         tasks._run_search(_StubTask(), query.id, "openalex", None, None, tasks.DEFAULT_MAX_RESULTS)
