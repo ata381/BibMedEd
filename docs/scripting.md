@@ -201,6 +201,25 @@ Known gaps:
 - **Not exported:** language, volume, issue, pages, funding, reprint address, research
   areas and cited-reference details, because BibMedEd does not store them.
 
+## CSV export columns
+
+The CSV export contains these columns in order:
+
+| Column | Meaning |
+|---|---|
+| `PMID` | PubMed identifier, when available |
+| `DOI` | DOI, when available |
+| `Title` | Publication title |
+| `Authors` | Authors separated by `; ` |
+| `Journal` | Journal name |
+| `Year` | Publication year |
+| `Citations` | Recorded citation count; empty when no count is available, while `0` means a recorded zero |
+| `Keywords` | Keywords separated by `; ` |
+| `Abstract` | Abstract text, with line breaks flattened to spaces |
+
+The empty `Citations` cell intentionally preserves the difference between missing data and
+a measured zero; downstream Excel, R, and pandas workflows should not coerce it to `0`.
+
 ## Batch over many queries
 
 Searches are dispatched to Celery and return HTTP 202 immediately. To batch 50 queries:

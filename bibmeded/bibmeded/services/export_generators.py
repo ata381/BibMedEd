@@ -67,7 +67,7 @@ def generate_csv(pubs: list[Publication]) -> str:
             _csv_safe("; ".join(a.name for a in pub.authors)),
             _csv_safe(pub.journal.name if pub.journal else ""),
             pub.year or "",
-            pub.citation_count or 0,
+            pub.citation_count if pub.citation_count is not None else "",
             _csv_safe("; ".join(k.term for k in pub.keywords)),
             _csv_safe((pub.abstract or "").replace("\n", " ")),
         ])

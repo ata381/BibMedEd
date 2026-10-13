@@ -157,6 +157,14 @@ class TestGenerateCsv:
         assert data_row[7] == ""  # keywords
         assert data_row[8] == ""  # abstract
 
+    def test_preserves_missing_citation_count_as_empty_and_zero_as_zero(self):
+        missing = make_pub(citation_count=None)
+        recorded_zero = make_pub(citation_count=0)
+
+        rows = list(csv.reader(io.StringIO(generate_csv([missing, recorded_zero]))))
+        assert rows[1][6] == ""
+        assert rows[2][6] == "0"
+
     @pytest.mark.parametrize("trigger", ["=", "+", "-", "@", "\t", "\r"])
     def test_escapes_formula_injection_in_title(self, trigger):
         """OWASP CSV injection: a cell starting with =, +, -, @ (or tab/CR) can be
