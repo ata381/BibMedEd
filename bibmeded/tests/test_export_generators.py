@@ -524,13 +524,17 @@ class TestGenerateMethodologyAuthorProductivity:
         text = generate_methodology("Lotka", self.STEPS, {}, author_productivity=lotka)
         assert self._section(text) == [
             f"  Method: {LOTKA_METHOD}",
-            "  Parameters: complete counting over included records; at least 3 productivity levels; "
-            "K-S at the 0.01 level, critical value 1.63/sqrt(N), used only above 35 authors",
+            (
+                "  Parameters: complete counting over included records; at least 3 productivity levels; "
+                "K-S at the 0.01 level, critical value 1.63/sqrt(N), used only above 35 authors"
+            ),
             "  Authors: 5369 across 6 productivity levels",
             "  Distribution (papers: authors): 1: 3600, 2: 900, 3: 400, 4: 225, 5: 144, 6: 100",
             "  Fit: alpha = 2.0, C = 3600.0, R^2 = 1.0",
-            "  Kolmogorov-Smirnov: D = 0.0933, critical value = 0.0222 at the 0.01 level; "
-            "consistent with Lotka's law: no",
+            (
+                "  Kolmogorov-Smirnov: D = 0.0933, critical value = 0.0222 at the 0.01 level; "
+                "consistent with Lotka's law: no"
+            ),
         ]
 
     def test_states_why_no_fit_was_made(self):

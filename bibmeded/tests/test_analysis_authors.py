@@ -206,6 +206,17 @@ def test_lotka_skips_the_ks_test_when_alpha_is_not_above_one():
     assert "alpha" in gof["reason"]
 
 
+def test_lotka_gates_the_ks_test_when_alpha_rounds_to_one():
+    """Floating-point error can leave the slope a hair above 1 where it is exactly 1 in
+    exact arithmetic; the gate must agree with the alpha the caller sees."""
+    fit = fit_lotka(_counts({1: 12, 2: 27, 3: 3}))["fit"]
+    assert fit["alpha"] == 1.0
+    gof = fit["goodness_of_fit"]
+    assert gof["D"] is None
+    assert gof["expected_single_paper_share"] is None
+    assert "alpha" in gof["reason"]
+
+
 def test_lotka_rejects_non_positive_paper_counts():
     with pytest.raises(ValueError):
         fit_lotka([1, 0, 2])

@@ -15,6 +15,8 @@ MIN_PRODUCTIVITY_LEVELS = 3
 KS_SIGNIFICANCE_LEVEL = 0.01
 KS_COEFFICIENT = 1.63
 KS_MIN_AUTHORS = 36
+# The gate is on the alpha the caller sees, which is rounded to four decimals.
+ALPHA_GATE_TOLERANCE = 5e-5
 # Pao truncates the zeta series at P = 20 terms and closes it with an
 # Euler-Maclaurin remainder; at alpha = 2 this matches 6/pi^2 to five decimals.
 _PAO_SERIES_TERMS = 20
@@ -78,7 +80,7 @@ def _ks_against_lotka(levels: Counter, total: int, alpha: float) -> dict:
         "expected_single_paper_share": None,
         "reason": None,
     }
-    if alpha <= 1:
+    if alpha <= 1 + ALPHA_GATE_TOLERANCE:
         return {
             **result,
             "reason": (
