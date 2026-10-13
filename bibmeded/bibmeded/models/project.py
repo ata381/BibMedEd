@@ -20,6 +20,9 @@ class SearchProject(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
     queries: Mapped[list["SearchQuery"]] = relationship(back_populates="project", cascade="all, delete-orphan")
     analysis_runs: Mapped[list["AnalysisRun"]] = relationship(cascade="all, delete-orphan")
+    # ORM-side cascade on purpose: SQLite runs without foreign-key enforcement and
+    # reuses a deleted project's id, so orphaned decisions would attach to the next project.
+    screening_decisions: Mapped[list["ScreeningDecision"]] = relationship(cascade="all, delete-orphan")
 
 
 class QueryStatus(str, enum.Enum):

@@ -51,7 +51,7 @@ When the flag is on:
 - **No outbound API calls can be triggered.** Searches (PubMed, OpenAlex, CrossRef, Semantic Scholar, Lens.org) and iCite enrichment only ever run inside a Celery task dispatched by `POST /search`, which is blocked. A read-only deploy therefore needs **no Redis and no worker**, and `/api/ready` reports `"redis": "skipped"`.
 - **The database refuses writes from requests, as a second line of defence.** Request sessions use a separate engine whose connections the database itself holds read-only: Postgres connections start with `default_transaction_read_only=on` (merged with any `?options=` already in `BIBMEDED_DATABASE_URL`), and SQLite connections run `PRAGMA query_only = ON`. The setting is re-applied every time a connection is taken from the pool, and startup fails unless a probe (`SHOW transaction_read_only` = `on`, or `PRAGMA query_only` = `1`) confirms the guard is active. Any write path (ORM flush, Core `insert`/`update`/`delete`, `Query.update`, raw SQL, bulk helpers) fails; ORM flushes are reported as `403`, other paths as a logged `500`. Other database backends are refused outright. The startup seeder uses the normal, writable engine. `GET /search/{query_id}` still reports a stale running search as `failed`, but no longer persists that change.
 - **The bundled sample project is seeded on startup** (if missing), and all six analyses are precomputed so the dashboard has data even though `POST /analysis/{type}` is blocked. Seeding is idempotent and fails the startup loudly if the database is unreachable.
-- **All exports keep working** (CSV, RIS, JSON, PRISMA SVG, methodology log, bundle zip) because they are `GET` downloads.
+- **All exports keep working** (CSV, RIS, Web of Science plain text, JSON, PRISMA SVG, methodology log, bundle zip) because they are `GET` downloads.
 - `GET /api/config` returns `{"read_only": true}`; the web UI uses it to show a "Read-only demo" banner and hide or disable create, delete, search, exclusion and analysis-run controls. If the endpoint can't be reached, the UI assumes read-only.
 - Startup logs `BibMedEd mode: read_only=<true|false>` and warns about any `BIBMEDED_*` environment variable that matches no setting (for example `BIBMEDED_READONLY`).
 
@@ -104,15 +104,19 @@ cp .env.example .env
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `BIBMEDED_PUBMED_API_KEY` | *(empty)* | Optional. Register free at [NCBI](https://www.ncbi.nlm.nih.gov/account/) for 10 req/s (default is 3 req/s) |
+| `BIBMEDED_PUBMED_API_KEY` | *(empty)* | Optional. Register free at [NCBI](https://www.ncbi.nlm.nih.gov/account/). With a key, PubMed requests run at 10 req/s; without one, at 3 req/s |
 | `BIBMEDED_NCBI_EMAIL` | *(empty)* | Optional contact email sent to NCBI on every PubMed search/fetch request. Requests identify the tool as `bibmeded`; blank email and API-key values are omitted. |
+| `BIBMEDED_PUBMED_RATE_LIMIT` | *(empty)* | Optional. PubMed requests per second. Empty means 10 with a key and 3 without. A value here must be a positive finite number, always wins and is not capped, so stay within NCBI's limits |
+| `BIBMEDED_OPENALEX_EMAIL` | *(empty)* | Optional. Sent to OpenAlex as `mailto=` |
+| `BIBMEDED_CROSSREF_EMAIL` | *(empty)* | Optional. Sent to CrossRef as `mailto=` |
+| `BIBMEDED_SEMANTIC_SCHOLAR_API_KEY` | *(empty)* | Optional. Semantic Scholar keyed tier (1 req/s sustained) |
 | `BIBMEDED_LENS_API_KEY` | *(empty)* | Required only for Lens.org searches. Scholarly API bearer token |
 | `BIBMEDED_READ_ONLY` | `false` | Public demo mode — see [Public read-only demo](#public-read-only-demo) |
 | `POSTGRES_USER` | `bibmeded` | Database username |
 | `POSTGRES_PASSWORD` | `bibmeded` | Database password |
 | `POSTGRES_DB` | `bibmeded` | Database name |
 
-All defaults work out of the box — no `.env` file is required.
+All defaults work out of the box — no `.env` file is required. `docker-compose.yml` passes the `BIBMEDED_*` source settings above into both the `api` and `worker` containers; `BIBMEDED_READ_ONLY` goes to the `api` only. The PubMed rate a search used is recorded in its methodology step and printed in the methodology export as "Request rate limit".
 
 ## Stopping
 

@@ -1,18 +1,24 @@
 from collections.abc import Mapping
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
 ENV_PREFIX = "BIBMEDED_"
-# Read directly from os.environ outside Settings (see bibmeded/main.py).
-NON_SETTINGS_ENV_VARS = frozenset({"BIBMEDED_LOG_LEVEL"})
+# Read directly from os.environ outside Settings (bibmeded/main.py and
+# alembic/versions/0004_screening_stage.py).
+NON_SETTINGS_ENV_VARS = frozenset({"BIBMEDED_LOG_LEVEL", "BIBMEDED_ALLOW_LOSSY_DOWNGRADE"})
+
+# NCBI E-utilities allowances: https://www.ncbi.nlm.nih.gov/books/NBK25497/
+PUBMED_RATE_LIMIT_WITHOUT_KEY = 3.0
+PUBMED_RATE_LIMIT_WITH_KEY = 10.0
 
 
 class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg2://bibmeded:bibmeded@localhost:5432/bibmeded"
     redis_url: str = "redis://localhost:6379/0"
     pubmed_api_key: str = ""
-    pubmed_rate_limit: float = 3.0  # requests/sec, 10 with API key
+    # None means "derive from whether a key is set"; see effective_pubmed_rate_limit.
+    pubmed_rate_limit: float | None = Field(default=None, gt=0, allow_inf_nan=False)
     ncbi_email: str = ""
     openalex_email: str = ""
     crossref_email: str = ""
@@ -33,6 +39,21 @@ class Settings(BaseSettings):
             if value.startswith(bare):
                 return "postgresql+psycopg2://" + value[len(bare):]
         return value
+
+    @field_validator("pubmed_rate_limit", mode="before")
+    @classmethod
+    def _blank_rate_limit_is_unset(cls, value: object) -> object:
+        # docker-compose passes an unset ${BIBMEDED_PUBMED_RATE_LIMIT:-} through as "".
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
+    def effective_pubmed_rate_limit(self) -> float:
+        if self.pubmed_rate_limit is not None:
+            return self.pubmed_rate_limit
+        if self.pubmed_api_key.strip():
+            return PUBMED_RATE_LIMIT_WITH_KEY
+        return PUBMED_RATE_LIMIT_WITHOUT_KEY
 
     model_config = {"env_prefix": ENV_PREFIX}
 

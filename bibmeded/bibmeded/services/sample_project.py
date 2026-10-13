@@ -9,6 +9,7 @@ from bibmeded.adapters.base import RawAuthor, RawRecord
 from bibmeded.config import settings
 from bibmeded.models import Publication, QueryStatus, SearchProject, SearchQuery
 from bibmeded.models.methodology import MethodologyStep
+from bibmeded.services.screening import SAMPLE_SEED_SOURCE, ScreeningState, apply_screening_state
 from bibmeded.workers.tasks import _persist_records
 
 logger = logging.getLogger(__name__)
@@ -134,10 +135,13 @@ def _create_sample_project(db: Session) -> SearchProject:
             publication.citation_count = citation_count
             publication.publication_type = record.publication_type
 
-        excluded = publications["sample-005"]
-        excluded.excluded = True
-        excluded.exclusion_reason = "wrong_population"
-        excluded.screening_stage = "title_abstract"
+        apply_screening_state(
+            db,
+            publications["sample-005"],
+            ScreeningState(True, "wrong_population", "title_abstract"),
+            reviewer=None,
+            source=SAMPLE_SEED_SOURCE,
+        )
 
         steps = (
             MethodologyStep(

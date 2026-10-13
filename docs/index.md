@@ -11,7 +11,7 @@ BibMedEd is an open-source tool that enables medical education researchers to se
 - **Six analysis modules** — Publications, authors, countries, keywords, citations, journals
 - **Interactive visualizations** — D3.js co-authorship and keyword co-occurrence networks
 - **Reproducible methodology** — Every pipeline step logged and exportable as a citable `.txt` file
-- **Standard exports** — .RIS (Zotero/EndNote), .CSV (Excel/Sheets), methodology log
+- **Standard exports** — .RIS (Zotero/EndNote), .CSV (Excel/Sheets), Web of Science plain text (VOSviewer/Bibliometrix), methodology log
 
 ## User Interface Tour
 
@@ -40,7 +40,7 @@ Open [http://localhost:3000](http://localhost:3000) and start analyzing.
 
 For first-run exploration, use **Explore sample project** on the empty workspace to populate a clearly labeled synthetic corpus and test the analysis workflow end-to-end right away. The sample remains editable like any other project; delete it and load it again whenever you want to restore the bundled dataset.
 
-See the [Self-Hosting Guide](deploy.md) for configuration options.
+See the [Self-Hosting Guide](deploy.md) for configuration options. If something does not work, see [Troubleshooting & FAQ](troubleshooting.md).
 
 ## Extend It
 

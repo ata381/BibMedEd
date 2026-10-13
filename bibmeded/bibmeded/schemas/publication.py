@@ -3,6 +3,7 @@ from typing import Literal, get_args
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from bibmeded.models.publication import NOT_RETRIEVED_REASON
+from bibmeded.models.screening import REVIEWER_LABEL_MAX_LENGTH
 
 # PRISMA 2020 exclusion-reason categories. `None` for the literal type means
 # "no reason recorded" — equivalent to legacy excluded-without-reason rows.
@@ -29,6 +30,17 @@ _STAGE_DESCRIPTION = (
     "or 'full_text' (reports assessed for eligibility). Omitted or null means 'full_text' "
     "for reason 'fulltext_unavailable' and 'title_abstract' otherwise; "
     "'fulltext_unavailable' with 'title_abstract' is rejected with 422 when the request excludes."
+)
+
+REVIEWER_HEADER = "X-Reviewer"
+# Starts with a letter or digit so a label can never open a spreadsheet formula
+# in the decision CSV, and stays ASCII because HTTP header values are latin-1.
+REVIEWER_LABEL_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9 ._@'()-]*$"
+REVIEWER_HEADER_DESCRIPTION = (
+    "Optional free-text label for the person making this screening decision, recorded in the "
+    "screening decision log of the methodology export. ASCII letters, digits, spaces and . _ @ ' ( ) -, "
+    f"starting with a letter or digit, at most {REVIEWER_LABEL_MAX_LENGTH} characters. "
+    "Anything else is rejected with 422. Omit it to record no reviewer."
 )
 
 STAGE_CONTRADICTION_MESSAGE = (

@@ -355,6 +355,81 @@ def test_adapter_kwargs_pubmed_reflects_configured_api_key_and_rate_limit(monkey
     assert kwargs == {"api_key": "pm-key-123", "rate_limit": 9.5, "email": "team@example.org"}
 
 
+@pytest.mark.parametrize(("api_key", "expected_rate"), [("pm-key-123", 10.0), ("", 3.0)])
+def test_adapter_kwargs_pubmed_derives_rate_from_api_key_when_rate_unset(
+    monkeypatch, api_key, expected_rate
+):
+    monkeypatch.setattr(settings, "pubmed_api_key", api_key)
+    monkeypatch.setattr(settings, "pubmed_rate_limit", None)
+
+    assert tasks._adapter_kwargs("pubmed") == {"api_key": api_key, "rate_limit": expected_rate, "email": settings.ncbi_email}
+
+
+def _search_step_parameters(db, query_id: int) -> dict:
+    step = (
+        db.query(MethodologyStep)
+        .filter(MethodologyStep.query_id == query_id, MethodologyStep.phase == "search")
+        .one()
+    )
+    return step.parameters
+
+
+class _EmptyICiteClient:
+    async def get_citations(self, pmids):
+        return {}
+
+    async def close(self):
+        pass
+
+
+@pytest.mark.parametrize(
+    ("api_key", "explicit_rate", "expected_rate"),
+    [("pm-key", None, 10.0), ("", None, 3.0), ("pm-key", 4.5, 4.5)],
+)
+def test_run_search_logs_effective_pubmed_rate_in_search_step(
+    db, monkeypatch, task_session_factory, api_key, explicit_rate, expected_rate
+):
+    query = _make_query(db)
+    stub_adapter = _StubAdapter(ids=["8201"], records=[_make_record("8201")])
+    adapter_calls: list[dict] = []
+
+    def fake_get_adapter(source, **kwargs):
+        adapter_calls.append(kwargs)
+        return stub_adapter
+
+    monkeypatch.setattr(settings, "pubmed_api_key", api_key)
+    monkeypatch.setattr(settings, "pubmed_rate_limit", explicit_rate)
+    monkeypatch.setattr(tasks, "get_adapter", fake_get_adapter)
+    monkeypatch.setattr(tasks, "SessionLocal", task_session_factory)
+    monkeypatch.setattr(tasks, "ICiteClient", _EmptyICiteClient)
+
+    asyncio.run(
+        tasks._run_search(_StubTask(), query.id, "pubmed", None, None, tasks.DEFAULT_MAX_RESULTS)
+    )
+
+    db.expire_all()
+    assert adapter_calls == [{"api_key": api_key, "rate_limit": expected_rate, "email": settings.ncbi_email}]
+    assert _search_step_parameters(db, query.id)["rate_limit_per_second"] == expected_rate
+
+
+def test_run_search_omits_rate_for_sources_without_a_rate_setting(
+    db, monkeypatch, task_session_factory
+):
+    query = _make_query(db)
+    stub_adapter = _StubAdapter(ids=["8301"], records=[_make_record("8301")])
+
+    monkeypatch.setattr(tasks, "get_adapter", lambda source, **kwargs: stub_adapter)
+    monkeypatch.setattr(tasks, "SessionLocal", task_session_factory)
+    monkeypatch.setattr(tasks, "ICiteClient", _EmptyICiteClient)
+
+    asyncio.run(
+        tasks._run_search(_StubTask(), query.id, "openalex", None, None, tasks.DEFAULT_MAX_RESULTS)
+    )
+
+    db.expire_all()
+    assert "rate_limit_per_second" not in _search_step_parameters(db, query.id)
+
+
 def test_adapter_kwargs_openalex_reflects_configured_email(monkeypatch):
     monkeypatch.setattr(settings, "openalex_email", "team@example.org")
 

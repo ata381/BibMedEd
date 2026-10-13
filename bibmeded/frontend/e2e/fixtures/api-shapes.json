@@ -54,6 +54,104 @@
             },
             "type": "object"
           },
+          "lotka": {
+            "properties": {
+              "distribution": {
+                "items": {
+                  "properties": {
+                    "authors": {
+                      "type": "number"
+                    },
+                    "papers": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "fit": {
+                "nullable": true,
+                "properties": {
+                  "C": {
+                    "type": "number"
+                  },
+                  "alpha": {
+                    "type": "number"
+                  },
+                  "goodness_of_fit": {
+                    "properties": {
+                      "D": {
+                        "nullable": true,
+                        "type": "number"
+                      },
+                      "consistent_with_lotka": {
+                        "nullable": true,
+                        "type": "boolean"
+                      },
+                      "critical_value": {
+                        "nullable": true,
+                        "type": "number"
+                      },
+                      "expected_single_paper_share": {
+                        "nullable": true,
+                        "type": "number"
+                      },
+                      "reason": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "significance_level": {
+                        "type": "number"
+                      },
+                      "test": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "r_squared": {
+                    "type": "number"
+                  }
+                },
+                "type": "object"
+              },
+              "method": {
+                "type": "string"
+              },
+              "parameters": {
+                "properties": {
+                  "counting": {
+                    "type": "string"
+                  },
+                  "ks_coefficient": {
+                    "type": "number"
+                  },
+                  "ks_min_authors": {
+                    "type": "number"
+                  },
+                  "min_productivity_levels": {
+                    "type": "number"
+                  },
+                  "significance_level": {
+                    "type": "number"
+                  }
+                },
+                "type": "object"
+              },
+              "productivity_levels": {
+                "type": "number"
+              },
+              "reason": {
+                "nullable": true,
+                "type": "string"
+              },
+              "total_authors": {
+                "type": "number"
+              }
+            },
+            "type": "object"
+          },
           "schema_version": {
             "type": "string"
           },

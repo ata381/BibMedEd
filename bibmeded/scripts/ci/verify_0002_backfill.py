@@ -16,6 +16,9 @@ exclusion is backfilled to ``full_text``, the other exclusion to
 ``title_abstract``, included rows keep a NULL stage, and the CHECK constraint
 exists.
 
+Also checks 0006_screening_decisions: the table exists with its stage and source CHECK
+constraints and holds no rows, because the decision log is never backfilled.
+
 Usage (from bibmeded/ directory, BIBMEDED_DATABASE_URL pointing at Postgres):
     python scripts/ci/verify_0002_backfill.py
 """
@@ -60,6 +63,37 @@ def _screening_stage_errors(conn) -> list[str]:
     return errors
 
 
+DECISION_CHECK_CONSTRAINTS = {
+    "ck_screening_decisions_screening_stage",
+    "ck_screening_decisions_previous_screening_stage",
+    "ck_screening_decisions_source",
+}
+
+
+def _screening_decision_errors(conn) -> list[str]:
+    exists = conn.execute(
+        text("SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'screening_decisions'")
+    ).scalar_one()
+    if not exists:
+        return ["screening_decisions table is missing after 0006_screening_decisions"]
+    errors: list[str] = []
+    decision_count = conn.execute(text("SELECT COUNT(*) FROM screening_decisions")).scalar_one()
+    if decision_count:
+        errors.append(f"screening_decisions has {decision_count} row(s); 0006 must not backfill decisions")
+    checks = {
+        row[0]
+        for row in conn.execute(
+            text(
+                "SELECT constraint_name FROM information_schema.table_constraints "
+                "WHERE table_name = 'screening_decisions' AND constraint_type = 'CHECK'"
+            )
+        )
+    }
+    for missing in sorted(DECISION_CHECK_CONSTRAINTS - checks):
+        errors.append(f"screening_decisions is missing CHECK constraint {missing}")
+    return errors
+
+
 def main() -> None:
     engine = get_engine()
     errors: list[str] = []
@@ -75,6 +109,7 @@ def main() -> None:
             )
         ).scalar_one()
         errors.extend(_screening_stage_errors(conn))
+        errors.extend(_screening_decision_errors(conn))
 
     if len(rows) != len(EXPECTED_PROJECT_ID_BY_PUBLICATION_ID):
         errors.append(
@@ -106,7 +141,8 @@ def main() -> None:
 
     print(
         f"Migration backfill verified: {len(rows)} publications correctly scoped "
-        "to project_id, NOT NULL enforced; exclusions backfilled to their PRISMA screening stage."
+        "to project_id, NOT NULL enforced; exclusions backfilled to their PRISMA screening stage; "
+        "empty screening decision log created."
     )
 
 

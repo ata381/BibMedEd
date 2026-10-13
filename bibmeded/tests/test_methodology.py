@@ -106,6 +106,37 @@ def test_export_methodology(client, db):
     assert "BibMedEd" in text
 
 
+def test_export_methodology_logs_the_lotka_step_for_included_records(client, db):
+    from bibmeded.models import Author, Publication, SearchProject, SearchQuery
+
+    project = SearchProject(name="Lotka Export")
+    db.add(project)
+    db.flush()
+    query = SearchQuery(project_id=project.id, query_string="q", database="pubmed")
+    db.add(query)
+    db.flush()
+    db.add(MethodologyStep(
+        query_id=query.id, step_order=1, phase="search", source="pubmed", action="Search",
+        records_in=0, records_out=3, records_affected=3, parameters={},
+        timestamp=datetime.now(timezone.utc),
+    ))
+    prolific, other, dropped = (Author(name=n, name_normalized=n) for n in ("prolific", "other", "dropped"))
+    for i, (authors, excluded) in enumerate([([prolific, other], False), ([prolific], False), ([dropped], True)]):
+        pub = Publication(pmid=f"lot{i}", title=f"T{i}", year=2024, query_id=query.id, project_id=project.id,
+                          excluded=excluded, exclusion_reason="other" if excluded else None,
+                          screening_stage="title_abstract" if excluded else None)
+        pub.authors.extend(authors)
+        db.add(pub)
+    db.commit()
+
+    for path in ("methodology", "bundle"):
+        response = client.get(f"/api/projects/{project.id}/export/{path}")
+        assert response.status_code == 200
+    text = client.get(f"/api/projects/{project.id}/export/methodology").text
+    assert "AUTHOR PRODUCTIVITY (Lotka's law)" in text
+    assert "  Authors: 2 across 2 productivity levels" in text
+
+
 def test_export_methodology_no_steps(client, db):
     from bibmeded.models import SearchProject
 

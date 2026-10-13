@@ -28,7 +28,7 @@ UPDATE_ENV_VAR = "UPDATE_API_SHAPES"
 
 # The sample corpus never produces null at these paths, but the analysis code can
 # (missing year, missing ORCID, undefined growth from a zero year, failed logistic
-# fit). Declaring them keeps the fixture from claiming a field is never null just
+# fit, a Lotka fit gated on too few productivity levels). Declaring them keeps the fixture from claiming a field is never null just
 # because the sample data happens to fill it.
 KNOWN_NULLABLE: dict[str, dict[str, str]] = {
     "publications": {
@@ -42,6 +42,13 @@ KNOWN_NULLABLE: dict[str, dict[str, str]] = {
     },
     "authors": {
         "results.top_authors[].orcid": "string",
+        "results.lotka.fit": "object",
+        "results.lotka.reason": "string",
+        "results.lotka.fit.goodness_of_fit.D": "number",
+        "results.lotka.fit.goodness_of_fit.critical_value": "number",
+        "results.lotka.fit.goodness_of_fit.consistent_with_lotka": "boolean",
+        "results.lotka.fit.goodness_of_fit.expected_single_paper_share": "number",
+        "results.lotka.fit.goodness_of_fit.reason": "string",
     },
     "citations": {
         "results.most_cited[].year": "number",

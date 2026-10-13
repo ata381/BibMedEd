@@ -52,7 +52,13 @@ class Publication(Base):
     # publications.
     external_references: Mapped[list | None] = mapped_column(JSON, nullable=True)
     journal: Mapped["Journal | None"] = relationship(back_populates="publications")
-    authors: Mapped[list["Author"]] = relationship(secondary="publication_authors", back_populates="publications")
+    # Author order drives first-author fields in every export (WoS AU and the bibliometrix
+    # SR key, RIS AU), so it must follow the source order stored at ingest, not row order.
+    authors: Mapped[list["Author"]] = relationship(
+        secondary="publication_authors",
+        back_populates="publications",
+        order_by="publication_authors.c.author_position",
+    )
     keywords: Mapped[list["Keyword"]] = relationship(secondary="publication_keywords", back_populates="publications")
     outgoing_citations: Mapped[list["Citation"]] = relationship(foreign_keys="Citation.citing_publication_id", back_populates="citing_publication")
     incoming_citations: Mapped[list["Citation"]] = relationship(foreign_keys="Citation.cited_publication_id", back_populates="cited_publication")
