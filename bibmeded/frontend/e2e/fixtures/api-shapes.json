@@ -753,6 +753,9 @@
               "excluded_current_year": {
                 "type": "boolean"
               },
+              "excluded_future_years": {
+                "type": "boolean"
+              },
               "reason": {
                 "nullable": true,
                 "type": "string"

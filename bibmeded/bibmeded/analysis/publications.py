@@ -22,10 +22,10 @@ _NON_POSITIVE_GROWTH_REASON = "Doubling time is not defined for non-positive gro
 def _growth_summary(yearly_items: list[tuple[int, int]], current_year: int) -> dict:
     """Compound annual growth rate and doubling time over full calendar years.
 
-    ``yearly_items`` is the zero-filled ``(year, count)`` series. Years from
-    ``current_year`` onward are incomplete and excluded, so a partial current
-    year cannot drag the end point down. ``cagr`` is a percentage; periods are
-    ``end_year - start_year``.
+    ``yearly_items`` is the zero-filled ``(year, count)`` series. The current
+    incomplete year and future-dated records are excluded, so they do not affect
+    the growth endpoint. ``cagr`` is a percentage; periods are ``end_year -
+    start_year``.
     """
     full_years = [(year, count) for year, count in yearly_items if year < current_year]
     summary = {
@@ -34,6 +34,7 @@ def _growth_summary(yearly_items: list[tuple[int, int]], current_year: int) -> d
         "start_year": full_years[0][0] if full_years else None,
         "end_year": full_years[-1][0] if full_years else None,
         "excluded_current_year": any(year == current_year and count > 0 for year, count in yearly_items),
+        "excluded_future_years": any(year > current_year and count > 0 for year, count in yearly_items),
         "reason": None,
     }
     if len(full_years) < 2:

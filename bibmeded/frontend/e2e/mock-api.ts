@@ -98,6 +98,7 @@ export const analysisResults: Record<string, Record<string, unknown>> = {
       start_year: 2018,
       end_year: 2020,
       excluded_current_year: false,
+      excluded_future_years: false,
       reason: null,
     },
   },

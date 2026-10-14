@@ -5,7 +5,15 @@ import pytest
 from bibmeded.models import Publication, SearchProject, SearchQuery
 from bibmeded.analysis.publications import _growth_summary, analyze_publication_trends
 
-GROWTH_SUMMARY_KEYS = {"cagr", "doubling_time_years", "start_year", "end_year", "excluded_current_year", "reason"}
+GROWTH_SUMMARY_KEYS = {
+    "cagr",
+    "doubling_time_years",
+    "start_year",
+    "end_year",
+    "excluded_current_year",
+    "excluded_future_years",
+    "reason",
+}
 
 def test_publication_trends(db):
     project = SearchProject(name="Test")
@@ -139,6 +147,28 @@ def test_growth_summary_excludes_current_calendar_year():
     assert summary["cagr"] == pytest.approx(100.0)
     assert summary["doubling_time_years"] == pytest.approx(1.0)
     assert summary["excluded_current_year"] is True
+    assert summary["excluded_future_years"] is False
+
+
+@pytest.mark.parametrize(
+    ("current_count", "future_count", "expected_current", "expected_future"),
+    [
+        (0, 0, False, False),
+        (5, 0, True, False),
+        (0, 7, False, True),
+        (5, 7, True, True),
+    ],
+)
+def test_growth_summary_flags_current_and_future_years_independently(
+    current_count, future_count, expected_current, expected_future
+):
+    summary = _growth_summary(
+        [(2028, 10), (2029, 20), (2030, current_count), (2031, future_count)],
+        current_year=2030,
+    )
+
+    assert summary["excluded_current_year"] is expected_current
+    assert summary["excluded_future_years"] is expected_future
 
 
 def test_growth_summary_single_full_year_returns_null_metrics_with_reason():
@@ -206,6 +236,34 @@ def test_publication_trends_growth_summary_excludes_current_year_but_yearly_coun
     assert summary["doubling_time_years"] == pytest.approx(1.0)
 
 
+def test_publication_trends_growth_summary_flags_future_year_without_using_it(db):
+    current_year = date.today().year
+    project = SearchProject(name="FutureYear")
+    db.add(project)
+    db.flush()
+    query = SearchQuery(project_id=project.id, query_string="t")
+    db.add(query)
+    db.flush()
+    yearly_totals = [(current_year - 2, 2), (current_year - 1, 4), (current_year + 1, 100)]
+    pmid_counter = 0
+    for year, n in yearly_totals:
+        for _ in range(n):
+            db.add(Publication(pmid=f"fy{pmid_counter}", title=f"P{pmid_counter}", year=year, query_id=query.id, project_id=project.id))
+            pmid_counter += 1
+    db.commit()
+
+    result = analyze_publication_trends(db, project.id)
+
+    assert result["yearly_counts"][-1] == {"year": current_year + 1, "count": 100}
+    summary = result["growth_summary"]
+    assert summary["start_year"] == current_year - 2
+    assert summary["end_year"] == current_year - 1
+    assert summary["cagr"] == pytest.approx(100.0)
+    assert summary["doubling_time_years"] == pytest.approx(1.0)
+    assert summary["excluded_current_year"] is False
+    assert summary["excluded_future_years"] is True
+
+
 @pytest.mark.parametrize("has_project", [True, False])
 def test_publication_trends_empty_result_has_consistent_growth_summary(db, has_project):
     project_id = -1
@@ -223,4 +281,5 @@ def test_publication_trends_empty_result_has_consistent_growth_summary(db, has_p
     assert summary["start_year"] is None
     assert summary["end_year"] is None
     assert summary["excluded_current_year"] is False
+    assert summary["excluded_future_years"] is False
     assert summary["reason"]
