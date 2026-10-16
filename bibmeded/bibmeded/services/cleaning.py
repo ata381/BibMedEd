@@ -11,14 +11,91 @@ COUNTRIES = [
     "New Zealand", "Greece", "Czech Republic", "Thailand", "Malaysia",
     "Mexico", "Egypt", "South Africa", "Pakistan", "Colombia", "Chile",
     "Argentina", "Indonesia", "Nigeria", "Russia", "Romania", "Hungary",
+    "Vietnam",
 ]
 
 COUNTRY_ALIASES = {
-    "United States": "USA", "United States of America": "USA", "U.S.A.": "USA",
-    "United Kingdom": "UK", "England": "UK", "Scotland": "UK", "Wales": "UK",
-    "Republic of Korea": "South Korea", "Korea": "South Korea",
-    "Peoples Republic of China": "China", "P.R. China": "China",
+    "United States": "USA", "United States of America": "USA", "U.S.A.": "USA", "U.S.": "USA",
+    "United Kingdom": "UK", "U.K.": "UK", "Great Britain": "UK",
+    "England": "UK", "Scotland": "UK", "Wales": "UK", "Northern Ireland": "UK",
+    "Republic of Korea": "South Korea", "Korea, Republic of": "South Korea",
+    "Korea": "South Korea", "South Korea": "South Korea",
+    "Peoples Republic of China": "China", "People's Republic of China": "China",
+    "P.R. China": "China", "P. R. China": "China", "PR China": "China",
+    "Türkiye": "Turkey", "Turkiye": "Turkey", "Republic of Turkey": "Turkey",
+    "Viet Nam": "Vietnam", "Vietnam": "Vietnam",
+    "Russian Federation": "Russia",
+    "Czechia": "Czech Republic",
+    "The Netherlands": "Netherlands",
 }
+
+US_STATES = [
+    "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
+    "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
+    "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana",
+    "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota",
+    "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada",
+    "New Hampshire", "New Jersey", "New Mexico", "New York",
+    "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon",
+    "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota",
+    "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington",
+    "West Virginia", "Wisconsin", "Wyoming", "District of Columbia",
+]
+
+US_STATE_ABBRS = {
+    "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+    "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+    "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+    "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+    "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
+    "DC",
+}
+
+_EMAIL_RE = re.compile(
+    r"[\s,;.]*(?:"
+    r"\((?:electronic\s+address|e-?mail)?[:\s]*[\w.+-]+@[\w-]+\.[\w.-]+\)|"
+    r"\[(?:electronic\s+address|e-?mail)?[:\s]*[\w.+-]+@[\w-]+\.[\w.-]+\]|"
+    r"(?:electronic\s+address|e-?mail)?[:\s]*<?[\w.+-]+@[\w-]+\.[\w.-]+>?"
+    r")\.?$",
+    re.IGNORECASE,
+)
+
+_POSTCODE_RE = re.compile(
+    r"[\s,;.]+(?:"
+    r"[A-Za-z]{1,2}\d[A-Za-z\d]?\s*\d[A-Za-z]{2}|"
+    r"[A-Za-z]\d[A-Za-z]\s*\d[A-Za-z]\d|"
+    r"[A-Za-z]{1,2}-\d{4,6}|"
+    r"\d{4,6}(?:-\d{3,4})?|"
+    r"CEDEX(?:\s*\d+)?"
+    r")\.?$",
+    re.IGNORECASE,
+)
+
+
+def _ends_with_word(text: str, suffix: str) -> bool:
+    if not text.lower().endswith(suffix.lower()):
+        return False
+    prefix_len = len(text) - len(suffix)
+    if prefix_len == 0:
+        return True
+    return not text[prefix_len - 1].isalnum()
+
+
+def _match_country_candidate(text: str) -> str | None:
+    for alias, canonical in COUNTRY_ALIASES.items():
+        if _ends_with_word(text, alias):
+            return canonical
+    for country in COUNTRIES:
+        if _ends_with_word(text, country):
+            return country
+    for state in US_STATES:
+        if _ends_with_word(text, state):
+            return "USA"
+    match = re.search(r"[\s,;]+([A-Za-z]{2})\.?$", text)
+    if match and match.group(1).upper() in US_STATE_ABBRS:
+        return "USA"
+    return None
+
 
 def normalize_name(name: str) -> str:
     name = name.lower().strip()
@@ -26,18 +103,22 @@ def normalize_name(name: str) -> str:
     name = re.sub(r"\s+", " ", name)
     return name.strip()
 
+
 def extract_country(affiliation: str) -> str | None:
     if not affiliation:
         return None
-    aff = affiliation.strip().rstrip(".")
-    for alias, canonical in COUNTRY_ALIASES.items():
-        if aff.lower().endswith(alias.lower()):
-            return canonical
-    aff_lower = aff.lower()
-    for country in COUNTRIES:
-        country_lower = country.lower()
-        if aff_lower.endswith(country_lower) or aff_lower.endswith(country_lower + "."):
-            return country
+    aff = affiliation.strip().rstrip(".;,")
+    aff = _EMAIL_RE.sub("", aff).strip().rstrip(".;,")
+    matched = _match_country_candidate(aff)
+    if matched:
+        return matched
+
+    aff_without_postcode = _POSTCODE_RE.sub("", aff).strip().rstrip(".;,")
+    if aff_without_postcode != aff:
+        matched = _match_country_candidate(aff_without_postcode)
+        if matched:
+            return matched
+
     return None
 
 
