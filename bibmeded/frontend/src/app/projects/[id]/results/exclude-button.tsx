@@ -105,9 +105,13 @@ export function ExcludeButton({ pub, projectId, screeningStage, onScreeningStage
   };
 
   // Truncated title in the accessible name so a screen reader announcing 20
-  // identical "Included" buttons gets enough context to disambiguate.
+  // identical "Included" buttons gets enough context to disambiguate. The
+  // visible status leads the name so speech-input users can say what they see
+  // (WCAG 2.5.3, axe label-content-name-mismatch).
   const labelTitle = (pub.title || "Untitled").slice(0, LABEL_TITLE_LENGTH);
-  const triggerLabel = pub.excluded ? `Re-include "${labelTitle}"` : `Exclude "${labelTitle}" — open PRISMA reason picker`;
+  const triggerLabel = pub.excluded
+    ? `Excluded: Re-include "${labelTitle}"`
+    : `Included: Exclude "${labelTitle}" — open PRISMA reason picker`;
   const stageLabel = SCREENING_STAGE_LABELS[screeningStage];
 
   return (
