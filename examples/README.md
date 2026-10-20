@@ -12,22 +12,25 @@ This notebook demonstrates the complete workflow of using the BibMedEd REST API 
 
 ## Setup
 
-1. Start the BibMedEd server:
+1. Install the Python libraries:
 ```bash
-   cd ../bibmeded
-   docker compose up
+   pip install requests pandas matplotlib jupyter
 ```
 
-2. Open `http://localhost:3000` in a browser and click "Explore sample project" to load the sample dataset.
-
-3. Open this notebook in Jupyter:
+2. Start the API server:
+```bash
+   cd bibmeded
+   docker compose up
+```
+- The server runs at http://localhost:8000
+3. From the examples folder, Open this notebook in Jupyter:
 ```bash
    jupyter notebook sample_project_api.ipynb
 ```
 
 ## What the Notebook Shows
 
-1. **Fetch project data** via GET `/api/projects`
+1. **Create or load the sample project** via POST `/api/projects/sample`
 2. **Run analyses** via POST `/api/projects/{id}/analysis/{type}`:
    - Publications: yearly trends
    - Authors: top authors and co-authorship network
