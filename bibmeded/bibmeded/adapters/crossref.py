@@ -59,6 +59,7 @@ class CrossrefAdapter(BaseSourceAdapter):
         return SearchResponse(total_count=total, ids=ids)
 
     async def search_paginated(self, query: str, **kwargs) -> AsyncGenerator[list[str], None]:
+        self.upstream_total = None
         cursor: str | None = "*"
         while cursor:
             params = self._with_mailto({"query": query, "rows": 200, "cursor": cursor})
@@ -69,6 +70,8 @@ class CrossrefAdapter(BaseSourceAdapter):
             resp.raise_for_status()
             data = await self._parse_json(resp)
             msg = data.get("message", {})
+            if cursor == "*":
+                self.upstream_total = msg.get("total-results")
             ids = [item["DOI"] for item in msg.get("items", []) if item.get("DOI")]
             if not ids:
                 break

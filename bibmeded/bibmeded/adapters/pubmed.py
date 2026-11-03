@@ -22,9 +22,12 @@ class PubMedAdapter(BaseSourceAdapter):
         return SearchResponse(total_count=result.total_count, ids=result.pmids)
 
     async def search_paginated(self, query: str, **kwargs) -> AsyncGenerator[list[str], None]:
+        self.upstream_total = None
         retstart = 0
         while True:
             result = await self._client.search(query, retstart=retstart, retmax=_ESEARCH_PAGE_SIZE)
+            if retstart == 0:
+                self.upstream_total = result.total_count
             if not result.pmids:
                 break
             yield result.pmids

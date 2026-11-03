@@ -152,6 +152,9 @@ def compute_counts(
 
     Phase → PRISMA box mapping:
       - ``search`` → "Records identified" (one entry per source).
+      - ``search.parameters.retrieved_ids`` records the retrieval boundary;
+        upstream-only matches are removed before screening, separately from
+        fetch failures and deduplication.
       - ``dedup`` → "Duplicates removed before screening".
       - ``enrichment.records_affected`` → folded into "Other reasons removed
         before screening" (e.g., DOI resolution misses, iCite lookup failures).
@@ -195,6 +198,8 @@ def compute_counts(
             counts.identified_by_source[step.source] = (
                 counts.identified_by_source.get(step.source, 0) + step.records_out
             )
+            retrieved_ids = (step.parameters or {}).get("retrieved_ids", step.records_out)
+            counts.other_removed_before_screening += max(step.records_out - retrieved_ids, 0)
         elif step.phase == "dedup":
             counts.duplicates_removed += step.records_affected
             dedup_affected_by_query[step.query_id] = (
