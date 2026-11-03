@@ -176,9 +176,9 @@ export default function Dashboard() {
         {show("overview") && (
           <StatRow ariaLabel="Corpus summary">
             <Stat label="Publications" value={totalPubs.toLocaleString()} note={`Included records, ${yearSpan}`} />
-            <Stat label="Unique authors" value={totalAuthors.toLocaleString()} note="After name normalisation" />
-            <Stat label="Total citations" value={totalCitations.toLocaleString()} note="Sum across included records" />
-            <Stat label="Keywords tracked" value={topKeywords.length.toString()} note="Distinct indexed terms" />
+            {analyses.authors && <Stat label="Unique authors" value={totalAuthors.toLocaleString()} note="After name normalisation" />}
+            {analyses.citations && <Stat label="Total citations" value={totalCitations.toLocaleString()} note="Sum across included records" />}
+            {analyses.keywords && <Stat label="Keywords tracked" value={topKeywords.length.toString()} note="Distinct indexed terms" />}
           </StatRow>
         )}
 
@@ -191,7 +191,7 @@ export default function Dashboard() {
             </Card>
           )}
 
-          {show("overview", "authors") && (
+          {show("overview", "authors") && analyses.authors && (
             <Card as="section" className={activeTab === "authors" ? "lg:col-span-3" : "lg:col-span-2"} aria-labelledby="table-authors">
               <CardHeader eyebrow="Table 1" title={<span id="table-authors">Top authors</span>} subtitle="Ranked by publications in the corpus." />
               <RankedBars
@@ -208,7 +208,7 @@ export default function Dashboard() {
             </Card>
           )}
 
-          {show("overview", "networks", "authors") && (
+          {show("overview", "networks", "authors") && analyses.authors && (
             <Card as="section" padding="none" className="lg:col-span-3 flex flex-col min-h-[440px] overflow-hidden" aria-labelledby="fig-network">
               <div className="p-5 md:p-6 pb-0">
                 <CardHeader eyebrow="Figure 2" title={<span id="fig-network">Network preview</span>} subtitle="Co-authorship clustering." className="mb-3" />
@@ -219,14 +219,14 @@ export default function Dashboard() {
             </Card>
           )}
 
-          {show("overview", "networks") && (
+          {show("overview", "networks") && analyses.keywords && (
             <Card as="section" className="lg:col-span-3" aria-labelledby="table-keywords">
               <CardHeader eyebrow="Table 3" title={<span id="table-keywords">Top keywords</span>} subtitle="Most frequent indexed terms." />
               <KeywordCloud keywords={topKeywords.slice(0, KEYWORD_LIMIT)} />
             </Card>
           )}
 
-          {show("overview", "citations") && (
+          {show("overview", "citations") && analyses.citations && (
             <Card as="section" className="lg:col-span-4" aria-labelledby="table-cited">
               <CardHeader eyebrow="Table 4" title={<span id="table-cited">Most cited publications</span>} subtitle="Citation counts from NIH iCite for PubMed records only; other sources may have no count." />
               <ol className="divide-y divide-divider">
