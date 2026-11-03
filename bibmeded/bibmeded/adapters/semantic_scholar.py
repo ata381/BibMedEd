@@ -70,6 +70,7 @@ class SemanticScholarAdapter(BaseSourceAdapter):
         return SearchResponse(total_count=total, ids=ids)
 
     async def search_paginated(self, query: str, **kwargs) -> AsyncGenerator[list[str], None]:
+        self.upstream_total = None
         offset = 0
         while True:
             params: dict = {
@@ -84,6 +85,8 @@ class SemanticScholarAdapter(BaseSourceAdapter):
             resp = await self._client.get(f"{S2_API}/paper/search", params=params)
             resp.raise_for_status()
             data = await self._parse_json(resp)
+            if offset == 0:
+                self.upstream_total = data.get("total")
             ids = [p["paperId"] for p in data.get("data", []) if p.get("paperId")]
             if not ids:
                 break

@@ -66,6 +66,8 @@ class BaseSourceAdapter(ABC):
     name: str
     display_name: str
     requires_api_key: bool
+    # First-page upstream count for the current paginated search; None if unavailable.
+    upstream_total: int | None = None
 
     @abstractmethod
     async def search(self, query: str, **kwargs) -> SearchResponse:
@@ -74,7 +76,9 @@ class BaseSourceAdapter(ABC):
 
     async def search_paginated(self, query: str, **kwargs) -> AsyncGenerator[list[str], None]:
         """Yield ID batches. Default: single yield from search()."""
+        self.upstream_total = None
         result = await self.search(query, **kwargs)
+        self.upstream_total = result.total_count
         yield result.ids
 
     @abstractmethod

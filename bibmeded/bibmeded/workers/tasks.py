@@ -430,13 +430,17 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
                 meta={"phase": "search", "ids_found": len(all_ids)},
             )
 
-        total_found = len(all_ids)
+        upstream_total = getattr(adapter, "upstream_total", None)
+        if not isinstance(upstream_total, int) or upstream_total < 0:
+            upstream_total = None
+        total_found = max(len(all_ids), upstream_total or 0)
         all_ids = all_ids[:max_results]  # cap to max_results
+        capped = total_found > len(all_ids)
         query.raw_result_count = total_found
         db.flush()
         log.info(
             "run_search query_id=%d phase=search complete: %d ids found (capped=%s)",
-            query_id, total_found, total_found > max_results,
+            query_id, total_found, capped,
         )
         if query.created_at:
             # SQLite returns naive datetimes; Postgres returns tz-aware. astimezone handles
@@ -448,7 +452,8 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
         else:
             searched_at_iso = None
         search_parameters = {"query": query.query_string, "database": source,
-                             "max_results": max_results, "capped": total_found > max_results,
+                             "max_results": max_results, "capped": capped,
+                             "upstream_total": upstream_total, "retrieved_ids": len(all_ids),
                              "searched_at": searched_at_iso, "request_id": request_id}
         if "rate_limit" in source_kwargs:
             search_parameters["rate_limit_per_second"] = source_kwargs["rate_limit"]
@@ -483,6 +488,8 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
                   action=f"Batch fetch via {adapter.methodology_label()}",
                   records_in=len(all_ids), records_out=persisted,
                   parameters={"batch_size": FETCH_BATCH_SIZE, "request_id": request_id,
+                              "upstream_total": upstream_total, "capped": capped,
+                              "max_results": max_results, "retrieved_ids": len(all_ids),
                               "persist_failed": len(persist_failures),
                               "persist_failures": persist_failures[:MAX_LOGGED_PERSIST_FAILURES]})
 

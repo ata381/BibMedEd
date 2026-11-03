@@ -53,10 +53,13 @@ class LensAdapter(BaseSourceAdapter):
         return SearchResponse(total_count=total, ids=ids)
 
     async def search_paginated(self, query: str, **kwargs):
+        self.upstream_total = None
         offset = 0
         while True:
             payload = self._build_payload(query, kwargs, from_=offset, size=_PAGE_SIZE)
             data = await self._post(payload)
+            if offset == 0:
+                self.upstream_total = self._extract_total(data)
             records = self._data_records(data)
             if not records:
                 break

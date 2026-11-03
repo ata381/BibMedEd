@@ -699,16 +699,22 @@ def generate_methodology(
             rate_limit = step.parameters.get("rate_limit_per_second")
             if rate_limit:
                 lines.append(f"    Request rate limit: {rate_limit:g} requests/s")
+            if step.parameters.get("upstream_total") is not None:
+                lines.append(f"    Upstream total: {step.parameters['upstream_total']}")
             capped = step.parameters.get("capped", False)
             max_results = step.parameters.get("max_results")
             if capped and max_results:
                 lines.append(
-                    f"    Results: {step.records_out} records (capped at max_results={max_results}; "
+                    f"    Results: {step.records_out} records (retrieval truncated; max_results={max_results}; "
                     f"full set not retrieved)"
                 )
             else:
                 lines.append(f"    Results: {step.records_out} records")
         elif step.phase == "fetch":
+            if "capped" in step.parameters:
+                total = step.parameters.get("upstream_total")
+                lines.append(f"    Upstream total: {total if total is not None else 'unavailable'}")
+                lines.append(f"    Retrieval truncated: {'yes' if step.parameters['capped'] else 'no'}")
             lines.append(
                 f"    Retrieved: {step.records_out} of {step.records_in} "
                 f"({step.records_affected} unavailable)"

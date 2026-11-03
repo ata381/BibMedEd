@@ -48,6 +48,7 @@ class OpenAlexAdapter(BaseSourceAdapter):
         return SearchResponse(total_count=total, ids=ids)
 
     async def search_paginated(self, query: str, **kwargs) -> AsyncGenerator[list[str], None]:
+        self.upstream_total = None
         cursor = "*"
         while cursor:
             params = {"search": query, "per_page": 200, "cursor": cursor}
@@ -59,6 +60,8 @@ class OpenAlexAdapter(BaseSourceAdapter):
             resp = await self._client.get(f"{OPENALEX_API}/works", params=params)
             resp.raise_for_status()
             data = await self._parse_json(resp)
+            if cursor == "*":
+                self.upstream_total = data.get("meta", {}).get("count")
             ids = [self._extract_id(r["id"]) for r in data["results"]]
             if not ids:
                 break

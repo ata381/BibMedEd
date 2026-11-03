@@ -941,3 +941,52 @@ def test_run_search_defaults_request_id_when_not_provided(db, monkeypatch, task_
     db.expire_all()
     refreshed = db.get(SearchQuery, query.id)
     assert refreshed.status == QueryStatus.completed
+
+@pytest.mark.parametrize("source", ["pubmed", "openalex", "crossref", "semanticscholar", "lens"])
+@pytest.mark.parametrize("limit,total", [(2, 0), (2, 2), (2, 3), (10_000, 10_001)])
+def test_upstream_total_survives_pagination_cap(db, monkeypatch, task_session_factory, source, limit, total):
+    from unittest.mock import AsyncMock, Mock
+    from bibmeded.services.pubmed import SearchResult
+    from bibmeded.services.export_generators import generate_methodology
+
+    query = _make_query(db)
+    monkeypatch.setattr(settings, "lens_api_key", "fixture-only")
+    adapter = get_adapter(source, **tasks._adapter_kwargs(source))
+    ids = [str(i) for i in range(min(limit, total))]
+    payloads = {
+        "openalex": {"meta": {"count": total}, "results": [{"id": "https://openalex.org/" + i} for i in ids]},
+        "crossref": {"message": {"total-results": total, "items": [{"DOI": i} for i in ids]}},
+        "semanticscholar": {"total": total, "data": [{"paperId": i} for i in ids]},
+        "lens": {"total": total, "data": [{"lens_id": i} for i in ids]},
+    }
+    if source == "pubmed":
+        monkeypatch.setattr(adapter._client, "search", AsyncMock(return_value=SearchResult(total_count=total, pmids=ids)))
+    elif source == "lens":
+        monkeypatch.setattr(adapter, "_post", AsyncMock(return_value=payloads[source]))
+    else:
+        response = Mock()
+        response.json.return_value = payloads[source]
+        monkeypatch.setattr(adapter._client, "get", AsyncMock(return_value=response))
+    received = []
+
+    async def fetch_stream(requested, **kwargs):
+        received.extend(requested)
+        yield []
+
+    monkeypatch.setattr(adapter, "fetch_stream", fetch_stream)
+    monkeypatch.setattr(tasks, "get_adapter", lambda *args, **kwargs: adapter)
+    monkeypatch.setattr(tasks, "SessionLocal", task_session_factory)
+    asyncio.run(tasks._run_search(_StubTask(), query.id, source, None, None, limit))
+    db.expire_all()
+    assert query.status == QueryStatus.completed
+    assert query.raw_result_count == total
+    assert len(received) == min(limit, total)
+    steps = db.query(MethodologyStep).filter_by(query_id=query.id).order_by(MethodologyStep.step_order).all()
+    for phase in ("search", "fetch"):
+        params = next(s.parameters for s in steps if s.phase == phase)
+        assert params["upstream_total"] == total
+        assert params["retrieved_ids"] == min(limit, total)
+        assert params["capped"] is (total > limit)
+    text = generate_methodology("Fixture", steps)
+    assert f"Upstream total: {total}" in text
+    assert f"Retrieval truncated: {'yes' if total > limit else 'no'}" in text
