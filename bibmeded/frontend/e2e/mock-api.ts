@@ -246,7 +246,8 @@ export function analysisRunResponse(analysisType: string) {
     id: 1,
     project_id: 1,
     analysis_type: analysisType,
-    results: analysisResults[analysisType] ?? {},
+    stale: false,
+    results: { ...analysisResults[analysisType], corpus_fingerprint: "v1:sample" },
     created_at: "2026-08-23T12:00:00Z",
   };
 }
@@ -256,6 +257,7 @@ export interface MockApiOptions {
   readOnly?: boolean;
   configUnavailable?: boolean;
   missingAnalyses?: string[];
+  staleAnalyses?: string[];
   sampleSearch?: boolean;
 }
 
@@ -372,7 +374,7 @@ export async function installMockApi(page: Page, options: MockApiOptions = {}) {
       if (method === "GET" && options.missingAnalyses?.includes(analysisType)) {
         return json(route, { detail: "Analysis not found. Run it first." }, 404);
       }
-      return json(route, analysisRunResponse(analysisType));
+      return json(route, { ...analysisRunResponse(analysisType), stale: method === "GET" && Boolean(options.staleAnalyses?.includes(analysisType)) });
     }
     if (pathname === "/api/projects/1/export/methodology") {
       return route.fulfill({

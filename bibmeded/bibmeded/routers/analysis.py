@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from bibmeded.database import get_db
 from bibmeded.models import SearchProject, AnalysisRun
 from bibmeded.analysis import ANALYSIS_FUNCTIONS, with_schema_version
+from bibmeded.analysis.corpus import corpus_fingerprint
 from bibmeded.schemas.analysis import AnalysisResponse
 
 logger = logging.getLogger(__name__)
@@ -24,16 +25,22 @@ def run_analysis(project_id: int, analysis_type: str, db: Session = Depends(get_
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     func = ANALYSIS_FUNCTIONS[analysis_type]
+    fingerprint = corpus_fingerprint(db, project_id)
     results = with_schema_version(func(db, project_id))
+    if fingerprint != corpus_fingerprint(db, project_id):
+        raise HTTPException(status_code=409, detail="Corpus changed during analysis. Retry after the search finishes.")
+    results["corpus_fingerprint"] = fingerprint
     run = AnalysisRun(project_id=project_id, analysis_type=analysis_type, results=json.dumps(results))
     db.add(run)
     db.commit()
     db.refresh(run)
-    return AnalysisResponse(id=run.id, project_id=run.project_id, analysis_type=run.analysis_type, results=results, created_at=run.created_at)
+    return AnalysisResponse(id=run.id, project_id=run.project_id, analysis_type=run.analysis_type, results=results, created_at=run.created_at, stale=False)
 
 @router.get("/{analysis_type}", response_model=AnalysisResponse)
 def get_analysis(project_id: int, analysis_type: str, db: Session = Depends(get_db)):
-    run = db.query(AnalysisRun).filter(AnalysisRun.project_id == project_id, AnalysisRun.analysis_type == analysis_type).order_by(AnalysisRun.created_at.desc()).first()
+    run = db.query(AnalysisRun).filter(AnalysisRun.project_id == project_id, AnalysisRun.analysis_type == analysis_type).order_by(AnalysisRun.created_at.desc(), AnalysisRun.id.desc()).first()
     if not run:
         raise HTTPException(status_code=404, detail="Analysis not found. Run it first.")
-    return AnalysisResponse(id=run.id, project_id=run.project_id, analysis_type=run.analysis_type, results=with_schema_version(json.loads(run.results)), created_at=run.created_at)
+    results = with_schema_version(json.loads(run.results))
+    stale = results.get("corpus_fingerprint") != corpus_fingerprint(db, project_id)
+    return AnalysisResponse(id=run.id, project_id=run.project_id, analysis_type=run.analysis_type, results=results, created_at=run.created_at, stale=stale)

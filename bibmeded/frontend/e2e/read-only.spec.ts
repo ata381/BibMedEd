@@ -83,3 +83,18 @@ for (const theme of ["light", "dark"] as const) {
     expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
   });
 }
+
+for (const readOnly of [false, true]) {
+  test(`stale dashboard ${readOnly ? "shows refresh needed without writing" : "recomputes cached analyses"}`, async ({ page }) => {
+    const { writeRequests } = await installMockApi(page, { readOnly, staleAnalyses: ["publications", "keywords"] });
+    await page.goto("/projects/1/dashboard");
+    await expect(page.getByRole("heading", { name: "Analysis overview" })).toBeVisible();
+    if (readOnly) {
+      await expect(page.getByText("Analysis needs refreshing")).toBeVisible();
+      expect(writeRequests).toEqual([]);
+    } else {
+      await expect(page.getByRole("group", { name: "Corpus summary" })).toBeVisible();
+      expect(writeRequests).toEqual(["POST /api/projects/1/analysis/publications", "POST /api/projects/1/analysis/keywords"]);
+    }
+  });
+}

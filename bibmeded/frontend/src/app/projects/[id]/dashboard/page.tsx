@@ -81,6 +81,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
   const [project, setProject] = useState<Project | null>(null);
   const [analyses, setAnalyses] = useState<Record<string, AnalysisData>>({});
+  const [incomplete, setIncomplete] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -93,21 +94,24 @@ export default function Dashboard() {
         if (ctrl.signal.aborted) return;
         setProject(proj.data);
         const results: Record<string, AnalysisData> = {};
+        let unavailable = false;
         for (const t of ANALYSIS_TYPES) {
           if (ctrl.signal.aborted) return;
           try {
             const r = await analysisApi.get(projectId, t);
+            if (r.data.stale) throw new Error("Stale analysis");
             results[t] = r.data.results as AnalysisData;
           } catch {
-            if (await fetchReadOnly()) continue;
+            if (await fetchReadOnly()) { unavailable = true; continue; }
             try {
               const r = await analysisApi.run(projectId, t);
               results[t] = r.data.results as AnalysisData;
-            } catch {}
+            } catch { unavailable = true; }
           }
         }
         if (ctrl.signal.aborted) return;
         setAnalyses(results);
+        setIncomplete(unavailable);
       } catch {
         if (!ctrl.signal.aborted) toast.error("Failed to load analysis data.");
       }
@@ -150,8 +154,8 @@ export default function Dashboard() {
         <Card>
           <EmptyState
             icon="chart"
-            title="No publications to analyze"
-            description="Run a search first to populate results, then come back here for analysis."
+            title={incomplete ? "Analysis needs refreshing" : "No publications to analyze"}
+            description={incomplete ? "Current analysis could not be loaded. Reload after the search finishes or ask the project owner to refresh the analysis." : "Run a search first to populate results, then come back here for analysis."}
             action={<Button onClick={() => router.push(`/projects/${projectId}/search`)}>Go to Search</Button>}
           />
         </Card>
@@ -165,6 +169,7 @@ export default function Dashboard() {
     <div className="space-y-8">
       <PageTitle project={project} />
 
+      {incomplete && <p role="status">Some analyses need refreshing and are hidden. Reload after the search finishes or ask the project owner to refresh them.</p>}
       <Tabs items={TABS} value={activeTab} onChange={setActiveTab} ariaLabel="Dashboard sections" />
 
       <section id={`panel-${activeTab}`} role="tabpanel" aria-labelledby={`tab-${activeTab}`} className="space-y-8">

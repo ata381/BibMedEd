@@ -670,6 +670,9 @@ def generate_methodology(
         "Tool: BibMedEd (https://github.com/ata381/bibmeded)",
         "",
     ]
+    if author_productivity and author_productivity.get("corpus_fingerprint"):
+        lines.extend(["Author productivity analysis corpus: " + author_productivity["corpus_fingerprint"],
+                      "Computed from the included records at export time.", ""])
     pipeline_steps, bulk_steps = _split_bulk_exclude_steps(steps)
     history_log = decision_log or ScreeningDecisionLog(decisions=())
     if not pipeline_steps:

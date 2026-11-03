@@ -90,6 +90,7 @@ export interface SearchStatus {
 }
 
 export interface AnalysisResult {
+  stale: boolean;
   id: number;
   project_id: number;
   analysis_type: string;
