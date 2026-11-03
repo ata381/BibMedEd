@@ -571,3 +571,19 @@ def test_export_methodology_endpoint_reports_both_stages(client, db):
     assert "Full-text retrieval: 1 report not retrieved" in body
     assert "Full-text eligibility: 1 report excluded" in body
     assert "Wrong outcome: 1" in body
+
+@pytest.mark.parametrize("persisted,duplicates", [(2000, 0), (1980, 10)])
+def test_truncated_upstream_matches_never_reach_screening(persisted, duplicates):
+    steps = [
+        _step(query_id=1, phase="search", records_out=5400, parameters={"retrieved_ids": 2000, "capped": True}),
+        _step(query_id=1, phase="fetch", records_in=2000, records_out=persisted),
+        _step(query_id=1, phase="dedup", records_affected=duplicates, records_out=persisted),
+        _step(query_id=2, source="crossref", phase="search", records_out=100, parameters={"retrieved_ids": 100}),
+        _step(query_id=2, source="crossref", phase="fetch", records_in=100, records_out=100),
+    ]
+    counts = compute_counts(steps, included_override=persisted + 100)
+    assert counts.total_identified == 5500
+    assert counts.other_removed_before_screening == 3400 + (2000 - persisted - duplicates)
+    assert counts.duplicates_removed == duplicates
+    assert counts.screened == counts.reports_sought == counts.reports_assessed == persisted + 100
+    assert f"Records screened ({persisted + 100})" in render_svg(counts, "Capped review")

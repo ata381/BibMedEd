@@ -987,6 +987,8 @@ def test_upstream_total_survives_pagination_cap(db, monkeypatch, task_session_fa
         assert params["upstream_total"] == total
         assert params["retrieved_ids"] == min(limit, total)
         assert params["capped"] is (total > limit)
+    from bibmeded.services.prisma import compute_counts
+    assert compute_counts(steps).screened == 0  # this fixture intentionally persists no records
     text = generate_methodology("Fixture", steps)
     assert f"Upstream total: {total}" in text
     assert f"Retrieval truncated: {'yes' if total > limit else 'no'}" in text

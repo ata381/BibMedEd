@@ -155,7 +155,7 @@ and the methodology log records:
     Results: 5400 records (retrieval truncated; max_results=2000; full set not retrieved)
 ```
 
-The search and fetch methodology steps record the upstream total, requested limit, retrieved ID count and truncation flag. A total equal to the limit is complete when all matching IDs were retrieved; a total above it is truncated. Upstream pagination limits are also reported as truncation. These totals reflect the database response at search time, so a changing database may report a different count later.
+The search and fetch methodology steps record the upstream total, requested limit, retrieved ID count and truncation flag. A total equal to the limit is complete when all matching IDs were retrieved; a total above it is truncated. Upstream pagination limits are also reported as truncation. Unfetched upstream matches count as removed before screening in PRISMA; they do not inflate records screened or reports assessed. These totals reflect the database response at search time, so a changing database may report a different count later.
 
 For a systematic review you need the full set. Either:
 
@@ -240,11 +240,11 @@ PRISMA 2020 separates title/abstract screening of records from full-text assessm
 
 ### "Exclude 0-citation papers" wants to exclude almost everything
 
-Citation counts come from NIH iCite, and BibMedEd only fetches them for **PubMed** searches. Records from OpenAlex, CrossRef, Semantic Scholar and Lens.org have no citation count. The bulk exclusion counts "no citation count" as 0, so it would remove every one of them. The confirmation dialog shows how many publications will be excluded. Read that number before confirming.
+Citation counts come from NIH iCite, and BibMedEd only fetches them for **PubMed** searches. Records from OpenAlex, CrossRef, Semantic Scholar and Lens.org have no citation count. Bulk exclusion keeps records with missing counts. Only recorded counts at or below the threshold qualify. The confirmation dialog shows both the number to exclude and how many missing-count records will remain unchanged.
 
 If a PubMed search's records all show 0 citations, check the methodology log for `iCite citation count enrichment (failed)`. iCite was unreachable during that search. The search itself still succeeded.
 
-The methodology log records how many records were excluded and why, not the threshold you used. State the threshold in your Methods section.
+The methodology log records the threshold, number excluded, missing-count policy, and number kept because their counts were missing.
 
 ### The API returns 422 when I exclude with `fulltext_unavailable`
 
