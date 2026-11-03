@@ -263,16 +263,11 @@ On the results page, click **Excluded** on the record. It goes back to included 
 
 ### The dashboard does not change after I exclude records or run another search
 
-The first time you open the dashboard, BibMedEd calculates the six analyses and stores the results. Later visits show those stored results. Nothing recalculates them after you exclude records or run a new search ([#152](https://github.com/ata381/BibMedEd/issues/152)), so the dashboard can describe an older version of your corpus. This also affects the answers below.
+The dashboard checks saved analyses against a fingerprint of the included corpus when you open it. New records, exclusions, citation updates, or changes to authors, affiliations, keywords and references make old analyses stale; writable instances recompute them automatically. Legacy analyses without a fingerprint are also refreshed.
 
-Until that is fixed, recalculate by hand:
+If a search is still changing the corpus, wait for it to finish and reload. Read-only instances hide stale results and show a refresh message; the owner must refresh the analyses. The bundled demo refreshes its sample analyses at startup.
 
-1. Note your project's number. It is in the address bar: `http://localhost:3000/projects/7/dashboard` is project 7.
-2. Open <http://localhost:8000/docs> and find `POST /api/projects/{project_id}/analysis/{analysis_type}`.
-3. Choose **Try it out**, enter the project number, and run it once for each of `publications`, `authors`, `countries`, `keywords`, `citations` and `journals`.
-4. Reload the dashboard.
-
-Do this again after every round of exclusions or new searches, and before you export figures or numbers for a paper.
+API clients should check `stale` on `GET /api/projects/{project_id}/analysis/{analysis_type}` and use `POST` on the same address to recompute. Each new result contains `corpus_fingerprint`. The methodology export labels its author-productivity analysis with the fingerprint used at export time.
 
 ### The dashboard says "No publications to analyze"
 

@@ -83,3 +83,29 @@ for (const theme of ["light", "dark"] as const) {
     expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
   });
 }
+
+for (const readOnly of [false, true]) {
+  test(`stale dashboard ${readOnly ? "shows refresh needed without writing" : "recomputes cached analyses"}`, async ({ page }) => {
+    const { writeRequests } = await installMockApi(page, { readOnly, staleAnalyses: ["publications", "keywords"] });
+    await page.goto("/projects/1/dashboard");
+    await expect(page.getByRole("heading", { name: "Analysis overview" })).toBeVisible();
+    if (readOnly) {
+      await expect(page.getByText("Analysis needs refreshing")).toBeVisible();
+      expect(writeRequests).toEqual([]);
+    } else {
+      await expect(page.getByRole("group", { name: "Corpus summary" })).toBeVisible();
+      expect(writeRequests).toEqual(["POST /api/projects/1/analysis/publications", "POST /api/projects/1/analysis/keywords"]);
+    }
+  });
+}
+
+test("partially stale read-only analyses are hidden instead of shown as zeros", async ({ page }) => {
+  const { writeRequests } = await installMockApi(page, { readOnly: true, staleAnalyses: ["authors", "citations", "keywords"] });
+  await page.goto("/projects/1/dashboard");
+  await expect(page.getByText("Some analyses need refreshing", { exact: false })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Corpus summary" })).toContainText("Publications");
+  for (const label of ["Unique authors", "Total citations", "Keywords tracked", "Top authors", "Most cited publications", "Top keywords", "Network preview"]) {
+    await expect(page.getByText(label, { exact: true })).toHaveCount(0);
+  }
+  expect(writeRequests).toEqual([]);
+});

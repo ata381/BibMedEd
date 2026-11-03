@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, joinedload
 
 logger = logging.getLogger(__name__)
 
+from bibmeded.analysis.corpus import corpus_fingerprint
 from bibmeded.analysis.authors import analyze_author_productivity
 from bibmeded.database import get_db
 from bibmeded.models import Author, Publication, SearchProject
@@ -169,7 +170,11 @@ def export_prisma(project_id: int, db: Session = Depends(get_db)):
 def export_methodology(project_id: int, db: Session = Depends(get_db)):
     project, steps = _get_project_and_steps(project_id, db)
     exclusion_summary = _get_exclusion_summary(project_id, db)
+    fingerprint = corpus_fingerprint(db, project_id)
     author_productivity = analyze_author_productivity(db, project_id)
+    if fingerprint != corpus_fingerprint(db, project_id):
+        raise HTTPException(status_code=409, detail="Corpus changed during export. Please retry.")
+    author_productivity["corpus_fingerprint"] = fingerprint
     decision_log = _get_decision_log(project, db, with_publications=False)
     filename = f"{slugify(project.name)}-methodology-{date.today().isoformat()}.txt"
     return StreamingResponse(
@@ -190,7 +195,11 @@ def export_bundle(project_id: int, db: Session = Depends(get_db)):
     project, pubs = _get_project_and_pubs(project_id, db, with_affiliations=True)
     _, steps = _get_project_and_steps(project_id, db)
     exclusion_summary = _get_exclusion_summary(project_id, db)
+    fingerprint = corpus_fingerprint(db, project_id)
     author_productivity = analyze_author_productivity(db, project_id)
+    if fingerprint != corpus_fingerprint(db, project_id):
+        raise HTTPException(status_code=409, detail="Corpus changed during export. Please retry.")
+    author_productivity["corpus_fingerprint"] = fingerprint
     decision_log = _get_decision_log(project, db, with_publications=True)
     filename = f"{slugify(project.name)}-bundle-{date.today().isoformat()}.zip"
     return StreamingResponse(

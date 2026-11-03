@@ -10,5 +10,6 @@ class AnalysisResponse(BaseModel):
     project_id: int
     analysis_type: str
     results: Any
+    stale: bool
     created_at: datetime
     model_config = {"from_attributes": True}

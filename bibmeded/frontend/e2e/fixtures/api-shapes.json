@@ -54,6 +54,9 @@
             },
             "type": "object"
           },
+          "corpus_fingerprint": {
+            "type": "string"
+          },
           "lotka": {
             "properties": {
               "distribution": {
@@ -193,6 +196,9 @@
           }
         },
         "type": "object"
+      },
+      "stale": {
+        "type": "boolean"
       }
     },
     "type": "object"
@@ -305,6 +311,9 @@
           "cocitation_truncated": {
             "type": "boolean"
           },
+          "corpus_fingerprint": {
+            "type": "string"
+          },
           "coupling_network": {
             "properties": {
               "links": {
@@ -383,6 +392,9 @@
           }
         },
         "type": "object"
+      },
+      "stale": {
+        "type": "boolean"
       }
     },
     "type": "object"
@@ -439,6 +451,9 @@
             },
             "type": "object"
           },
+          "corpus_fingerprint": {
+            "type": "string"
+          },
           "country_counts": {
             "items": {
               "properties": {
@@ -472,6 +487,9 @@
           }
         },
         "type": "object"
+      },
+      "stale": {
+        "type": "boolean"
       }
     },
     "type": "object"
@@ -509,6 +527,9 @@
             },
             "type": "array"
           },
+          "corpus_fingerprint": {
+            "type": "string"
+          },
           "schema_version": {
             "type": "string"
           },
@@ -534,6 +555,9 @@
           }
         },
         "type": "object"
+      },
+      "stale": {
+        "type": "boolean"
       }
     },
     "type": "object"
@@ -616,6 +640,9 @@
             },
             "type": "object"
           },
+          "corpus_fingerprint": {
+            "type": "string"
+          },
           "keyword_trends": {
             "items": {
               "properties": {
@@ -660,6 +687,9 @@
           }
         },
         "type": "object"
+      },
+      "stale": {
+        "type": "boolean"
       }
     },
     "type": "object"
@@ -680,6 +710,9 @@
       },
       "results": {
         "properties": {
+          "corpus_fingerprint": {
+            "type": "string"
+          },
           "cumulative": {
             "items": {
               "properties": {
@@ -789,6 +822,9 @@
           }
         },
         "type": "object"
+      },
+      "stale": {
+        "type": "boolean"
       }
     },
     "type": "object"

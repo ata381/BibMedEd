@@ -81,6 +81,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
   const [project, setProject] = useState<Project | null>(null);
   const [analyses, setAnalyses] = useState<Record<string, AnalysisData>>({});
+  const [incomplete, setIncomplete] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -93,21 +94,24 @@ export default function Dashboard() {
         if (ctrl.signal.aborted) return;
         setProject(proj.data);
         const results: Record<string, AnalysisData> = {};
+        let unavailable = false;
         for (const t of ANALYSIS_TYPES) {
           if (ctrl.signal.aborted) return;
           try {
             const r = await analysisApi.get(projectId, t);
+            if (r.data.stale) throw new Error("Stale analysis");
             results[t] = r.data.results as AnalysisData;
           } catch {
-            if (await fetchReadOnly()) continue;
+            if (await fetchReadOnly()) { unavailable = true; continue; }
             try {
               const r = await analysisApi.run(projectId, t);
               results[t] = r.data.results as AnalysisData;
-            } catch {}
+            } catch { unavailable = true; }
           }
         }
         if (ctrl.signal.aborted) return;
         setAnalyses(results);
+        setIncomplete(unavailable);
       } catch {
         if (!ctrl.signal.aborted) toast.error("Failed to load analysis data.");
       }
@@ -150,8 +154,8 @@ export default function Dashboard() {
         <Card>
           <EmptyState
             icon="chart"
-            title="No publications to analyze"
-            description="Run a search first to populate results, then come back here for analysis."
+            title={incomplete ? "Analysis needs refreshing" : "No publications to analyze"}
+            description={incomplete ? "Current analysis could not be loaded. Reload after the search finishes or ask the project owner to refresh the analysis." : "Run a search first to populate results, then come back here for analysis."}
             action={<Button onClick={() => router.push(`/projects/${projectId}/search`)}>Go to Search</Button>}
           />
         </Card>
@@ -165,15 +169,16 @@ export default function Dashboard() {
     <div className="space-y-8">
       <PageTitle project={project} />
 
+      {incomplete && <p role="status">Some analyses need refreshing and are hidden. Reload after the search finishes or ask the project owner to refresh them.</p>}
       <Tabs items={TABS} value={activeTab} onChange={setActiveTab} ariaLabel="Dashboard sections" />
 
       <section id={`panel-${activeTab}`} role="tabpanel" aria-labelledby={`tab-${activeTab}`} className="space-y-8">
         {show("overview") && (
           <StatRow ariaLabel="Corpus summary">
             <Stat label="Publications" value={totalPubs.toLocaleString()} note={`Included records, ${yearSpan}`} />
-            <Stat label="Unique authors" value={totalAuthors.toLocaleString()} note="After name normalisation" />
-            <Stat label="Total citations" value={totalCitations.toLocaleString()} note="Sum across included records" />
-            <Stat label="Keywords tracked" value={topKeywords.length.toString()} note="Distinct indexed terms" />
+            {analyses.authors && <Stat label="Unique authors" value={totalAuthors.toLocaleString()} note="After name normalisation" />}
+            {analyses.citations && <Stat label="Total citations" value={totalCitations.toLocaleString()} note="Sum across included records" />}
+            {analyses.keywords && <Stat label="Keywords tracked" value={topKeywords.length.toString()} note="Distinct indexed terms" />}
           </StatRow>
         )}
 
@@ -186,7 +191,7 @@ export default function Dashboard() {
             </Card>
           )}
 
-          {show("overview", "authors") && (
+          {show("overview", "authors") && analyses.authors && (
             <Card as="section" className={activeTab === "authors" ? "lg:col-span-3" : "lg:col-span-2"} aria-labelledby="table-authors">
               <CardHeader eyebrow="Table 1" title={<span id="table-authors">Top authors</span>} subtitle="Ranked by publications in the corpus." />
               <RankedBars
@@ -203,7 +208,7 @@ export default function Dashboard() {
             </Card>
           )}
 
-          {show("overview", "networks", "authors") && (
+          {show("overview", "networks", "authors") && analyses.authors && (
             <Card as="section" padding="none" className="lg:col-span-3 flex flex-col min-h-[440px] overflow-hidden" aria-labelledby="fig-network">
               <div className="p-5 md:p-6 pb-0">
                 <CardHeader eyebrow="Figure 2" title={<span id="fig-network">Network preview</span>} subtitle="Co-authorship clustering." className="mb-3" />
@@ -214,14 +219,14 @@ export default function Dashboard() {
             </Card>
           )}
 
-          {show("overview", "networks") && (
+          {show("overview", "networks") && analyses.keywords && (
             <Card as="section" className="lg:col-span-3" aria-labelledby="table-keywords">
               <CardHeader eyebrow="Table 3" title={<span id="table-keywords">Top keywords</span>} subtitle="Most frequent indexed terms." />
               <KeywordCloud keywords={topKeywords.slice(0, KEYWORD_LIMIT)} />
             </Card>
           )}
 
-          {show("overview", "citations") && (
+          {show("overview", "citations") && analyses.citations && (
             <Card as="section" className="lg:col-span-4" aria-labelledby="table-cited">
               <CardHeader eyebrow="Table 4" title={<span id="table-cited">Most cited publications</span>} subtitle="Citation counts from NIH iCite for PubMed records only; other sources may have no count." />
               <ol className="divide-y divide-divider">
