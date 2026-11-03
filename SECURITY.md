@@ -35,3 +35,24 @@ Out of scope:
 ## Hall of fame
 
 Researchers who responsibly disclose valid issues will be credited (with consent) in release notes and the advisory.
+
+## Dependency advisory assessments
+
+### GHSA-g3hv-75wg-m249 (reviewed 2026-11-04)
+
+The frontend overrides minimatch 10.x to patched 11.0.4 or later. This covers the
+copy used by typescript-eslint, which contained the affected preprocessing code.
+
+The remaining minimatch 3.1.5 copy is a development dependency of ESLint and its
+plugins. Its source has neither `firstPhasePreProcess`, `secondPhasePreProcess`
+nor the `optimizationLevel` preprocessing path described in the
+[upstream advisory](https://github.com/isaacs/minimatch/security/advisories/GHSA-g3hv-75wg-m249).
+The advisory database's `<11.0.1` range therefore overmatches this legacy copy.
+The legacy-version alert is assessed as inaccurate for this specific advisory;
+this is not a blanket exemption for other minimatch vulnerabilities. Keep its
+compatible callable API until the parent packages migrate. Reassess if the
+resolved major version or advisory scope changes. npm audit may continue to
+report this advisory and its dependent packages despite this assessment.
+
+The same audit also found GHSA-mrhx-c7xc-m3w5 in development-only Zod 4.6.5;
+the lockfile updates it to patched 4.6.7 within the parent's existing range.
