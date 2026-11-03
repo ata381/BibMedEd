@@ -86,6 +86,8 @@ class PublicationResponse(BaseModel):
         return "other"
 
 class PublicationListResponse(BaseModel):
+    zero_citation_count: int = 0
+    missing_citation_count: int = 0
     total: int
     excluded_count: int = 0
     items: list[PublicationResponse]

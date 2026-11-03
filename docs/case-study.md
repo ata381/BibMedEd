@@ -125,3 +125,5 @@ Your numbers will differ from the hypothetical figures above (PubMed and OpenAle
 ## Want a different worked example?
 
 If you've run a bibliometric study with BibMedEd, a one-page case-study contribution is one of the highest-leverage PRs you can send. See [CONTRIBUTING.md](https://github.com/ata381/BibMedEd/blob/master/CONTRIBUTING.md) — "Improve docs and examples". Real-world studies (with real numbers) double as marketing and as tutorial material; they will be linked from this page.
+
+Citation-threshold screening excludes only records with a recorded count at or below the threshold. Missing citation counts are kept. The confirmation dialog reports both counts across the whole project, and the methodology log records the threshold and how many records were kept for missing counts. Citation enrichment currently comes from NIH iCite for PubMed records. Older screening audit entries retain their original missing-count policy.

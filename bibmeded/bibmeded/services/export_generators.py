@@ -445,6 +445,8 @@ def _criteria_json(criteria: dict | None) -> str:
 
 
 def _criteria_text(criteria: dict | None) -> str:
+    if criteria and criteria.get("missing_count_policy") == "keep" and "citation_threshold" in criteria:
+        return f"recorded citation count at most {criteria['citation_threshold']} (missing counts kept)"
     if criteria and set(criteria) == {"citation_threshold"}:
         return f"citation count missing or at most {criteria['citation_threshold']}"
     return f"criteria {_criteria_json(criteria) or 'not recorded'}"
@@ -491,12 +493,16 @@ def _bulk_settings_text(reason: str | None, stage: str | None, reviewer: str | N
 def _bulk_step_lines(step: MethodologyStep, logged_rows: int) -> list[str]:
     params = step.parameters or {}
     criteria = {"citation_threshold": params["citation_threshold"]} if "citation_threshold" in params else None
+    if criteria and "missing_count_policy" in params:
+        criteria["missing_count_policy"] = params["missing_count_policy"]
     lines = [
         f"    {_utc_stamp(step.timestamp)} (run {params.get('run_id') or 'id not recorded'}): "
         f"{params.get('matched')} matched, {params.get('excluded')} excluded, {params.get('skipped')} skipped; "
         f"{_criteria_text(criteria)} "
         f"{_bulk_settings_text(params.get('reason'), params.get('screening_stage'), params.get('reviewer'))}"
     ]
+    if "skipped_missing_count" in params:
+        lines.append(f"      Kept for missing citation count: {params['skipped_missing_count']}")
     if logged_rows != params.get("excluded"):
         lines.append(
             f"      Note: {_plural(logged_rows, 'decision row')} {'carries' if logged_rows == 1 else 'carry'} "

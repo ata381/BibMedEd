@@ -147,7 +147,7 @@ def test_bulk_exclude_appends_one_decision_per_affected_publication(client, db):
     for decision in decisions:
         assert _snapshot(decision) == (False, None, None, True, "not_peer_reviewed", "title_abstract")
         assert decision.source == "bulk_exclude"
-        assert decision.criteria == {"citation_threshold": 0}
+        assert decision.criteria == {"citation_threshold": 0, "missing_count_policy": "keep"}
         assert decision.reviewer == "MB"
     assert len({d.decided_at for d in decisions}) == 1
     (run_id,) = {d.run_id for d in decisions}
@@ -194,7 +194,7 @@ def test_bulk_exclude_records_a_methodology_step_sharing_the_run_id(client, db):
     assert (step.source, step.records_in, step.records_out, step.records_affected) == ("bulk_exclude", 3, 1, 2)
     assert step.parameters == {
         "run_id": run_id, "scope": "project", "citation_threshold": 0, "matched": 2, "excluded": 2,
-        "skipped": 0, "reason": "non_english", "screening_stage": "title_abstract", "reviewer": "MB",
+        "skipped": 0, "skipped_missing_count": 0, "missing_count_policy": "keep", "reason": "non_english", "screening_stage": "title_abstract", "reviewer": "MB",
     }
 
 
@@ -409,3 +409,27 @@ def test_deleting_a_project_deletes_its_decisions(client, db):
 
     db.expire_all()
     assert _decisions(db, project_id) == []
+
+
+@pytest.mark.parametrize("threshold", [0, 5])
+def test_missing_citations_are_kept_and_reported(client, db, threshold):
+    project, pubs = _project_with_pubs(db, "missing-cites", count=4, citation_count=0)
+    pubs[1].citation_count = None
+    pubs[2].citation_count = threshold + 1
+    pubs[3].citation_count = None
+    pubs[3].excluded = True
+    db.commit()
+    preview = client.get(f"/api/projects/{project.id}/publications", params={"limit": 1}).json()
+    assert preview["zero_citation_count"] == 1
+    assert preview["missing_citation_count"] == 1
+    response = client.post(_bulk_url(project), json={"citation_threshold": threshold})
+    assert response.json()["excluded_count"] == 1
+    db.refresh(pubs[1])
+    assert pubs[1].excluded is False
+    assert [d.publication_id for d in _decisions(db, project.id)] == [pubs[0].id]
+    step, = _bulk_steps(db, project)
+    assert step.parameters["skipped_missing_count"] == 1
+    assert step.parameters["citation_threshold"] == threshold
+    exported = client.get(f"/api/projects/{project.id}/export/methodology").text
+    assert "Kept for missing citation count: 1" in exported
+    assert "missing counts kept" in exported

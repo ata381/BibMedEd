@@ -154,7 +154,7 @@ test.describe("bulk-exclude confirmation", () => {
       abstract: null,
       year: 2024,
       publication_type: "Article",
-      citation_count: i < 4 ? 0 : i,
+      citation_count: i === 4 ? null : i < 4 ? 0 : i,
       excluded: i === 0,
       exclusion_reason: i === 0 ? "other" : null,
       journal_name: null,
@@ -168,14 +168,15 @@ test.describe("bulk-exclude confirmation", () => {
       return route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ total: records.length, excluded_count: 1, items: records.slice(0, limit) }),
+        body: JSON.stringify({ total: 1200, excluded_count: 1, zero_citation_count: 3, missing_citation_count: 1100, items: records.slice(0, limit) }),
       });
     });
     const { dialog } = await openBulkExcludeDialog(page);
 
     await expect(dialog).toContainText("3 publications will be excluded");
     await expect(dialog.getByRole("button", { name: "Exclude 3 publications" })).toBeVisible();
-    expect(limits).toContain("500");
+    expect(limits).toContain("1");
+    await expect(dialog).toContainText("1,100 publications with no citation count will be left unchanged");
   });
 
   test("confirming excludes the uncited publications", async ({ page }) => {

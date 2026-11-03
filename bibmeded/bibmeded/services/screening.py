@@ -105,7 +105,7 @@ def exclude_by_citation_threshold(
     target: ScreeningState,
     reviewer: str | None,
 ) -> int:
-    """Exclude every included publication whose citation count is missing or at
+    """Exclude every included publication whose recorded citation count is at
     most ``citation_threshold``. Logs one decision per excluded publication and
     one ``bulk_exclude`` methodology step for the request, even when nothing
     matched, all sharing a fresh ``run_id``. Returns the number excluded. Does
@@ -113,12 +113,19 @@ def exclude_by_citation_threshold(
     included_before = db.scalar(
         select(func.count(Publication.id)).where(Publication.query_id.in_(query_ids), Publication.excluded == False)
     )
+    skipped_missing_count = db.scalar(
+        select(func.count(Publication.id)).where(
+            Publication.query_id.in_(query_ids), Publication.excluded.is_(False),
+            Publication.citation_count.is_(None),
+        )
+    )
     rows = db.execute(
         select(Publication.id, Publication.exclusion_reason, Publication.screening_stage)
         .where(
             Publication.query_id.in_(query_ids),
             Publication.excluded == False,
-            Publication.citation_count.is_(None) | (Publication.citation_count <= citation_threshold),
+            Publication.citation_count.is_not(None),
+            Publication.citation_count <= citation_threshold,
         )
         .order_by(Publication.id)
         # FOR NO KEY UPDATE on Postgres: only non-key columns change, and plain
@@ -158,7 +165,7 @@ def exclude_by_citation_threshold(
                     "reviewer": reviewer,
                     "source": BULK_EXCLUDE_SOURCE,
                     "run_id": run_id,
-                    "criteria": {"citation_threshold": citation_threshold},
+                    "criteria": {"citation_threshold": citation_threshold, "missing_count_policy": "keep"},
                     **_decision_values(ScreeningState(False, row.exclusion_reason, row.screening_stage), target),
                 }
                 for row in excluded_rows
@@ -174,6 +181,7 @@ def exclude_by_citation_threshold(
             "matched": len(rows),
             "excluded": len(excluded_rows),
             "skipped": len(rows) - len(excluded_rows),
+            "skipped_missing_count": skipped_missing_count,
         },
         included_before=included_before,
         target=target,
@@ -205,7 +213,7 @@ def _bulk_exclude_step(
         step_order=(last_step or 0) + 1,
         phase=BULK_EXCLUDE_PHASE,
         source=BULK_EXCLUDE_SOURCE,
-        action=f"Bulk exclusion of included records with citation count missing or at most {citation_threshold}",
+        action=f"Bulk exclusion of included records with recorded citation count at most {citation_threshold}",
         records_in=included_before,
         records_out=included_before - counts["excluded"],
         records_affected=counts["excluded"],
@@ -213,6 +221,7 @@ def _bulk_exclude_step(
             "run_id": run_id,
             "scope": "project",
             "citation_threshold": citation_threshold,
+            "missing_count_policy": "keep",
             **counts,
             "reason": target.exclusion_reason,
             "screening_stage": target.screening_stage,

@@ -2,64 +2,36 @@
 
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { publicationsApi, Publication, EXCLUSION_REASON_LABELS } from "@/lib/api";
+import { publicationsApi, EXCLUSION_REASON_LABELS } from "@/lib/api";
 import { ConfirmDialog } from "@/components/ui";
 
 const CITATION_THRESHOLD = 0;
 const BULK_REASON = "other" as const;
-// The list endpoint caps `limit` at 500 and has no unique sort key, so offset
-// paging can skip or repeat tied rows; above this we can't count exactly.
-const MAX_COUNTABLE = 500;
-
-type Preview = { status: "counting" } | { status: "ready"; count: number } | { status: "unavailable" };
-
-function isBulkExcludable(pub: Publication) {
-  return !pub.excluded && (pub.citation_count ?? 0) <= CITATION_THRESHOLD;
-}
+type Preview = { status: "counting" } | { status: "ready"; count: number; missing: number } | { status: "unavailable" };
 
 function plural(count: number, noun: string) {
-  return `${count.toLocaleString()} ${noun}${count === 1 ? "" : "s"}`;
+  return count.toLocaleString() + " " + noun + (count === 1 ? "" : "s");
 }
 
 interface BulkExcludeDialogProps {
   open: boolean;
   projectId: number;
-  total: number;
-  /** Publications already on screen; used directly when they cover the whole project. */
-  loaded: Publication[];
   onCancel: () => void;
   onExcluded: () => void;
 }
 
-export function BulkExcludeDialog({ open, projectId, total, loaded, onCancel, onExcluded }: BulkExcludeDialogProps) {
-  const [fetched, setFetched] = useState<number | "failed" | null>(null);
-  const coversProject = loaded.length >= total;
-  const needsFetch = !coversProject && total <= MAX_COUNTABLE;
-
+export function BulkExcludeDialog({ open, projectId, onCancel, onExcluded }: BulkExcludeDialogProps) {
+  const [preview, setPreview] = useState<Preview>({ status: "counting" });
   useEffect(() => {
-    if (!open || !needsFetch) return;
+    if (!open) return;
     let stale = false;
-    publicationsApi
-      .list(projectId, { sort_by: "citation_count", order: "asc", limit: MAX_COUNTABLE, offset: 0 })
-      .then((res) => {
-        if (!stale) setFetched(res.data.items.filter(isBulkExcludable).length);
-      })
-      .catch(() => {
-        if (!stale) setFetched("failed");
-      });
-    return () => {
-      stale = true;
-      setFetched(null);
-    };
-  }, [open, needsFetch, projectId]);
-
-  const preview: Preview = coversProject
-    ? { status: "ready", count: loaded.filter(isBulkExcludable).length }
-    : !needsFetch || fetched === "failed"
-      ? { status: "unavailable" }
-      : fetched === null
-        ? { status: "counting" }
-        : { status: "ready", count: fetched };
+    publicationsApi.list(projectId, { limit: 1 }).then((res) => {
+      if (!stale) setPreview({ status: "ready", count: res.data.zero_citation_count, missing: res.data.missing_citation_count });
+    }).catch(() => {
+      if (!stale) setPreview({ status: "unavailable" });
+    });
+    return () => { stale = true; setPreview({ status: "counting" }); };
+  }, [open, projectId]);
 
   const handleConfirm = async () => {
     try {
@@ -93,6 +65,11 @@ export function BulkExcludeDialog({ open, projectId, total, loaded, onCancel, on
                 citations.
               </>
             )}
+          </p>
+          <p>
+            {preview.status === "ready"
+              ? plural(preview.missing, "publication") + " with no citation count will be left unchanged."
+              : "Publications with no citation count will be left unchanged."}
           </p>
           {count !== 0 && (
             <p>

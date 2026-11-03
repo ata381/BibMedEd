@@ -54,6 +54,9 @@ def list_publications(project_id: int, sort_by: str = Query("year", json_schema_
     base_query = db.query(Publication).options(joinedload(Publication.authors), joinedload(Publication.journal)).filter(Publication.query_id.in_(query_ids))
     total = base_query.count()
     excluded_count = base_query.filter(Publication.excluded == True).count()
+    included = base_query.filter(Publication.excluded.is_(False))
+    zero_citation_count = included.filter(Publication.citation_count == 0).count()
+    missing_citation_count = included.filter(Publication.citation_count.is_(None)).count()
     sort_col = getattr(Publication, sort_by, Publication.year)
     if order == "desc":
         sort_col = sort_col.desc()
@@ -80,7 +83,8 @@ def list_publications(project_id: int, sort_by: str = Query("year", json_schema_
             logger.warning("Skipping malformed publication id=%s: %s", pub.id, exc, exc_info=True)
     if skipped:
         logger.info("list_publications: %d malformed publications skipped out of %d returned", skipped, len(publications))
-    return PublicationListResponse(total=total, excluded_count=excluded_count, items=items)
+    return PublicationListResponse(total=total, excluded_count=excluded_count, items=items,
+                                   zero_citation_count=zero_citation_count, missing_citation_count=missing_citation_count)
 
 
 @router.post("/bulk-exclude", response_model=BulkExcludeResponse)
@@ -90,7 +94,7 @@ def bulk_exclude(
     reviewer: ReviewerLabel = None,
     db: Session = Depends(get_db),
 ):
-    """Exclude all publications with citation_count at or below the threshold; stamps
+    """Exclude publications with a known citation_count at or below the threshold; stamps
     every affected row with the supplied PRISMA exclusion reason and screening stage
     (stage rule in ``schemas.publication._StagedExclusionRequest``) and logs one
     screening decision per excluded publication."""
