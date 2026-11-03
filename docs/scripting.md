@@ -56,8 +56,12 @@ When the API is running locally:
 Use the raw spec with [`openapi-generator`](https://openapi-generator.tech/) to generate a
 typed client in Python, TypeScript, R, or any other supported language.
 
-## Versioning contract
+## Example Jupyter Notebook
 
+For a complete, runnable example, see [`examples/sample_project_api.ipynb`](https://github.com/ata381/BibMedEd/blob/master/examples/sample_project_api.ipynb).
+
+## Versioning contract
+cd
 Every analysis response carries a `schema_version` field. As of v0.2.0 the version is
 `"1.0"`. Additive changes (new optional keys on existing endpoints) do not bump the version;
 breaking changes do. Pin against this field in any downstream pipeline you build.

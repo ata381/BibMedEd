@@ -42,8 +42,8 @@ ReviewerLabel = Annotated[
 ]
 
 @router.get("", response_model=PublicationListResponse)
-def list_publications(project_id: int, sort_by: str = Query("year", enum=["year", "title", "citation_count"]),
-    order: str = Query("desc", enum=["asc", "desc"]), limit: int = Query(50, ge=1, le=500),
+def list_publications(project_id: int, sort_by: str = Query("year", json_schema_extra={"enum": ["year", "title", "citation_count"]}),
+    order: str = Query("desc", json_schema_extra={"enum": ["asc", "desc"]}), limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0), db: Session = Depends(get_db)):
     project = db.get(SearchProject, project_id)
     if not project:
