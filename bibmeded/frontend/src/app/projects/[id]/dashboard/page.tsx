@@ -223,7 +223,7 @@ export default function Dashboard() {
 
           {show("overview", "citations") && (
             <Card as="section" className="lg:col-span-4" aria-labelledby="table-cited">
-              <CardHeader eyebrow="Table 4" title={<span id="table-cited">Most cited publications</span>} subtitle="Citation counts as reported by the source database." />
+              <CardHeader eyebrow="Table 4" title={<span id="table-cited">Most cited publications</span>} subtitle="Citation counts from NIH iCite for PubMed records only; other sources may have no count." />
               <ol className="divide-y divide-divider">
                 {mostCited.slice(0, TOP_N).map((c, i) => (
                   <li key={`${c.pmid}-${i}`} className="grid grid-cols-[2rem_1fr_auto] gap-x-4 py-3.5 items-start">

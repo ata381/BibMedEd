@@ -219,8 +219,6 @@ export default function ResultsReview() {
         <BulkExcludeDialog
           open={bulkExcludeOpen}
           projectId={projectId}
-          total={total}
-          loaded={publications}
           onCancel={() => setBulkExcludeOpen(false)}
           onExcluded={() => {
             setBulkExcludeOpen(false);

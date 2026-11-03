@@ -330,6 +330,8 @@ export async function installMockApi(page: Page, options: MockApiOptions = {}) {
     if (pathname === "/api/projects/1/publications" && method === "GET") {
       return json(route, {
         total: publications.length + 1,
+        zero_citation_count: uncitedExcluded ? 0 : 1,
+        missing_citation_count: 0,
         excluded_count: (exclusionReason ? 1 : 0) + (uncitedExcluded ? 1 : 0),
         items: [
           ...publications.map((publication) =>
