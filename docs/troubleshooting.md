@@ -120,10 +120,10 @@ Lens.org is the only built-in source that needs a key. Without one, BibMedEd ref
 {"detail": "Lens searches require BIBMEDED_LENS_API_KEY"}
 ```
 
-The web app only shows a general message:
+The web app displays the API error detail when available:
 
 ```text
-Could not start search. Is the backend running?
+Lens searches require BIBMEDED_LENS_API_KEY
 ```
 
 The command line prints `Lens searches require BIBMEDED_LENS_API_KEY`, and `bibmeded sources` lists Lens as `missing BIBMEDED_LENS_API_KEY`.
@@ -138,7 +138,7 @@ The search page shows `0 publications ready.` and the results page says "No publ
 2. **PubMed syntax sent to another database.** Field tags such as `[Mesh]`, `[tiab]` and `[PDAT]` only work in PubMed. OpenAlex and Lens.org take plain keywords combined with `AND`, `OR` and `NOT`. Remove the tags, or switch the source to PubMed.
 
 CrossRef and Semantic Scholar are a different case: they run a free-text relevance search and do not apply `AND`, `OR` and `NOT` as Boolean logic. With them, the usual problem is the opposite of zero results: a broad set of loosely related records that fills the 2,000-record cap. For a precise Boolean strategy, use PubMed, OpenAlex or Lens.org.
-3. **Advanced Query (Raw) mode.** For PubMed, the year range is part of the query text: it is the `[PDAT]` clause the Query Builder adds. In raw mode, type it yourself. For the other sources, the year fields are hidden in raw mode, but the years you last set in the Query Builder are still applied. Switch back to the Query Builder to check them.
+3. **Advanced Query (Raw) mode.** For PubMed, the year range is part of the query text: it is the `[PDAT]` clause the Query Builder adds. In raw mode, type it yourself. Raw mode sends no separate year filters for any source. Use the Query Builder to apply its year fields; any date restrictions written into the raw query itself remain part of that query.
 4. **Test the count without fetching anything.** From the command line, `bibmeded search "your query" --source openalex --dry-run` prints `Estimated results: N`. The dry run ignores year limits, so a large number here and 0 in the app points to the years.
 
 ### Did my search hit the 2,000-record cap?
