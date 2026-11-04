@@ -7,6 +7,29 @@ from collections.abc import AsyncGenerator
 
 OPENALEX_API = "https://api.openalex.org"
 
+COUNTRY_NAMES = {
+    "US": "USA", "GB": "UK", "CN": "China", "DE": "Germany", "JP": "Japan",
+    "CA": "Canada", "AU": "Australia", "FR": "France", "IT": "Italy", "ES": "Spain",
+    "KR": "South Korea", "IN": "India", "BR": "Brazil", "NL": "Netherlands", "TR": "Turkey",
+    "SE": "Sweden", "CH": "Switzerland", "IR": "Iran", "TW": "Taiwan", "SA": "Saudi Arabia",
+    "SG": "Singapore", "BE": "Belgium", "DK": "Denmark", "NO": "Norway", "FI": "Finland",
+    "AT": "Austria", "PL": "Poland", "IL": "Israel", "PT": "Portugal", "IE": "Ireland",
+    "NZ": "New Zealand", "GR": "Greece", "CZ": "Czech Republic", "TH": "Thailand", "MY": "Malaysia",
+    "MX": "Mexico", "EG": "Egypt", "ZA": "South Africa", "PK": "Pakistan", "CO": "Colombia",
+    "CL": "Chile", "AR": "Argentina", "ID": "Indonesia", "NG": "Nigeria", "RU": "Russia",
+    "RO": "Romania", "HU": "Hungary",
+}
+
+
+def _institution_country(institution: dict) -> str | None:
+    code = institution.get("country_code")
+    if not isinstance(code, str):
+        return None
+    code = code.strip().upper()
+    if len(code) != 2 or not code.isascii() or not code.isalpha():
+        return None
+    return COUNTRY_NAMES.get(code, code)
+
 
 class OpenAlexAdapter(BaseSourceAdapter):
     name = "openalex"
@@ -98,9 +121,13 @@ class OpenAlexAdapter(BaseSourceAdapter):
             name = author_info.get("display_name", "")
             orcid_raw = author_info.get("orcid")
             orcid = orcid_raw.replace("https://orcid.org/", "") if orcid_raw else None
-            institutions = authorship.get("institutions", [])
-            affiliation = institutions[0]["display_name"] if institutions else None
-            authors.append(RawAuthor(name=name, orcid=orcid, affiliation=affiliation))
+            institutions = authorship.get("institutions") or []
+            institution = institutions[0] if institutions else {}
+            country = _institution_country(institution)
+            affiliation = institution.get("display_name")
+            if affiliation and country:
+                affiliation = f"{affiliation}, {country}"
+            authors.append(RawAuthor(name=name, orcid=orcid, affiliation=affiliation, country=country))
 
         abstract = self._reconstruct_abstract(work.get("abstract_inverted_index"))
         keywords = [kw["display_name"] for kw in work.get("keywords", [])]

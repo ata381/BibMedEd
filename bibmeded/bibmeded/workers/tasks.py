@@ -225,7 +225,7 @@ def _attach_authors(
             if aff is None:
                 aff = Affiliation(
                     name=author_data.affiliation,
-                    country=extract_country(author_data.affiliation),
+                    country=author_data.country or extract_country(author_data.affiliation),
                     name_normalized=af_norm,
                 )
                 db.add(aff)

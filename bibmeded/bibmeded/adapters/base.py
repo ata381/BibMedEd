@@ -8,6 +8,7 @@ class RawAuthor:
     name: str
     orcid: str | None = None
     affiliation: str | None = None
+    country: str | None = None
 
 
 @dataclass
