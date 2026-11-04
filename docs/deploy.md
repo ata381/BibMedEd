@@ -116,7 +116,7 @@ cp .env.example .env
 | `POSTGRES_PASSWORD` | `bibmeded` | Database password |
 | `POSTGRES_DB` | `bibmeded` | Database name |
 
-All defaults work out of the box — no `.env` file is required. `docker-compose.yml` passes the `BIBMEDED_*` source settings above into both the `api` and `worker` containers; `BIBMEDED_READ_ONLY` goes to the `api` only. The PubMed rate a search used is recorded in its methodology step and printed in the methodology export as "Request rate limit".
+All defaults work out of the box — no `.env` file is required. `docker-compose.yml` passes the `BIBMEDED_*` source settings above into both the `api` and `worker` containers; `BIBMEDED_READ_ONLY` goes to the `api` only. PubMed workers use a shared Redis budget per NCBI API key, with one shared bucket for searches without a key. Search and fetch requests both draw from that budget, regardless of worker concurrency. Configure all workers sharing a key to use the same Redis and rate. Redis failure stops outbound PubMed requests rather than reverting to independent limits. The methodology step and export record the rate and shared scope. Standalone CLI searches keep local pacing and must be coordinated separately with other tools using the same key or network.
 
 ## Stopping
 

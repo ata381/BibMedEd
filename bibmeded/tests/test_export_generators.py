@@ -791,6 +791,13 @@ class TestGenerateMethodologyStudiesIncluded:
         ]
         assert "Request rate limit: 0.5 requests/s" in generate_methodology("Slow Project", steps)
 
+    def test_search_step_reports_shared_rate_scope(self):
+        steps = [make_step(query_id=1, step_order=1, phase="search", records_in=0, records_out=1,
+                           parameters={"rate_limit_per_second": 3, "rate_limit_scope": "shared_redis_per_key"})]
+        text = generate_methodology("Shared rate", steps)
+        assert "Request rate limit: 3 requests/s" in text
+        assert "Request rate scope: shared across workers per NCBI key" in text
+
     def test_search_step_without_rate_omits_rate_line(self):
         steps = [make_step(query_id=1, step_order=1, phase="search", records_out=5, parameters={"query": "x"})]
         assert "Request rate limit" not in generate_methodology("No Rate Project", steps)

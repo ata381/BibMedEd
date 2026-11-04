@@ -1,4 +1,5 @@
 import asyncio
+import math
 from dataclasses import dataclass, field
 import httpx
 from lxml import etree
@@ -44,14 +45,19 @@ ESEARCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 EFETCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
 
 class PubMedClient:
-    def __init__(self, api_key: str = "", rate_limit: float = 3.0, email: str = ""):
-        if rate_limit <= 0:
+    def __init__(self, api_key: str = "", rate_limit: float = 3.0, email: str = "", redis_url: str | None = None):
+        if not math.isfinite(rate_limit) or rate_limit <= 0:
             raise ValueError("rate_limit must be greater than 0")
         self.api_key = api_key.strip()
         self.email = email.strip()
         self.rate_limit = rate_limit
         self._client = httpx.AsyncClient(timeout=30.0)
         self._last_request_time: float = 0.0
+        self._throttle_lock = asyncio.Lock()
+        self._shared_limiter = None
+        if redis_url:
+            from bibmeded.services.pubmed_rate_limit import RedisPubMedLimiter
+            self._shared_limiter = RedisPubMedLimiter(redis_url, self.api_key, rate_limit)
 
     async def __aenter__(self):
         return self
@@ -61,13 +67,16 @@ class PubMedClient:
         return False
 
     async def _throttle(self) -> None:
-        """Enforce rate limiting between consecutive API requests."""
-        now = asyncio.get_running_loop().time()
-        min_interval = 1.0 / self.rate_limit
-        elapsed = now - self._last_request_time
-        if elapsed < min_interval:
-            await asyncio.sleep(min_interval - elapsed)
-        self._last_request_time = asyncio.get_running_loop().time()
+        async with self._throttle_lock:
+            if self._shared_limiter is not None:
+                await self._shared_limiter.acquire()
+                return
+            now = asyncio.get_running_loop().time()
+            min_interval = 1.0 / self.rate_limit
+            elapsed = now - self._last_request_time
+            if elapsed < min_interval:
+                await asyncio.sleep(min_interval - elapsed)
+            self._last_request_time = asyncio.get_running_loop().time()
 
     def _request_params(self) -> dict[str, str]:
         params = {"tool": "bibmeded"}
@@ -166,4 +175,8 @@ class PubMedClient:
         return records
 
     async def close(self):
-        await self._client.aclose()
+        try:
+            await self._client.aclose()
+        finally:
+            if self._shared_limiter is not None:
+                await self._shared_limiter.close()
