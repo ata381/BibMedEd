@@ -252,7 +252,7 @@ def test_put_screening_rejects_invalid_bodies(client, db, body):
 
 def test_put_screening_returns_404_for_missing_or_cross_project_resources(client, db):
     project, (pub,) = _project_with_pubs(db, "put-screening-scope")
-    other, (other_pub,) = _project_with_pubs(db, "put-screening-other")
+    _, (other_pub,) = _project_with_pubs(db, "put-screening-other")
     body = {"excluded": True}
 
     assert client.put(f"/api/projects/999999/publications/{pub.id}/screening", json=body).status_code == 404
