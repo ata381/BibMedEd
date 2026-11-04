@@ -182,6 +182,102 @@ def _exclude_url(project, pub):
     return f"/api/projects/{project.id}/publications/{pub.id}/exclude"
 
 
+def _screening_url(project, pub):
+    return f"/api/projects/{project.id}/publications/{pub.id}/screening"
+
+
+def test_put_screening_excludes_with_defaults_and_reincludes_cleanly(client, db):
+    project, (pub,) = _project_with_pubs(db, "put-screening-state")
+
+    excluded = client.put(_screening_url(project, pub), json={"excluded": True})
+    assert excluded.status_code == 200
+    assert excluded.json() == {
+        "id": pub.id,
+        "excluded": True,
+        "exclusion_reason": "other",
+        "screening_stage": "title_abstract",
+    }
+
+    included = client.put(
+        _screening_url(project, pub),
+        json={"excluded": False, "reason": "wrong_outcome", "screening_stage": "full_text"},
+    )
+    assert included.json() == {
+        "id": pub.id,
+        "excluded": False,
+        "exclusion_reason": None,
+        "screening_stage": None,
+    }
+
+
+def test_put_screening_changes_stage_directly(client, db):
+    project, (pub,) = _project_with_pubs(db, "put-screening-stage")
+    url = _screening_url(project, pub)
+    client.put(url, json={"excluded": True, "reason": "wrong_outcome"})
+
+    changed = client.put(
+        url,
+        json={"excluded": True, "reason": "wrong_outcome", "screening_stage": "full_text"},
+    )
+
+    assert changed.json()["screening_stage"] == "full_text"
+    db.refresh(pub)
+    assert (pub.excluded, pub.exclusion_reason, pub.screening_stage) == (True, "wrong_outcome", "full_text")
+
+
+def test_put_screening_fulltext_unavailable_defaults_to_full_text(client, db):
+    project, (pub,) = _project_with_pubs(db, "put-screening-unavailable")
+    response = client.put(
+        _screening_url(project, pub), json={"excluded": True, "reason": "fulltext_unavailable"}
+    )
+    assert response.json()["screening_stage"] == "full_text"
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {},
+        {"excluded": True, "reason": "made_up_reason"},
+        {"excluded": True, "screening_stage": "abstract"},
+        {"excluded": True, "reason": "fulltext_unavailable", "screening_stage": "title_abstract"},
+    ],
+)
+def test_put_screening_rejects_invalid_bodies(client, db, body):
+    project, (pub,) = _project_with_pubs(db, f"put-screening-invalid-{len(str(body))}")
+    response = client.put(_screening_url(project, pub), json=body)
+    assert response.status_code == 422
+    db.refresh(pub)
+    assert pub.excluded is False
+
+
+def test_put_screening_returns_404_for_missing_or_cross_project_resources(client, db):
+    project, (pub,) = _project_with_pubs(db, "put-screening-scope")
+    other, (other_pub,) = _project_with_pubs(db, "put-screening-other")
+    body = {"excluded": True}
+
+    assert client.put(f"/api/projects/999999/publications/{pub.id}/screening", json=body).status_code == 404
+    assert client.put(f"/api/projects/{project.id}/publications/999999/screening", json=body).status_code == 404
+    assert client.put(_screening_url(project, other_pub), json=body).status_code == 404
+    db.refresh(other_pub)
+    assert other_pub.excluded is False
+
+
+def test_put_screening_does_not_change_patch_toggle_behavior(client, db):
+    project, (pub,) = _project_with_pubs(db, "put-screening-patch-compat")
+    url = _exclude_url(project, pub)
+
+    excluded = client.patch(url, json={"reason": "non_english"})
+    included = client.patch(url, json={"reason": "wrong_outcome", "screening_stage": "full_text"})
+
+    assert excluded.json()["excluded"] is True
+    assert included.json() == {
+        "id": pub.id,
+        "excluded": False,
+        "exclusion_reason": None,
+        "screening_stage": None,
+    }
+
+
 def test_toggle_exclude_without_stage_defaults_to_title_abstract(client, db):
     project, (pub,) = _project_with_pubs(db, "stage-default")
     r = client.patch(_exclude_url(project, pub), json={"reason": "non_english"})
