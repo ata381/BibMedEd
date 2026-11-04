@@ -76,7 +76,7 @@ def test_seeded_exclusion_is_logged_as_a_sample_seed_decision(db):
         select(Publication).where(Publication.project_id == project.id, Publication.excluded == True)
     ).one()
     assert decision.publication_id == excluded.id
-    assert excluded.pmid == "sample-005"
+    assert excluded.source_id == "sample-005"
     assert decision.source == "sample_seed"
     assert decision.reviewer is None
     assert decision.criteria is None

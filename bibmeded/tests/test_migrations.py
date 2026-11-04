@@ -21,6 +21,28 @@ from bibmeded.services.sample_project import (
 ALEMBIC_DIR = Path(__file__).resolve().parents[1] / "alembic"
 LOSSY_DOWNGRADE_ENV_VAR = "BIBMEDED_ALLOW_LOSSY_DOWNGRADE"
 
+
+def test_0007_preserves_native_ids_and_real_pmids(sqlite_db):
+    with sqlite_db.begin() as conn:
+        conn.execute(sa.text('''CREATE TABLE publications (
+            id INTEGER PRIMARY KEY, project_id INTEGER NOT NULL,
+            pmid VARCHAR(50) NOT NULL, source_database VARCHAR(50) NOT NULL,
+            CONSTRAINT uq_publications_project_pmid UNIQUE (project_id, pmid))'''))
+        conn.execute(sa.text("INSERT INTO publications VALUES (1, 1, '777', 'pubmed'), (2, 1, 'W123', 'openalex')"))
+    config = _alembic_config()
+    command.stamp(config, "0006_screening_decisions")
+    command.upgrade(config, "head")
+    table = sa.Table("publications", sa.MetaData(), autoload_with=sqlite_db)
+    with sqlite_db.connect() as conn:
+        rows = conn.execute(sa.select(table).order_by(table.c.id)).mappings().all()
+    assert rows[0]["pmid"] == "777"
+    assert rows[1]["pmid"] is None
+    assert rows[1]["source_id"] == "W123"
+    assert rows[1]["external_ids"] == {"openalex": "W123"}
+    command.downgrade(config, "0006_screening_decisions")
+    with sqlite_db.connect() as conn:
+        assert conn.execute(sa.text("SELECT pmid FROM publications ORDER BY id")).scalars().all() == ["777", "W123"]
+
 PRE_0005_DDL = [
     "CREATE TABLE search_projects (id INTEGER PRIMARY KEY, name VARCHAR(255) NOT NULL, sample_key VARCHAR(100))",
     """

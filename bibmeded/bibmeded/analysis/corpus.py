@@ -16,7 +16,7 @@ def corpus_fingerprint(db: Session, project_id: int) -> str:
             .populate_existing().order_by(Publication.id).all())
     ids = {p.id for p in pubs}
     records = [
-        [p.id, p.pmid, p.doi, p.title, p.year, p.citation_count, p.external_references,
+        [p.id, p.pmid, p.doi, p.title, p.year, p.citation_count, p.external_references, p.external_ids,
          [p.journal.id, p.journal.name, p.journal.issn] if p.journal else None,
          [[a.id, a.name, a.orcid, sorted([f.id, f.name, f.country] for f in a.affiliations)] for a in p.authors],
          sorted([k.id, k.term, k.type] for k in p.keywords),

@@ -18,13 +18,16 @@ class Publication(Base):
     __table_args__ = (
         UniqueConstraint("project_id", "pmid", name="uq_publications_project_pmid"),
         UniqueConstraint("project_id", "doi", name="uq_publications_project_doi"),
+        UniqueConstraint("project_id", "source_database", "source_id", name="uq_publications_project_source"),
         CheckConstraint(
             "screening_stage IS NULL OR screening_stage IN ('title_abstract', 'full_text')",
             name="ck_publications_screening_stage",
         ),
     )
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    pmid: Mapped[str] = mapped_column(String(50), index=True)
+    pmid: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
+    external_ids: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    source_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     # `doi` is the cross-source dedup key and the coupling/co-citation join target —
     # indexed so the bibliographic-coupling lookup at analysis time is sublinear.
     doi: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)

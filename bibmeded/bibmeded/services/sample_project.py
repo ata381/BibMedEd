@@ -125,7 +125,7 @@ def _create_sample_project(db: Session) -> SearchProject:
             )
 
         publications = {
-            publication.pmid: publication
+            (publication.source_id or publication.pmid): publication
             for publication in db.query(Publication)
             .filter(Publication.project_id == project.id)
             .all()

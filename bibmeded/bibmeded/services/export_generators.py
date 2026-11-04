@@ -80,6 +80,8 @@ EXPORT_SCHEMA_VERSION = "1.0"
 def _publication_to_dict(pub: Publication) -> dict:
     return {
         "pmid": pub.pmid,
+        "source_id": pub.source_id,
+        "external_ids": pub.external_ids or {},
         "doi": pub.doi,
         "title": pub.title,
         "abstract": pub.abstract,
@@ -146,7 +148,7 @@ def generate_ris(pubs: list[Publication]) -> str:
             lines.append(f"PY  - {pub.year}")
         if pub.doi:
             lines.append(f"DO  - {_ris_safe(pub.doi)}")
-        lines.append(f"AN  - {pub.pmid}")
+        lines.append(f"AN  - {pub.source_id or pub.pmid or ''}")
         if pub.abstract:
             lines.append(f"AB  - {_ris_safe(pub.abstract)}")
         for kw in pub.keywords:
@@ -249,6 +251,9 @@ def _wos_corpus_index(pubs: list[Publication]) -> dict[str, Publication]:
         index[pub.doi.lower()] = pub
         if pub.pmid:
             index[pub.pmid.lower()] = pub
+        for identifier in (pub.external_ids or {}).values():
+            if isinstance(identifier, str) and identifier:
+                index[identifier.lower()] = pub
     return index
 
 
@@ -337,8 +342,8 @@ def _wos_record(pub: Publication, corpus_index: dict[str, Publication]) -> list[
         *_wos_tag("EI", [journal.e_issn or ""] if journal else []),
         *_wos_tag("PY", [str(pub.year)] if pub.year else []),
         *_wos_tag("DI", [pub.doi or ""]),
-        *_wos_tag("UT", [f"{pub.source_database.upper()}:{pub.pmid}"] if pub.pmid else []),
-        *_wos_tag("PM", [pub.pmid] if pub.source_database == "pubmed" else []),
+        *_wos_tag("UT", [f"{pub.source_database.upper()}:{pub.source_id or pub.pmid}"] if (pub.source_id or pub.pmid) else []),
+        *_wos_tag("PM", [pub.pmid] if pub.pmid and pub.pmid.isascii() and pub.pmid.isdecimal() and pub.source_database != "sample" else []),
         "ER",
         "",
     ]
