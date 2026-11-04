@@ -117,7 +117,8 @@ def test_openalex_fetch(adapter):
     assert len(r.authors) == 1
     assert r.authors[0].name == "Jane Doe"
     assert r.authors[0].orcid == "0000-0001-2345-6789"
-    assert r.authors[0].affiliation == "Harvard Medical School"
+    assert r.authors[0].affiliation == "Harvard Medical School, USA"
+    assert r.authors[0].country == "USA"
     assert r.keywords == ["medical education"]
     assert "AI is great" == r.abstract
 
@@ -125,3 +126,32 @@ def test_openalex_fetch(adapter):
 def test_openalex_methodology_label():
     a = OpenAlexAdapter()
     assert a.methodology_label() == "OpenAlex API"
+
+
+@pytest.mark.parametrize("code,expected", [("US", "USA"), ("GB", "UK"), ("KR", "South Korea"),
+    ("ke", "KE"), (None, None), ("", None), ("invalid", None)])
+def test_openalex_country_survives_persistence_and_analysis(adapter, db, code, expected):
+    from copy import deepcopy
+    from bibmeded.models import SearchProject, SearchQuery, Publication
+    from bibmeded.workers.tasks import _persist_records
+    from bibmeded.analysis.countries import analyze_countries
+    work = deepcopy(WORK_DETAIL)
+    work["authorships"][0]["institutions"][0]["country_code"] = code
+    record = adapter._to_raw(work)
+    project = SearchProject(name="OpenAlex country fixture")
+    db.add(project)
+    db.flush()
+    query = SearchQuery(project_id=project.id, query_string="fixture", database="openalex")
+    db.add(query)
+    db.flush()
+    assert _persist_records(db, [record], query.id, project.id).persisted == 1
+    pub = db.query(Publication).filter_by(project_id=project.id).one()
+    assert pub.authors[0].affiliations[0].country == expected
+    assert analyze_countries(db, project.id)["country_counts"] == (
+        [{"country": expected, "count": 1}] if expected else [])
+
+
+def test_openalex_absent_institutions_do_not_invent_country(adapter):
+    record = adapter._to_raw({"id": "W1", "authorships": [{"author": {"display_name": "Jane"}, "institutions": None}]})
+    assert record.authors[0].affiliation is None
+    assert record.authors[0].country is None
