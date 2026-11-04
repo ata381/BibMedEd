@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import axios from "axios";
 import toast from "react-hot-toast";
 import { searchApi, adaptersApi, projectsApi, AdapterInfo } from "@/lib/api";
 import { fetchReadOnly, useReadOnly } from "@/lib/read-only";
@@ -14,9 +15,18 @@ const PUBMED_TAGS = ["[Mesh]", "[tiab]", "[PDAT]", "[AU]", "[TA]"];
 const OPERATORS = ["AND", "OR", "NOT"];
 const DEFAULT_YEAR_START = "2022";
 const DEFAULT_YEAR_END = "2025";
+const SEARCH_START_ERROR = "Could not start search. Is the backend running?";
 // The bundled sample project's stored query is display metadata, not a runnable
 // adapter, so it is only ever loaded into the raw editor and never set as `source`.
 const SAMPLE_DATABASE = "sample";
+
+function searchStartErrorMessage(error: unknown) {
+  if (!axios.isAxiosError(error)) return SEARCH_START_ERROR;
+  const data: unknown = error.response?.data;
+  if (typeof data !== "object" || data === null || !("detail" in data)) return SEARCH_START_ERROR;
+  const detail = (data as { detail?: unknown }).detail;
+  return typeof detail === "string" && detail.trim() ? detail.trim() : SEARCH_START_ERROR;
+}
 
 const CHIP_CLASSES = (active: boolean) =>
   [
@@ -122,7 +132,13 @@ export default function SearchConfig() {
     setLoading(true);
     setStatus("Submitting search...");
     try {
-      const res = await searchApi.trigger(projectId, queryString, source, yearStart, yearEnd);
+      const res = await searchApi.trigger(
+        projectId,
+        queryString,
+        source,
+        advancedMode ? undefined : yearStart,
+        advancedMode ? undefined : yearEnd,
+      );
       if (cancelledRef.current) return;
       const queryId = res.data.query_id;
       setStatus("Search dispatched...");
@@ -168,13 +184,13 @@ export default function SearchConfig() {
           toast.error("Lost connection while checking search status.");
         }
       }, POLL_INTERVAL_MS);
-    } catch {
+    } catch (error: unknown) {
       if (cancelledRef.current) return;
       setStatus("Failed to start search.");
       setLoading(false);
-      toast.error("Could not start search. Is the backend running?");
+      toast.error(searchStartErrorMessage(error));
     }
-  }, [projectId, queryString, source, yearStart, yearEnd, router]);
+  }, [projectId, queryString, source, yearStart, yearEnd, advancedMode, router]);
 
   const [confirmDiscardRaw, setConfirmDiscardRaw] = useState(false);
 

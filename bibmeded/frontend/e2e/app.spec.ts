@@ -219,6 +219,101 @@ test("search builder exposes labels and selected options", async ({ page }) => {
   await expect(page.getByRole("textbox", { name: "Raw query" })).toBeVisible();
 });
 
+test("search shows the API detail when starting a search fails", async ({ page }) => {
+  await installMockApi(page);
+  await page.route("**/api/projects/1/search", (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ detail: "Lens searches require BIBMEDED_LENS_API_KEY" }),
+    }),
+  );
+  await page.goto("/projects/1/search");
+
+  await page.getByRole("button", { name: "Execute Search" }).click();
+
+  await expect(page.getByText("Lens searches require BIBMEDED_LENS_API_KEY", { exact: true })).toBeVisible();
+});
+
+test("search uses the generic message when an HTTP error has no usable detail", async ({ page }) => {
+  await installMockApi(page);
+  await page.route("**/api/projects/1/search", (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ detail: { message: "internal adapter failure" } }),
+    }),
+  );
+  await page.goto("/projects/1/search");
+
+  await page.getByRole("button", { name: "Execute Search" }).click();
+
+  await expect(page.getByText("Could not start search. Is the backend running?", { exact: true })).toBeVisible();
+  await expect(page.getByText("internal adapter failure", { exact: true })).toHaveCount(0);
+});
+
+test("query builder sends its year filters", async ({ page }) => {
+  await installMockApi(page);
+  await page.route("**/api/projects/1/search", (route) =>
+    route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({}) }),
+  );
+  await page.goto("/projects/1/search");
+  const startYear = page.getByRole("spinbutton", { name: "Start year" });
+  const endYear = page.getByRole("spinbutton", { name: "End year" });
+  const queryPreview = page.getByRole("heading", { name: "Query preview" }).locator("..").locator("..");
+  await expect(async () => {
+    await startYear.fill("2019");
+    await endYear.fill("2024");
+    await expect(queryPreview).toContainText('"2019/01/01"[PDAT] : "2024/12/31"[PDAT]');
+  }).toPass();
+  await expect(startYear).toHaveValue("2019");
+  await expect(endYear).toHaveValue("2024");
+  const searchRequest = page.waitForRequest(
+    (request) => request.method() === "POST" && new URL(request.url()).pathname === "/api/projects/1/search",
+  );
+
+  await page.getByRole("button", { name: "Execute Search" }).click();
+
+  expect((await searchRequest).postDataJSON()).toMatchObject({ year_start: "2019", year_end: "2024" });
+});
+
+test("raw query does not send separate year filters", async ({ page }) => {
+  await installMockApi(page);
+  await page.route("**/api/projects/1/search", (route) =>
+    route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({}) }),
+  );
+  await page.goto("/projects/1/search");
+  await page.getByRole("button", { name: "Advanced Query (Raw)" }).click();
+  await page.getByRole("textbox", { name: "Raw query" }).fill("custom raw query");
+  const searchRequest = page.waitForRequest(
+    (request) => request.method() === "POST" && new URL(request.url()).pathname === "/api/projects/1/search",
+  );
+
+  await page.getByRole("button", { name: "Execute Search" }).click();
+
+  const body = (await searchRequest).postDataJSON();
+  expect(body).not.toHaveProperty("year_start");
+  expect(body).not.toHaveProperty("year_end");
+});
+
+test("raw query preserves the exact query text", async ({ page }) => {
+  await installMockApi(page);
+  await page.route("**/api/projects/1/search", (route) =>
+    route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({}) }),
+  );
+  await page.goto("/projects/1/search");
+  await page.getByRole("button", { name: "Advanced Query (Raw)" }).click();
+  const rawQuery = '  (Education[Mesh])\nAND "AI-assisted learning"[tiab]  ';
+  await page.getByRole("textbox", { name: "Raw query" }).fill(rawQuery);
+  const searchRequest = page.waitForRequest(
+    (request) => request.method() === "POST" && new URL(request.url()).pathname === "/api/projects/1/search",
+  );
+
+  await page.getByRole("button", { name: "Execute Search" }).click();
+
+  expect((await searchRequest).postDataJSON()).toMatchObject({ query_string: rawQuery });
+});
+
 test("sample project search page shows its stored strategy", async ({ page }) => {
   const { writeRequests } = await installMockApi(page, { sampleSearch: true });
   await page.goto("/projects/1/search");
