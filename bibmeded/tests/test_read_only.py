@@ -34,6 +34,7 @@ EXPECTED_BLOCKED_ROUTES = {
     ("POST", "/api/projects/{project_id}/search"),
     ("POST", "/api/projects/{project_id}/publications/bulk-exclude"),
     ("PATCH", "/api/projects/{project_id}/publications/{publication_id}/exclude"),
+    ("PUT", "/api/projects/{project_id}/publications/{publication_id}/screening"),
     ("POST", "/api/projects/{project_id}/analysis/{analysis_type}"),
 }
 EXPORT_FORMATS = ("csv", "ris", "wos", "json", "prisma", "methodology", "bundle")

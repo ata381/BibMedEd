@@ -323,6 +323,24 @@ c.patch(f"/api/projects/{pid}/publications/{pub_id}/exclude",
         json={"reason": "wrong_population"}, headers={"X-Reviewer": "Reviewer A"})
 ```
 
+Automated clients should prefer the idempotent state endpoint. Its `excluded` field is
+required, while `reason` and `screening_stage` use the same validation and exclusion
+defaults as the toggle endpoint. Repeating an identical request leaves both the record and
+the screening decision log unchanged. Setting `excluded` to `false` clears the reason and
+stage, regardless of the other fields in the body.
+
+```python
+# Set the exact desired state; safe to retry after a timeout.
+c.put(f"/api/projects/{pid}/publications/{pub_id}/screening",
+      json={"excluded": True, "reason": "wrong_outcome", "screening_stage": "full_text"},
+      headers={"X-Reviewer": "Reviewer A"})
+# -> {"id": ..., "excluded": true, "exclusion_reason": "wrong_outcome", "screening_stage": "full_text"}
+
+c.put(f"/api/projects/{pid}/publications/{pub_id}/screening",
+      json={"excluded": False})
+# -> {"id": ..., "excluded": false, "exclusion_reason": null, "screening_stage": null}
+```
+
 The methodology log has a "Screening decision history" section. It gives the number of
 decisions (exclusions, reversals where an excluded record is re-included, and reason or
 stage changes), the first and last decision times, exclusion decisions by stage and
@@ -348,7 +366,8 @@ full-text assessment of *reports*. Every exclusion carries a `screening_stage`:
 | `title_abstract` | Records excluded (beside "Records screened") |
 | `full_text` | Reports excluded, or Reports not retrieved when the reason is `fulltext_unavailable` |
 
-Both exclude endpoints accept an optional `screening_stage`. When it is omitted or `null`:
+The PATCH toggle, PUT screening-state, and bulk-exclude endpoints accept an optional
+`screening_stage`. When it is omitted or `null` for an exclusion:
 
 - reason `fulltext_unavailable` is recorded at `full_text`, because PRISMA 2020 counts a
   report that could not be retrieved under "Reports not retrieved", a full-text box;
@@ -370,11 +389,11 @@ c.post(f"/api/projects/{pid}/publications/bulk-exclude", json={"citation_thresho
 # -> {"excluded_count": ..., "reason": "other", "screening_stage": "title_abstract"}
 ```
 
-The endpoint is a toggle: calling it on an excluded record re-includes it and clears both
+The PATCH endpoint is a toggle: calling it on an excluded record re-includes it and clears both
 `exclusion_reason` and `screening_stage`, whatever the body says (a re-include is never
-refused for the contradiction above). A record has one stage,
-the stage it was excluded at; to move an exclusion to the other stage, re-include it and
-exclude it again. `GET /api/projects/{id}/publications` returns `screening_stage` on every
+refused for the contradiction above). The PUT endpoint instead sets the requested state and
+can move an existing exclusion directly to another reason or stage. A record has one stage,
+the stage it was excluded at. `GET /api/projects/{id}/publications` returns `screening_stage` on every
 publication (`null` while it is included). The data exports (CSV, RIS, Web of Science, JSON) contain
 only included records, so stages appear in exports through the methodology log and the PRISMA
 diagram counts.

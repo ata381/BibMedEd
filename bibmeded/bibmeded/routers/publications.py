@@ -16,6 +16,7 @@ from bibmeded.schemas.publication import (
     BulkExcludeResponse,
     PublicationListResponse,
     PublicationResponse,
+    SetScreeningStateRequest,
     ToggleExcludeRequest,
     ToggleExcludeResponse,
 )
@@ -114,6 +115,39 @@ def bulk_exclude(
     )
     db.commit()
     return BulkExcludeResponse(excluded_count=updated, reason=body.reason, screening_stage=body.resolved_screening_stage)
+
+
+@router.put("/{publication_id}/screening", response_model=ToggleExcludeResponse)
+def set_screening_state(
+    project_id: int,
+    publication_id: int,
+    body: SetScreeningStateRequest,
+    reviewer: ReviewerLabel = None,
+    db: Session = Depends(get_db),
+):
+    """Set a publication's screening state explicitly and idempotently."""
+    project = db.get(SearchProject, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    pub = db.get(Publication, publication_id, with_for_update={"key_share": True})
+    if not pub:
+        raise HTTPException(status_code=404, detail="Publication not found")
+    project_query_ids = {q.id for q in project.queries}
+    if pub.query_id not in project_query_ids:
+        raise HTTPException(status_code=404, detail="Publication not found")
+    target = (
+        ScreeningState(True, body.reason or "other", body.resolved_screening_stage)
+        if body.excluded
+        else INCLUDED
+    )
+    apply_screening_state(db, pub, target, reviewer=reviewer, source=TOGGLE_SOURCE)
+    db.commit()
+    return ToggleExcludeResponse(
+        id=pub.id,
+        excluded=pub.excluded,
+        exclusion_reason=pub.exclusion_reason,
+        screening_stage=pub.screening_stage,
+    )
 
 
 @router.patch("/{publication_id}/exclude", response_model=ToggleExcludeResponse)

@@ -142,6 +142,18 @@ class ToggleExcludeRequest(_StagedExclusionRequest):
     stage rule's contradiction check runs in the handler once it knows it is excluding."""
 
 
+class SetScreeningStateRequest(_StagedExclusionRequest):
+    """Explicit, idempotent screening state requested by an API client."""
+
+    excluded: bool
+
+    @model_validator(mode="after")
+    def _reject_unretrieved_title_abstract_exclusion(self):
+        if self.excluded and self.contradicts_stage_rule:
+            raise ValueError(STAGE_CONTRADICTION_MESSAGE)
+        return self
+
+
 class ToggleExcludeResponse(BaseModel):
     id: int
     excluded: bool

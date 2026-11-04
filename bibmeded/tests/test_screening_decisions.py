@@ -46,6 +46,10 @@ def _exclude_url(project, pub):
     return f"/api/projects/{project.id}/publications/{pub.id}/exclude"
 
 
+def _screening_url(project, pub):
+    return f"/api/projects/{project.id}/publications/{pub.id}/screening"
+
+
 def _bulk_url(project):
     return f"/api/projects/{project.id}/publications/bulk-exclude"
 
@@ -116,6 +120,23 @@ def test_toggle_response_contract_is_unchanged_by_the_audit_trail(client, db):
     project, (pub,) = _project_with_pubs(db, "audit-contract")
     r = client.patch(_exclude_url(project, pub), headers={REVIEWER_HEADER: "MB"})
     assert r.json() == {"id": pub.id, "excluded": True, "exclusion_reason": "other", "screening_stage": "title_abstract"}
+
+
+def test_put_screening_is_idempotent_and_logs_only_state_changes(client, db):
+    project, (pub,) = _project_with_pubs(db, "audit-put-idempotent")
+    url = _screening_url(project, pub)
+    excluded = {"excluded": True, "reason": "wrong_population", "screening_stage": "full_text"}
+
+    client.put(url, json=excluded, headers={REVIEWER_HEADER: "Reviewer A"})
+    client.put(url, json=excluded, headers={REVIEWER_HEADER: "Reviewer B"})
+    client.put(url, json={"excluded": False})
+    client.put(url, json={"excluded": False, "reason": "non_english"})
+
+    exclusion, re_inclusion = _decisions(db, project.id)
+    assert _snapshot(exclusion) == (False, None, None, True, "wrong_population", "full_text")
+    assert exclusion.reviewer == "Reviewer A"
+    assert _snapshot(re_inclusion) == (True, "wrong_population", "full_text", False, None, None)
+    assert len(_decisions(db, project.id)) == 2
 
 
 def test_rejected_toggle_writes_no_decision(client, db):
