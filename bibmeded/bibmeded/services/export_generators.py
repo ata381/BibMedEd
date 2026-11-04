@@ -702,6 +702,8 @@ def generate_methodology(
             if searched_at:
                 lines.append(f"    Searched at: {searched_at}")
             rate_limit = step.parameters.get("rate_limit_per_second")
+            if step.parameters.get("rate_limit_scope") == "shared_redis_per_key":
+                lines.append("    Request rate scope: shared across workers per NCBI key (one bucket without a key)")
             if rate_limit:
                 lines.append(f"    Request rate limit: {rate_limit:g} requests/s")
             if step.parameters.get("upstream_total") is not None:

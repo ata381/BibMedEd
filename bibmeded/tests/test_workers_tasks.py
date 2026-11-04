@@ -408,8 +408,9 @@ def test_run_search_logs_effective_pubmed_rate_in_search_step(
     )
 
     db.expire_all()
-    assert adapter_calls == [{"api_key": api_key, "rate_limit": expected_rate, "email": settings.ncbi_email}]
+    assert adapter_calls == [{"api_key": api_key, "rate_limit": expected_rate, "email": settings.ncbi_email, "redis_url": settings.redis_url}]
     assert _search_step_parameters(db, query.id)["rate_limit_per_second"] == expected_rate
+    assert _search_step_parameters(db, query.id)["rate_limit_scope"] == "shared_redis_per_key"
 
 
 def test_run_search_omits_rate_for_sources_without_a_rate_setting(
