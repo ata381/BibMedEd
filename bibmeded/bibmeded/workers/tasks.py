@@ -163,22 +163,30 @@ def _describe_failure(record: RawRecord, exc: Exception) -> dict[str, str]:
 def _find_existing_publication(
     db, record: RawRecord, normalized_doi: str | None, project_id: int,
 ) -> Publication | None:
-    # `Publication.pmid` stores source_id (the source-native primary id), but a
-    # non-PubMed record's real PMID lives in external_ids["pmid"]. Check both so
-    # a PubMed-first-persisted paper (Publication.pmid == its PMID, often no DOI)
-    # is deduped when the same paper re-arrives via OpenAlex/CrossRef.
-    pmid_candidates = {record.source_id}
-    real_pmid = record.external_ids.get("pmid")
-    if real_pmid:
-        pmid_candidates.add(real_pmid)
-    id_match = Publication.pmid.in_(pmid_candidates)
+    identifiers = _record_identifiers(record)
+    id_match = ((Publication.source_database == record.source_database) & (Publication.source_id == record.source_id))
+    id_match = id_match | (Publication.external_ids[record.source_database].as_string() == record.source_id)
+    if identifiers.get("pmid"):
+        id_match = id_match | (Publication.pmid == identifiers["pmid"])
     if normalized_doi:
         id_match = id_match | (Publication.doi == normalized_doi)
     return (
         db.query(Publication)
         .filter(Publication.project_id == project_id, id_match)
+        .with_for_update(key_share=True)
         .first()
     )
+
+
+def _record_identifiers(record: RawRecord) -> dict[str, str]:
+    identifiers = {k: v for k, v in record.external_ids.items() if v}
+    identifiers[record.source_database] = record.source_id
+    pmid = identifiers.get("pmid", record.source_id if record.source_database == "pubmed" else "").strip().rstrip("/").rsplit("/", 1)[-1]
+    if pmid.isascii() and pmid.isdecimal():
+        identifiers["pmid"] = pmid
+    else:
+        identifiers.pop("pmid", None)
+    return identifiers
 
 
 def _get_or_create_journal(
@@ -262,12 +270,19 @@ def _persist_one(
     already holds this paper; the existence check runs before any INSERT so that an
     empty savepoint, not an orphan Journal row, is what gets released."""
     normalized_doi = _normalize_doi(record.external_ids.get("doi") or record.doi)
-    if _find_existing_publication(db, record, normalized_doi, project_id) is not None:
+    identifiers = _record_identifiers(record)
+    existing = _find_existing_publication(db, record, normalized_doi, project_id)
+    if existing is not None:
+        existing.external_ids = {**identifiers, **(existing.external_ids or {})}
+        if not existing.pmid and identifiers.get("pmid"):
+            existing.pmid = identifiers["pmid"]
         return None
 
     journal = _get_or_create_journal(db, record, caches, additions)
     pub = Publication(
-        pmid=record.source_id,
+        pmid=identifiers.get("pmid"),
+        external_ids=identifiers,
+        source_id=record.source_id,
         doi=normalized_doi,
         title=record.title,
         abstract=record.abstract,
@@ -341,7 +356,7 @@ def _persist_records(
             failures.append(_describe_failure(record, exc))
             continue
         if pub is not None:
-            persisted_pmids.append(pub.pmid)
+            persisted_pmids.append(pub.pmid or record.source_id)
 
     if commit:
         db.commit()

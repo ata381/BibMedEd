@@ -33,10 +33,12 @@ def _index_by_identifier(pubs: list[Publication]) -> dict[str, int]:
         if pub.doi:
             index[pub.doi.lower()] = pub.id
         if pub.pmid:
-            # `pmid` actually stores the source-native primary ID (PMID for PubMed,
-            # OpenAlex W-ID for OpenAlex, DOI for CrossRef). Cover both shapes.
             index[pub.pmid] = pub.id
             index[pub.pmid.lower()] = pub.id
+        for identifier in (pub.external_ids or {}).values():
+            if isinstance(identifier, str) and identifier:
+                index[identifier] = pub.id
+                index[identifier.lower()] = pub.id
     return index
 
 
@@ -145,7 +147,7 @@ def _pairs_to_d3(pubs: list[Publication], pairs: Counter, top_k: int = 100) -> d
             continue
         G.add_node(
             pid,
-            pmid=pub.pmid,
+            pmid=pub.pmid or "",
             title=(pub.title or "")[:80],
             year=pub.year,
             citations=pub.citation_count or 0,
@@ -182,7 +184,7 @@ def analyze_citations(db: Session, project_id: int) -> dict:
     most_cited = sorted(
         [
             {
-                "pmid": p.pmid,
+                "pmid": p.pmid or "",
                 "title": p.title,
                 "year": p.year,
                 "citation_count": p.citation_count or 0,
@@ -207,7 +209,7 @@ def analyze_citations(db: Session, project_id: int) -> dict:
     citation_graph = nx.DiGraph()
     for p in pubs:
         citation_graph.add_node(
-            p.id, pmid=p.pmid, title=(p.title or "")[:60], year=p.year, citations=p.citation_count or 0
+            p.id, pmid=p.pmid or "", title=(p.title or "")[:60], year=p.year, citations=p.citation_count or 0
         )
     for c in citations:
         citation_graph.add_edge(c.citing_publication_id, c.cited_publication_id)

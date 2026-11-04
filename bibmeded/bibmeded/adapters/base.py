@@ -33,13 +33,12 @@ class RawRecord:
     - **references** entries are source-native identifiers — PMIDs for PubMed,
       DOIs (lowercased) for CrossRef, OpenAlex Work IDs for OpenAlex. Downstream
       bibliographic-coupling / co-citation analysis matches them against
-      `Publication.doi` (case-insensitively) and `Publication.pmid` (which stores
-      the source-native primary id), so any of those shapes resolves correctly.
+      `Publication.doi`, `Publication.pmid`, and `Publication.external_ids`.
 
     - **source_id** is the source's primary identifier — PMID for PubMed,
       OpenAlex W-ID for OpenAlex, DOI (raw, not lowercased) for CrossRef — and
-      becomes ``Publication.pmid`` in the ORM. The dedup pass keys on this AND
-      on ``doi``, so cross-source duplicates are caught even when source_ids differ.
+      is preserved in ``Publication.external_ids[source_database]``. Only a real
+      PMID is stored in ``Publication.pmid``; unavailable PMIDs remain NULL.
     """
     source_id: str
     source_database: str

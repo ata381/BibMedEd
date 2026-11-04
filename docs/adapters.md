@@ -158,3 +158,9 @@ Read the [official Lens Scholarly API documentation](https://docs.api.lens.org/)
 4. If the source cannot search without a key, add a `BIBMEDED_<SOURCE>_API_KEY` setting to `bibmeded/config.py` and register it in `REQUIRED_SETTINGS` in `bibmeded/adapters/settings.py`, e.g. `"lens": RequiredSetting("lens_api_key", "BIBMEDED_LENS_API_KEY", "Lens")`. The API, worker, CLI and `bibmeded sources` then reject unconfigured searches with `"<label> searches require <ENV_VAR>"`; no per-source `if` is needed
 5. Restart the worker: `docker compose restart worker`
 6. The new source appears in the search page dropdown automatically
+
+At persistence, the native ID is retained as `Publication.source_id` and in
+`Publication.external_ids[source_database]`. `Publication.pmid` contains only
+a real numeric PubMed ID, or NULL when unavailable. Adapters should put any
+known PubMed ID in `external_ids["pmid"]`; this supports deduplication regardless
+of which source was imported first. The `RawRecord` constructor is unchanged.

@@ -106,8 +106,10 @@ class OpenAlexAdapter(BaseSourceAdapter):
         external_ids: dict[str, str] = {}
         if "openalex" in raw_ids:
             external_ids["openalex"] = self._extract_id(str(raw_ids["openalex"]))
-        if "pmid" in raw_ids:
-            external_ids["pmid"] = str(raw_ids["pmid"]).split("/")[-1]
+        if raw_ids.get("pmid"):
+            pmid = str(raw_ids["pmid"]).rstrip("/").split("/")[-1]
+            if pmid.isascii() and pmid.isdecimal():
+                external_ids["pmid"] = pmid
         if "doi" in raw_ids:
             doi_str = str(raw_ids["doi"])
             external_ids["doi"] = doi_str.replace("https://doi.org/", "").lower()

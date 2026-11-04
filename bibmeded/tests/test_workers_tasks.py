@@ -257,8 +257,8 @@ def test_run_search_logs_mid_batch_persist_failure_in_methodology(
     )
 
     db.expire_all()
-    pmids = sorted(p.pmid for p in db.query(Publication).filter(Publication.query_id == query.id))
-    assert pmids == ["W2301", "W2303"]
+    source_ids = sorted(p.source_id for p in db.query(Publication).filter(Publication.query_id == query.id))
+    assert source_ids == ["W2301", "W2303"]
     fetch_step = (
         db.query(MethodologyStep)
         .filter(MethodologyStep.query_id == query.id, MethodologyStep.phase == "fetch")
@@ -763,6 +763,32 @@ def test_persist_records_intra_project_dedup_uses_external_ids_pmid(db):
     pubs = db.query(Publication).filter(Publication.query_id == query.id).all()
     assert len(pubs) == 1
     assert pubs[0].pmid == "777"
+
+
+@pytest.mark.parametrize("openalex_first", [True, False])
+def test_cross_source_pmid_dedup_both_import_orders(db, openalex_first):
+    query = _make_query(db)
+    records = [_make_openalex_record("W777", pmid="777"), _make_record("777")]
+    if not openalex_first:
+        records.reverse()
+    for record in records:
+        tasks._persist_records(db, [record], query.id, query.project_id)
+    pub = db.query(Publication).one()
+    assert pub.pmid == "777"
+    assert pub.external_ids["openalex"] == "W777"
+    assert pub.external_ids["pmid"] == "777"
+    from bibmeded.analysis.citations import _index_by_identifier
+    assert _index_by_identifier([pub])["W777"] == pub.id
+
+
+def test_source_native_identifiers_are_not_pmids_and_still_deduplicate(db):
+    query = _make_query(db)
+    record = _make_openalex_record("W123")
+    assert tasks._persist_records(db, [record], query.id, query.project_id).persisted == 1
+    assert tasks._persist_records(db, [record], query.id, query.project_id).persisted == 0
+    pub = db.query(Publication).one()
+    assert pub.pmid is None
+    assert pub.external_ids["openalex"] == "W123"
 
 
 # ---------------------------------------------------------------------------

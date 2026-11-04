@@ -127,9 +127,11 @@ class PubMedClient:
             journal_issn = art.findtext(".//Journal/ISSN")
             doi = None
             for eloc in art.findall(".//ELocationID"):
-                if eloc.get("EIdType") == "doi":
+                if eloc.get("EIdType") == "doi" and eloc.text:
                     doi = eloc.text
                     break
+            if not doi:
+                doi = article.findtext("PubmedData/ArticleIdList/ArticleId[@IdType='doi']")
             authors = []
             for auth_el in art.findall(".//AuthorList/Author"):
                 last = auth_el.findtext("LastName", "")

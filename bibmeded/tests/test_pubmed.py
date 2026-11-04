@@ -5,6 +5,20 @@ import pytest
 from bibmeded.services.pubmed import PubMedClient
 
 
+def test_doi_falls_back_to_article_id_list_not_reference_ids():
+    client = PubMedClient()
+    xml = '''<PubmedArticleSet><PubmedArticle>
+    <MedlineCitation><PMID>777</PMID><Article><ArticleTitle>Test</ArticleTitle></Article></MedlineCitation>
+    <PubmedData><ArticleIdList><ArticleId IdType="doi">10.1234/FALLBACK</ArticleId></ArticleIdList>
+    <ReferenceList><Reference><ArticleIdList><ArticleId IdType="doi">10.1234/WRONG</ArticleId>
+    </ArticleIdList></Reference></ReferenceList></PubmedData>
+    </PubmedArticle></PubmedArticleSet>'''
+    try:
+        assert client._parse_records(xml)[0].doi == "10.1234/FALLBACK"
+    finally:
+        asyncio.run(client.close())
+
+
 async def _capture_request(client: PubMedClient, operation: str) -> dict:
     fixture = "pubmed_search_response.xml" if operation == "search" else "pubmed_response.xml"
     response = AsyncMock()
