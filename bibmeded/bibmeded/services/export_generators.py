@@ -18,7 +18,7 @@ from bibmeded.models import Publication
 from bibmeded.models.author import Affiliation
 from bibmeded.models.keyword import KeywordType
 from bibmeded.models.methodology import MethodologyStep
-from bibmeded.services.cleaning import extract_country
+from bibmeded.services.cleaning import explicit_country_suffix
 from bibmeded.services.prisma import ExclusionSummary, compute_counts, render_svg, summarize_exclusions
 from bibmeded.services.screening import BULK_EXCLUDE_PHASE, BULK_EXCLUDE_SOURCE, ScreeningDecisionLog
 
@@ -212,13 +212,13 @@ def _wos_address(affiliation: Affiliation) -> str:
     bibliometrix joins C1 lines with spaces and splits addresses on ".", and VOSviewer
     reads the country from the last comma-separated part, so both the period and a
     trailing country are load-bearing. The "already names it" test reuses
-    ``extract_country`` so an alias ("England" stored as "UK") is not appended twice.
+    ``explicit_country_suffix`` so an alias ("England" stored as "UK") is not appended twice.
     """
     address = _ris_safe(affiliation.name or "").rstrip(". ")
     if not address:
         return ""
     country = _ris_safe(affiliation.country or "")
-    if country and extract_country(address) != country:
+    if country and explicit_country_suffix(address) != country:
         address = f"{address}, {country}"
     return f"{address}."
 

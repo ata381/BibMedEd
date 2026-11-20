@@ -515,6 +515,17 @@ class TestGenerateWosPlaintext:
         )
         assert wos_fields(generate_wos_plaintext([pub]))["C1"] == ["[Patel, J] University of Oxford, Oxford, England."]
 
+    @pytest.mark.parametrize(("address", "country"), [
+        ("Johns Hopkins, Baltimore, Maryland", "USA"),
+        ("Oxford, UK OX1 2JD", "UK"),
+        ("Oxford, UK contact@example.org", "UK"),
+    ])
+    def test_c1_appends_the_country_when_inference_uses_other_address_parts(self, address, country):
+        pub = make_wos_pub(
+            authors=[Author(name="Patel, James", affiliations=[Affiliation(name=address, country=country)])],
+        )
+        assert wos_fields(generate_wos_plaintext([pub]))["C1"] == [f"[Patel, J] {address}, {country}."]
+
     def test_doi_references_outside_the_export_stay_bare(self):
         pub = make_wos_pub(external_references=["10.1000/cited-one", "10.1000/CITED-two"])
         fields = wos_fields(generate_wos_plaintext([pub]))
