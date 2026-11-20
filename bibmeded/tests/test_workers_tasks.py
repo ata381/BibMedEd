@@ -1003,7 +1003,7 @@ def test_upstream_total_survives_pagination_cap(db, monkeypatch, task_session_fa
     monkeypatch.setattr(adapter, "fetch_stream", fetch_stream)
     monkeypatch.setattr(tasks, "get_adapter", lambda *args, **kwargs: adapter)
     monkeypatch.setattr(tasks, "SessionLocal", task_session_factory)
-    asyncio.run(tasks._run_search(_StubTask(), query.id, source, None, None, limit))
+    asyncio.run(tasks._run_search(_StubTask(), query.id, source, "2000", "2025", limit))
     db.expire_all()
     assert query.status == QueryStatus.completed
     assert query.raw_result_count == total
@@ -1015,6 +1015,10 @@ def test_upstream_total_survives_pagination_cap(db, monkeypatch, task_session_fa
         assert params["retrieved_ids"] == min(limit, total)
         assert params["capped"] is (total > limit)
     from bibmeded.services.prisma import compute_counts
+    search_step = next(step for step in steps if step.phase == "search")
+    assert search_step.parameters["year_filters"] == (
+        {} if source == "pubmed" else {"year_start": "2000", "year_end": "2025"}
+    )
     assert compute_counts(steps).screened == 0  # this fixture intentionally persists no records
     text = generate_methodology("Fixture", steps)
     assert f"Upstream total: {total}" in text

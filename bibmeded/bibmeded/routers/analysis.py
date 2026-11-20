@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from bibmeded.database import get_db
 from bibmeded.models import SearchProject, AnalysisRun
-from bibmeded.analysis import ANALYSIS_FUNCTIONS, with_schema_version
+from bibmeded.analysis import ANALYSIS_FUNCTIONS, analysis_provenance, with_schema_version
 from bibmeded.analysis.corpus import corpus_fingerprint
 from bibmeded.schemas.analysis import AnalysisResponse
 
@@ -30,7 +30,8 @@ def run_analysis(project_id: int, analysis_type: str, db: Session = Depends(get_
     if fingerprint != corpus_fingerprint(db, project_id):
         raise HTTPException(status_code=409, detail="Corpus changed during analysis. Retry after the search finishes.")
     results["corpus_fingerprint"] = fingerprint
-    run = AnalysisRun(project_id=project_id, analysis_type=analysis_type, results=json.dumps(results))
+    run = AnalysisRun(project_id=project_id, analysis_type=analysis_type,
+                      parameters=analysis_provenance(), results=json.dumps(results))
     db.add(run)
     db.commit()
     db.refresh(run)

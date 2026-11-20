@@ -97,6 +97,14 @@ Step  Time            Action                          Details
 
 This file is the part most researchers find surprisingly useful. [PRISMA 2020](https://doi.org/10.1136/bmj.n71) items 7 (search strategy) and 9 (deduplication process) are answered by lines you don't have to write yourself.
 
+The [reporting exports](scripting.md#biblio-worksheet-and-prisma-s-search-appendix)
+give you a starting point for the methods supplement. For example, the bundled
+synthetic sample fills BIBLIO item 6 with its recorded source, `BibMedEd sample dataset`.
+Item 10 reports one synthetic duplicate removed and a title-and-abstract
+exclusion for the wrong population. Item 13 shows 11 included records.
+The PRISMA-S appendix labels the sample as synthetic and gives its 13 input
+records separately from upstream matches, which were never recorded.
+
 ## 7. Write up
 
 Cite BibMedEd in your paper's Methods section:

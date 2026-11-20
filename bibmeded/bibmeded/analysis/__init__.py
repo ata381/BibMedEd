@@ -1,3 +1,5 @@
+from importlib.metadata import PackageNotFoundError, version
+
 from bibmeded.analysis.publications import analyze_publication_trends
 from bibmeded.analysis.authors import analyze_authors
 from bibmeded.analysis.countries import analyze_countries
@@ -25,3 +27,10 @@ def with_schema_version(results: dict) -> dict:
     if isinstance(results, dict) and "schema_version" not in results:
         return {"schema_version": ANALYSIS_SCHEMA_VERSION, **results}
     return results
+
+
+def analysis_provenance() -> dict[str, str]:
+    try:
+        return {"bibmeded_version": version("bibmeded")}
+    except PackageNotFoundError:
+        return {}
