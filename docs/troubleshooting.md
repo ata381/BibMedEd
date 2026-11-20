@@ -101,7 +101,7 @@ run_search failed query_id=12
 httpx.HTTPStatusError: Client error '429 Too Many Requests' for url 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?...'
 ```
 
-NCBI limits how many requests one computer may send to PubMed: 3 per second without an API key and 10 per second with one. BibMedEd paces each search at 3 requests per second. The worker runs up to two searches at the same time, so two PubMed searches together, or other PubMed tools on the same network, can go over the keyless limit.
+NCBI allows 3 requests per second without an API key and 10 per second with a standard key. BibMedEd workers share a Redis request budget: all searches using the same key share one limit, and searches without a key share one bucket. Other tools on the same network or using the same key can still consume the upstream allowance.
 
 Fix:
 
@@ -110,7 +110,7 @@ Fix:
 3. Restart so the containers pick it up: `docker compose down`, then `docker compose up`.
 4. Run the search again.
 
-The key raises NCBI's limit for you. BibMedEd still sends at most 3 requests per second per search, so it does not search faster. It does stop two searches at once from going over the limit. Without a key, run one PubMed search at a time.
+The default shared worker limit is 10 requests per second with a key and 3 without one. An explicit BIBMEDED_PUBMED_RATE_LIMIT overrides that budget; keep it within your NCBI allowance. Workers stop outbound PubMed requests if Redis is unavailable. Standalone CLI searches use local pacing, so coordinate them with other PubMed tools.
 
 ### Lens.org searches fail: "Lens searches require BIBMEDED_LENS_API_KEY"
 
