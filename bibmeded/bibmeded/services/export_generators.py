@@ -372,8 +372,8 @@ _LATEX_ESCAPES = {
     "$": r"\$",
     "#": r"\#",
     "_": r"\_",
-    "{": r"\{",
-    "}": r"\}",
+    "{": r"\textbraceleft{}",
+    "}": r"\textbraceright{}",
     "~": r"\textasciitilde{}",
     "^": r"\textasciicircum{}",
 }
@@ -387,8 +387,13 @@ def _bibtex_safe(value: str | None) -> str:
     """
     if not value:
         return ""
-    clean = re.sub(r"[\r\n]+", " ", str(value)).strip()
+    clean = _ris_safe(value).strip()
     return _LATEX_REGEX.sub(lambda m: _LATEX_ESCAPES[m.group(1)], clean)
+
+
+def _bibtex_identifier(value: str) -> str:
+    clean = _ris_safe(value).strip()
+    return "" if any(ch in clean for ch in "{}\\") else clean
 
 
 def _index_to_suffix(index: int) -> str:
@@ -455,7 +460,7 @@ def generate_bibtex(pubs: list[Publication]) -> str:
             fields.append(f"  title = {{{_bibtex_safe(pub.title)}}}")
         if pub.authors:
             authors_str = " and ".join(
-                _bibtex_safe(a.name) for a in pub.authors if a.name
+                f"{{{name}}}" for a in pub.authors if (name := _bibtex_safe(a.name))
             )
             if authors_str:
                 fields.append(f"  author = {{{authors_str}}}")
@@ -463,10 +468,10 @@ def generate_bibtex(pubs: list[Publication]) -> str:
             fields.append(f"  journal = {{{_bibtex_safe(pub.journal.name)}}}")
         if pub.year:
             fields.append(f"  year = {{{pub.year}}}")
-        if pub.doi:
-            fields.append(f"  doi = {{{_bibtex_safe(pub.doi)}}}")
-        if pub.pmid:
-            fields.append(f"  pmid = {{{_bibtex_safe(pub.pmid)}}}")
+        if pub.doi and (doi := _bibtex_identifier(pub.doi)):
+            fields.append(f"  doi = {{{doi}}}")
+        if pub.pmid and (pmid := _bibtex_identifier(pub.pmid)):
+            fields.append(f"  pmid = {{{pmid}}}")
         if pub.abstract:
             fields.append(f"  abstract = {{{_bibtex_safe(pub.abstract)}}}")
 

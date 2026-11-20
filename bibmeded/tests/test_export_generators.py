@@ -672,7 +672,7 @@ class TestGenerateBibtex:
     def test_writes_exact_article_entry(self):
         pub = make_pub(
             pmid="12345",
-            doi="10.1000/xyz",
+            doi="10.1000/abc_def",
             title="A Study of Things",
             abstract="Line one.\nLine two.",
             year=2024,
@@ -682,10 +682,10 @@ class TestGenerateBibtex:
         bib_text = generate_bibtex([pub])
         assert bib_text.startswith("@article{smith2024study,\n")
         assert "  title = {A Study of Things}" in bib_text
-        assert "  author = {Smith A and Jones B}" in bib_text
+        assert "  author = {{Smith A} and {Jones B}}" in bib_text
         assert "  journal = {Medical Education Review}" in bib_text
         assert "  year = {2024}" in bib_text
-        assert "  doi = {10.1000/xyz}" in bib_text
+        assert "  doi = {10.1000/abc_def}" in bib_text
         assert "  pmid = {12345}" in bib_text
         assert "  abstract = {Line one. Line two.}" in bib_text
         assert bib_text.endswith("}\n")
@@ -702,8 +702,8 @@ class TestGenerateBibtex:
         assert r"\$" in bib_text
         assert r"\#" in bib_text
         assert r"\_" in bib_text
-        assert r"\{" in bib_text
-        assert r"\}" in bib_text
+        assert r"\textbraceleft{}" in bib_text
+        assert r"\textbraceright{}" in bib_text
         assert r"\textasciitilde{}" in bib_text
         assert r"\textasciicircum{}" in bib_text
         assert r"\textbackslash{}" in bib_text
