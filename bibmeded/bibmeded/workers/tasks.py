@@ -16,6 +16,7 @@ _FATAL_DB_EXCEPTIONS = (OperationalError, DisconnectionError)
 from bibmeded.adapters.base import RawRecord
 from bibmeded.adapters.registry import get_adapter
 from bibmeded.adapters.settings import adapter_configuration_error, adapter_kwargs as _adapter_kwargs
+from bibmeded.config import settings
 from bibmeded.database import SessionLocal
 from bibmeded.models import (
     Affiliation, Author, Journal, Keyword, KeywordType,
@@ -429,6 +430,8 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
         if configuration_error:
             raise RuntimeError(configuration_error)
         source_kwargs = _adapter_kwargs(source)
+        if source == "pubmed":
+            source_kwargs["redis_url"] = settings.redis_url
         adapter = get_adapter(source, **source_kwargs)
         query.status = QueryStatus.running
         db.commit()
@@ -472,6 +475,7 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
                              "searched_at": searched_at_iso, "request_id": request_id}
         if "rate_limit" in source_kwargs:
             search_parameters["rate_limit_per_second"] = source_kwargs["rate_limit"]
+            search_parameters["rate_limit_scope"] = "shared_redis_per_key"
         _log_step(db, query_id, step_order=None, phase="search", source=source,
                   action=f"{adapter.methodology_label()} search",
                   records_in=0, records_out=total_found,

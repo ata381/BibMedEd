@@ -37,7 +37,7 @@ EXPECTED_BLOCKED_ROUTES = {
     ("PUT", "/api/projects/{project_id}/publications/{publication_id}/screening"),
     ("POST", "/api/projects/{project_id}/analysis/{analysis_type}"),
 }
-EXPORT_FORMATS = ("csv", "ris", "wos", "json", "prisma", "methodology", "bundle")
+EXPORT_FORMATS = ("csv", "ris", "wos", "bibtex", "json", "prisma", "methodology", "bundle")
 
 
 def _build_app(db, read_only: bool, monkeypatch):
