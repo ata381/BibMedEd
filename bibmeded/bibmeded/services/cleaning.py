@@ -81,15 +81,24 @@ def _ends_with_word(text: str, suffix: str) -> bool:
     return not text[prefix_len - 1].isalnum()
 
 
-def _match_country_candidate(text: str) -> str | None:
+def explicit_country_suffix(text: str) -> str | None:
+    """Match a country written at the end of an address."""
+    text = text.strip().rstrip(".;,")
     for alias, canonical in COUNTRY_ALIASES.items():
         if _ends_with_word(text, alias.rstrip(".")):
             return canonical
     if _ends_with_word(text, "New Mexico"):
-        return "USA"
+        return None
     for country in COUNTRIES:
         if _ends_with_word(text, country):
             return country
+    return None
+
+
+def _match_country_candidate(text: str) -> str | None:
+    country = explicit_country_suffix(text)
+    if country:
+        return country
     for state in US_STATES:
         if _ends_with_word(text, state):
             return "USA"
