@@ -74,7 +74,7 @@ Well-done contributions are merged, not rewritten. If a PR needs changes of roug
 ## Merge order and review norms
 
 - Dependabot patch PRs, which is how its security bumps usually arrive, auto-merge once CI is green (`.github/workflows/dependabot-auto-merge.yml`); minor and major bumps, security or not, need a maintainer.
-- A PR by `ata381` or `MugeBakiryol` that adds a migration, changes `RawRecord` or dedup, or exceeds roughly 300 lines gets the other maintainer's review before auto-merge is enabled. Smaller maintainer PRs may merge on agent review plus green CI.
+- A PR by `ata381` or `MugeBakiryol` that adds a migration, changes `RawRecord` or deduplication, or exceeds roughly 300 lines needs the other maintainer's review or explicit approval to merge from the repository owner (`ata381`). Owner approval applies to the named PR and may be given in GitHub or directly to the maintainer's agent. Required CI checks, applicable security review, and resolution of blocking review findings still apply. Smaller maintainer PRs may merge on agent review plus green CI.
 - Contributor PRs merge before maintainer PRs when both are ready; maintainers absorb the rebases.
 - Response-time targets: acknowledge within 3 working days; review verdict (approve or changes requested) within 7 calendar days, 10 during an announced absence. The contributor-facing wording is in `CONTRIBUTING.md`.
 
