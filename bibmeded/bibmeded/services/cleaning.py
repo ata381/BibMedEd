@@ -31,7 +31,7 @@ COUNTRY_ALIASES = {
 
 US_STATES = [
     "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
-    "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
+    "Connecticut", "Delaware", "Florida", "Hawaii", "Idaho",
     "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana",
     "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota",
     "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada",
@@ -83,16 +83,18 @@ def _ends_with_word(text: str, suffix: str) -> bool:
 
 def _match_country_candidate(text: str) -> str | None:
     for alias, canonical in COUNTRY_ALIASES.items():
-        if _ends_with_word(text, alias):
+        if _ends_with_word(text, alias.rstrip(".")):
             return canonical
+    if _ends_with_word(text, "New Mexico"):
+        return "USA"
     for country in COUNTRIES:
         if _ends_with_word(text, country):
             return country
     for state in US_STATES:
         if _ends_with_word(text, state):
             return "USA"
-    match = re.search(r"[\s,;]+([A-Za-z]{2})\.?$", text)
-    if match and match.group(1).upper() in US_STATE_ABBRS:
+    match = re.search(r"(?:^|[\s,;])([A-Z]{2})[\s,]+[0-9]{5}(?:-[0-9]{4})?$", text)
+    if match and match.group(1) in US_STATE_ABBRS:
         return "USA"
     return None
 

@@ -167,8 +167,17 @@ def test_cross_source_dedup_chains_through_dropped_records_other_identifier():
         ),
         (
             "University of Washington School of Medicine, Seattle, WA",
-            "USA",
+            None,
         ),
+        ("Royal Perth Hospital, Perth, WA", None),
+        ("Universidade Federal de Santa Catarina, Florianópolis, SC", None),
+        ("Christian Medical College, Vellore, TN", None),
+        ("Hospital Universitario, Santiago de", None),
+        ("Tbilisi State Medical University, Tbilisi, Georgia", None),
+        ("University of New Mexico, Albuquerque, New Mexico", "USA"),
+        ("Boston, U.S.", "USA"),
+        ("Boston, U.S.A.", "USA"),
+        ("London, U.K.", "UK"),
         (
             "Massachusetts General Hospital, Boston, MA 02114",
             "USA",
