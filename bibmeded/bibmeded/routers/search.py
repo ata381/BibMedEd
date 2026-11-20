@@ -41,10 +41,7 @@ def trigger_search(project_id: int, body: SearchRequest, db: Session = Depends(g
     db.refresh(query)
     request_id = request_id_ctx.get()
     run_search.delay(query.id, body.source, body.year_start, body.year_end, body.max_results, request_id)
-    logger.info(
-        "search dispatched project_id=%d query_id=%d source=%s max_results=%d request_id=%s",
-        project_id, query.id, body.source, body.max_results, request_id,
-    )
+    logger.info("search dispatched query_id=%d", query.id)
     return SearchStatusResponse(query_id=query.id, status=query.status.value, result_count=None)
 
 
