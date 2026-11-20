@@ -356,6 +356,27 @@ backfilled, so the section also counts excluded records that have no logged deci
 Downgrading that revision refuses to drop logged decisions unless
 `BIBMEDED_ALLOW_LOSSY_DOWNGRADE=1` is set.
 
+## BIBLIO worksheet and PRISMA-S search appendix
+
+`GET /api/projects/{id}/export/checklist?guideline=biblio` downloads a Markdown
+table with all 20 [BIBLIO items](https://doi.org/10.1186/s13643-023-02410-2)
+in their published order. The evidence column draws from the project's saved
+searches, screening outcomes, and analysis runs. Add manuscript page or section
+references and complete entries marked `not recorded`. Recorded exclusion
+reasons describe screening outcomes. Write out the full eligibility protocol
+and rationale separately.
+
+`GET /api/projects/{id}/export/checklist?guideline=prisma-s` downloads a plain-text
+search appendix for the [PRISMA-S](https://doi.org/10.1186/s13643-020-01542-z)
+items on sources, strategies, restrictions, dates, result counts, and
+deduplication. It keeps the exact stored query, including line breaks, and
+reports upstream hits separately from retrieved IDs and the retrieval cap.
+Adapters may translate queries into database-specific syntax. Verify any
+translated strategy and add details for searches conducted outside BibMedEd.
+Year filters and analysis software versions are available for new runs.
+Older runs may leave those fields blank in storage and display `not recorded`.
+Both files are included in the ZIP bundle.
+
 ## Screening stages
 
 PRISMA 2020 reports screening in two stages: title/abstract screening of *records* and

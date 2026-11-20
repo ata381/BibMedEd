@@ -439,6 +439,7 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
 
         # Phase 1: Collect IDs via streaming pagination
         all_ids: list[str] = []
+        searched_at_iso = datetime.now(timezone.utc).isoformat()
         async for id_batch in adapter.search_paginated(query.query_string, year_start=year_start, year_end=year_end):
             all_ids.extend(id_batch)
             if len(all_ids) >= max_results:
@@ -460,19 +461,15 @@ async def _run_search(task, query_id: int, source: str, year_start: str | None =
             "run_search query_id=%d phase=search complete: %d ids found (capped=%s)",
             query_id, total_found, capped,
         )
-        if query.created_at:
-            # SQLite returns naive datetimes; Postgres returns tz-aware. astimezone handles
-            # both: naive datetimes are first localized to UTC, aware ones are converted.
-            ca = query.created_at
-            if ca.tzinfo is None:
-                ca = ca.replace(tzinfo=timezone.utc)
-            searched_at_iso = ca.astimezone(timezone.utc).isoformat()
-        else:
-            searched_at_iso = None
+        year_filters = {
+            key: value for key, value in (("year_start", year_start), ("year_end", year_end))
+            if value and source != "pubmed"
+        }
         search_parameters = {"query": query.query_string, "database": source,
                              "max_results": max_results, "capped": capped,
                              "upstream_total": upstream_total, "retrieved_ids": len(all_ids),
-                             "searched_at": searched_at_iso, "request_id": request_id}
+                             "searched_at": searched_at_iso, "year_filters": year_filters,
+                             "request_id": request_id}
         if "rate_limit" in source_kwargs:
             search_parameters["rate_limit_per_second"] = source_kwargs["rate_limit"]
             search_parameters["rate_limit_scope"] = "shared_redis_per_key"

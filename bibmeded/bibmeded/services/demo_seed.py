@@ -3,7 +3,7 @@ import logging
 
 from sqlalchemy.orm import Session
 
-from bibmeded.analysis import ANALYSIS_FUNCTIONS, with_schema_version
+from bibmeded.analysis import ANALYSIS_FUNCTIONS, analysis_provenance, with_schema_version
 from bibmeded.analysis.corpus import corpus_fingerprint
 from bibmeded.models import AnalysisRun, SearchProject
 from bibmeded.services.sample_project import get_or_create_sample_project
@@ -33,6 +33,7 @@ def seed_demo_data(db: Session) -> SearchProject:
             AnalysisRun(
                 project_id=project.id,
                 analysis_type=analysis_type,
+                parameters=analysis_provenance(),
                 results=json.dumps(results),
             )
         )

@@ -19,6 +19,7 @@ from bibmeded.models.author import Affiliation
 from bibmeded.models.keyword import KeywordType
 from bibmeded.models.methodology import MethodologyStep
 from bibmeded.services.cleaning import explicit_country_suffix
+from bibmeded.services.reporting_checklist import generate_biblio, generate_prisma_s
 from bibmeded.services.prisma import ExclusionSummary, compute_counts, render_svg, summarize_exclusions
 from bibmeded.services.screening import BULK_EXCLUDE_PHASE, BULK_EXCLUDE_SOURCE, ScreeningDecisionLog
 
@@ -792,6 +793,7 @@ def generate_methodology(
         f'METHODOLOGY LOG — Project: "{project_name}"',
         f"Generated: {date.today().isoformat()}",
         "Tool: BibMedEd (https://github.com/ata381/bibmeded)",
+        "Reporting aids: BIBLIO checklist and PRISMA-S search appendix (export bundle or checklist API).",
         "",
     ]
     if author_productivity and author_productivity.get("corpus_fingerprint"):
@@ -820,6 +822,9 @@ def generate_methodology(
             searched_at = step.parameters.get("searched_at")
             if searched_at:
                 lines.append(f"    Searched at: {searched_at}")
+            if step.parameters.get("year_filters"):
+                for key, value in step.parameters["year_filters"].items():
+                    lines.append(f"    {key}: {value}")
             rate_limit = step.parameters.get("rate_limit_per_second")
             if step.parameters.get("rate_limit_scope") == "shared_redis_per_key":
                 lines.append("    Request rate scope: shared across workers per NCBI key (one bucket without a key)")
@@ -928,6 +933,9 @@ def generate_bundle(
     exclusion_summary: ExclusionSummary | None = None,
     decision_log: ScreeningDecisionLog | None = None,
     author_productivity: dict | None = None,
+    *,
+    biblio: str | None = None,
+    prisma_s: str | None = None,
 ) -> bytes:
     """Produce a single .zip containing CSV, RIS, WoS plain text, JSON, methodology .txt, PRISMA .svg,
     the screening decision log CSV (when ``decision_log`` is given), and a manifest."""
@@ -937,6 +945,8 @@ def generate_bundle(
     # so len(pubs) is the authoritative "included" count.
     included_count = len(pubs)
     decisions_name = f"{slug}-screening-decisions-{stamp}.csv"
+    biblio_name = f"{slug}-biblio-{stamp}.md"
+    prisma_s_name = f"{slug}-prisma-s-{stamp}.txt"
     cited_written, cited_reported = wos_reference_coverage(pubs)
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
@@ -950,6 +960,10 @@ def generate_bundle(
             generate_methodology(project_name, steps, exclusion_summary, decision_log, author_productivity),
         )
         zf.writestr(f"{slug}-prisma-{stamp}.svg", generate_prisma_svg(project_name, steps, exclusion_summary, included_count=included_count))
+        zf.writestr(biblio_name, biblio if biblio is not None else generate_biblio(
+            project_name, steps, exclusions=exclusion_summary, included_count=included_count,
+        ))
+        zf.writestr(prisma_s_name, prisma_s if prisma_s is not None else generate_prisma_s(project_name, steps))
         if decision_log is not None:
             zf.writestr(decisions_name, generate_screening_decisions_csv(decision_log.decisions))
         manifest = (
@@ -967,6 +981,8 @@ def generate_bundle(
             f"  - {slug}-{stamp}.json ({len(pubs)} records, schema_version={EXPORT_SCHEMA_VERSION})\n"
             f"  - {slug}-methodology-{stamp}.txt ({len(steps)} steps)\n"
             f"  - {slug}-prisma-{stamp}.svg\n"
+            f"  - {biblio_name} (BIBLIO reporting worksheet)\n"
+            f"  - {prisma_s_name} (PRISMA-S search appendix)\n"
         )
         if decision_log is not None:
             manifest += f"  - {decisions_name} ({_plural(len(decision_log.decisions), 'decision')})\n"

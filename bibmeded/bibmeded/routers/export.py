@@ -1,5 +1,6 @@
 import logging
 from datetime import date
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 from bibmeded.analysis.corpus import corpus_fingerprint
 from bibmeded.analysis.authors import analyze_author_productivity
 from bibmeded.database import get_db
-from bibmeded.models import Author, Publication, SearchProject
+from bibmeded.models import AnalysisRun, Author, Publication, SearchProject
 from bibmeded.models.methodology import MethodologyStep
 from bibmeded.services.export_generators import (
     generate_bibtex,
@@ -25,6 +26,7 @@ from bibmeded.services.export_generators import (
     slugify,
 )
 from bibmeded.services.screening import ScreeningDecisionLog, load_decision_log
+from bibmeded.services.reporting_checklist import generate_biblio, generate_prisma_s
 
 router = APIRouter(prefix="/api/projects/{project_id}/export", tags=["export"])
 
@@ -92,6 +94,33 @@ def _get_decision_log(project: SearchProject, db: Session, *, with_publications:
 
 def _attachment(filename: str) -> dict[str, str]:
     return {"Content-Disposition": f'attachment; filename="{filename}"'}
+
+
+def _biblio_for_project(project: SearchProject, steps: list[MethodologyStep],
+                        exclusions: dict[tuple[str | None, str | None], int],
+                        included_count: int, db: Session) -> str:
+    runs = (db.query(AnalysisRun.analysis_type, AnalysisRun.parameters)
+            .filter_by(project_id=project.id).order_by(AnalysisRun.analysis_type, AnalysisRun.id).all())
+    return generate_biblio(
+        project.name, steps, queries=project.queries, date_start=project.date_range_start,
+        date_end=project.date_range_end, exclusions=exclusions, included_count=included_count,
+        analyses=[(kind, (params or {}).get("bibmeded_version")) for kind, params in runs],
+    )
+
+
+@router.get("/checklist")
+def export_checklist(project_id: int, guideline: Literal["biblio", "prisma-s"] = "biblio",
+                     db: Session = Depends(get_db)):
+    project, steps = _get_project_and_steps(project_id, db)
+    if guideline == "prisma-s":
+        content = generate_prisma_s(project.name, steps, queries=project.queries)
+        extension, media_type = "txt", "text/plain"
+    else:
+        included_count = db.query(Publication).filter_by(project_id=project.id, excluded=False).count()
+        content = _biblio_for_project(project, steps, _get_exclusion_summary(project.id, db), included_count, db)
+        extension, media_type = "md", "text/markdown"
+    filename = f"{slugify(project.name)}-{guideline}-{date.today().isoformat()}.{extension}"
+    return StreamingResponse(iter([content]), media_type=media_type, headers=_attachment(filename))
 
 
 @router.get("/csv")
@@ -215,7 +244,11 @@ def export_bundle(project_id: int, db: Session = Depends(get_db)):
     decision_log = _get_decision_log(project, db, with_publications=True)
     filename = f"{slugify(project.name)}-bundle-{date.today().isoformat()}.zip"
     return StreamingResponse(
-        iter([generate_bundle(project.name, pubs, steps, exclusion_summary, decision_log, author_productivity)]),
+        iter([generate_bundle(
+            project.name, pubs, steps, exclusion_summary, decision_log, author_productivity,
+            biblio=_biblio_for_project(project, steps, exclusion_summary, len(pubs), db),
+            prisma_s=generate_prisma_s(project.name, steps, queries=project.queries),
+        )]),
         media_type="application/zip",
         headers=_attachment(filename),
     )
