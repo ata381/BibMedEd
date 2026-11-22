@@ -1,0 +1,131 @@
+{
+  "_synthetic_fixture": "SYNTHETIC test data, not captured from the live API. Shape follows the Europe PMC REST ResponseWrapper/Result schemas in https://www.ebi.ac.uk/europepmc/webservices/rest/v3/api-docs (resultType=core, format=json). Identifiers are fictitious: PMIDs 99000001+, PPR990001, PMC99000009, DOIs under the 10.5555 example prefix; 0000-0002-1825-0097 and 0000-0002-1694-233X are ORCID-published example iDs.",
+  "version": "6.9",
+  "hitCount": 4,
+  "nextCursorMark": "*",
+  "request": {"queryString": "synthetic batch", "resultType": "core", "cursorMark": "*", "pageSize": 1000, "sort": "", "synonym": false},
+  "resultList": {
+    "result": [
+      {
+        "id": "99000001",
+        "source": "MED",
+        "pmid": "99000001",
+        "pmcid": "PMC99000001",
+        "doi": "10.5555/BibMedEd.EPMC.0001",
+        "title": "Simulation-based training in undergraduate medical education: a synthetic cohort",
+        "authorString": "Example J, Sample A, BibMedEd Synthetic Consortium.",
+        "authorList": {
+          "author": [
+            {
+              "fullName": "Example J",
+              "firstName": "Jane",
+              "lastName": "Example",
+              "initials": "J",
+              "authorId": {"type": "ORCID", "value": "0000-0002-1825-0097"},
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {"affiliation": "Department of Medical Education, Synthetic University Hospital, Ankara, Turkey."},
+                  {"affiliation": "Second Synthetic Institute, Lisbon, Portugal."}
+                ]
+              }
+            },
+            {
+              "fullName": "Sample A",
+              "firstName": "Alex",
+              "lastName": "Sample",
+              "initials": "A",
+              "authorId": {"type": "OTHER", "value": "not-an-orcid-123"}
+            },
+            {
+              "collectiveName": "BibMedEd Synthetic Consortium"
+            }
+          ]
+        },
+        "journalInfo": {
+          "issue": "3",
+          "volume": "12",
+          "dateOfPublication": "2023 Mar",
+          "monthOfPublication": 3,
+          "yearOfPublication": 2023,
+          "printPublicationDate": "2023-03-01",
+          "journal": {
+            "title": "Journal of Synthetic Medical Education",
+            "medlineAbbreviation": "J Synth Med Educ",
+            "isoabbreviation": "J Synth Med Educ",
+            "issn": "1234-5678",
+            "essn": "8765-4321",
+            "nlmid": "0000000"
+          }
+        },
+        "pubYear": "2023",
+        "pageInfo": "101-110",
+        "abstractText": "Synthetic abstract describing a simulation curriculum.",
+        "language": "eng",
+        "pubModel": "Print-Electronic",
+        "pubTypeList": {"pubType": ["Journal Article", "Research Support, Non-U.S. Gov't"]},
+        "meshHeadingList": {
+          "meshHeading": [
+            {
+              "majorTopic_YN": "Y",
+              "descriptorName": "Education, Medical, Undergraduate",
+              "meshQualifierList": {"meshQualifier": [{"abbreviation": "MT", "qualifierName": "methods", "majorTopic_YN": "N"}]}
+            },
+            {"majorTopic_YN": "N", "descriptorName": "Humans"}
+          ]
+        },
+        "keywordList": {"keyword": ["simulation", "curriculum"]},
+        "isOpenAccess": "Y",
+        "inEPMC": "Y",
+        "inPMC": "N",
+        "citedByCount": 7,
+        "firstPublicationDate": "2023-02-15"
+      },
+      {
+        "id": "PPR990001",
+        "source": "PPR",
+        "doi": "https://doi.org/10.5555/Preprint.EPMC.0002",
+        "title": "A synthetic preprint on assessment in residency programmes",
+        "authorString": "Preprint P.",
+        "authorList": {
+          "author": [
+            {
+              "fullName": "Preprint P",
+              "firstName": "Pat",
+              "lastName": "Preprint",
+              "initials": "P",
+              "authorId": {"type": "ORCID", "value": "https://orcid.org/0000-0002-1694-233X"},
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [{"affiliation": "Synthetic Preprint Lab, Toronto, Canada."}]
+              }
+            }
+          ]
+        },
+        "pubYear": "2024",
+        "bookOrReportDetails": {"publisher": "medRxiv", "yearOfPublication": 2024},
+        "abstractText": "Synthetic preprint abstract.",
+        "pubTypeList": {"pubType": ["Preprint"]},
+        "isOpenAccess": "Y",
+        "inEPMC": "N",
+        "inPMC": "N",
+        "citedByCount": 0,
+        "firstPublicationDate": "2024-05-02"
+      },
+      {
+        "id": "99000002",
+        "source": "MED",
+        "pmid": "99000002",
+        "title": "Minimal synthetic MEDLINE record"
+      },
+      {
+        "id": "PMC99000009",
+        "source": "PMC",
+        "pmcid": "PMC99000009",
+        "doi": "10.5555/PMC.Only.0009",
+        "title": "Synthetic PMC-only article without a PMID",
+        "journalInfo": {"yearOfPublication": 2022, "journal": {"title": "Synthetic Open Journal", "essn": "1111-2222"}},
+        "pubTypeList": {"pubType": ["research-article"]},
+        "firstPublicationDate": "2022-08-30"
+      }
+    ]
+  }
+}

@@ -17,7 +17,7 @@ const HEADLINE = (
 );
 
 const LEDE =
-  "Search five literature databases at once, deduplicate by DOI and PMID, run six analyses, and export a PRISMA-ready methodology log — from one self-hosted tool.";
+  "Search six literature databases at once, deduplicate by DOI and PMID, run six analyses, and export a PRISMA-ready methodology log — from one self-hosted tool.";
 
 export default function Home() {
   const router = useRouter();

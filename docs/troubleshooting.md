@@ -143,7 +143,7 @@ CrossRef and Semantic Scholar are a different case: they run a free-text relevan
 
 ### Did my search hit the 2,000-record cap?
 
-Each search fetches at most 2,000 records by default, so one broad query cannot run for hours. All five adapters preserve the total reported by the database, including when pagination stops exactly at the fetch limit. BibMedEd warns when fewer IDs were retrieved than the reported total. The results page shows:
+Each search fetches at most 2,000 records by default, so one broad query cannot run for hours. All six adapters preserve the total reported by the database, including when pagination stops exactly at the fetch limit. BibMedEd warns when fewer IDs were retrieved than the reported total. The results page shows:
 
 ```text
 Search returned 5,400 records — only the first 2,000 were fetched.

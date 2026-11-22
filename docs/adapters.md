@@ -150,6 +150,25 @@ Patterns worth noting:
 
 Read the [official Lens Scholarly API documentation](https://docs.api.lens.org/) and the full source: [`bibmeded/adapters/lens.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/bibmeded/adapters/lens.py) - with fixture-based tests at [`tests/test_adapters_lens.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/tests/test_adapters_lens.py).
 
+## Walkthrough: Europe PMC Adapter
+
+The Europe PMC adapter (`bibmeded/adapters/europepmc.py`) shows cursor pagination, composite source identifiers, and batched detail fetches through a form-encoded POST endpoint. No API key is required.
+
+Patterns worth noting:
+
+1. **Composite `source_id`** - Europe PMC IDs are only unique within a source collection, so the adapter emits `"<SRC>:<id>"`, e.g. `MED:34093275` or `PPR:PPR1373820`, and also stores it in `external_ids["europepmc"]`. All eleven documented collections are supported: MED, PMC, PAT, AGR, CBA, HIR, CTX, ETH, CIT, PPR, NBK.
+2. **Search never reports a short result as complete** - `search_paginated()` requests `resultType=idlist` pages of 1,000 and follows `nextCursorMark` until the first page's `hitCount` has been delivered, keeping `hitCount` as `upstream_total`. It raises instead of finishing when a page is empty before that count, when more results arrive than `hitCount`, or when the cursor is missing, repeated, or cycles. A search result without a supported collection and a safe ID, or a duplicate ID within or across pages, also raises, so every yielded ID is unique and fetchable.
+3. **Fetch returns every requested record or raises** - `fetch()` sends up to 100 `(EXT_ID:<id> AND SRC:<SRC>)` clauses per `POST /searchPOST` request with `resultType=core`. Duplicate hits and hits from another collection are ignored; if any requested ID is still missing, it raises `EuropePMCIncompleteFetchError` naming up to ten missing IDs. IDs that are not `<supported SRC>:<plain identifier>` raise `ValueError` before any request, so they are never interpolated into a Lucene query.
+4. **Explicit upstream failures** - HTTP errors, non-JSON bodies, `errCode`/`errMsg` payloads, and envelopes without `hitCount` or `resultList.result` raise. In the worker any of these errors marks the search `failed`. Fetch batches persisted before the failure stay in the project, because the worker commits batch by batch.
+5. **Year filters** - `year_start` / `year_end` become `PUB_YEAR:[start TO end]` (open ends use `*`) ANDed with the parenthesised user query; values that are not four-digit years are rejected.
+6. **Identifiers follow the RawRecord contract** - DOIs are lowercased and unprefixed, PMIDs are bare digits (from `pmid`, or the ID of a `MED` record), and PMCIDs are uppercased `PMC` IDs (from `pmcid`, or the ID of a `PMC` record). A valid PMID is kept whatever the collection. Cross-source deduplication still keys on DOI and PMID only.
+7. **MeSH and keywords** - `meshHeadingList` descriptor names become `mesh_terms` and `keywordList` becomes `keywords`; authors carry ORCID (from an `authorId` of type ORCID) and their first affiliation. `references` stays empty because Europe PMC serves references per record.
+8. **Abstracts are plain text** - Europe PMC serves structured abstracts as HTML (`<h4>` section headings, `<p>`, `<br>`, inline `<i>`/`<sub>`, entities). The adapter parses them with the standard-library `html.parser`, writes each heading or paragraph on its own line, and decodes entities. Every tag the parser recognises is removed: unknown tags become a word boundary and `script`/`style` contents are dropped. A `<` that does not open a tag (such as `p<0.05`) stays as written, but an unescaped word in angle brackets (`<placebo>`) is read as a tag. Abstracts without any markup are kept as returned, apart from entity decoding.
+
+Known limitation: Europe PMC can answer a syntactically invalid query with HTTP 200 and `hitCount: 0`, which the adapter cannot tell apart from a genuinely empty search.
+
+Read the [official Europe PMC REST documentation](https://europepmc.org/RestfulWebService) and the full source: [`bibmeded/adapters/europepmc.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/bibmeded/adapters/europepmc.py) - with tests at [`tests/test_adapters_europepmc.py`](https://github.com/ata381/BibMedEd/blob/master/bibmeded/tests/test_adapters_europepmc.py) that use both synthetic edge-case fixtures and minimised captured Europe PMC responses, with synthetic text in place of titles, abstracts and author details (provenance in `tests/fixtures/europepmc_real_PROVENANCE.md`).
+
 ## Step-by-Step: Adding a New Source
 
 1. Create `bibmeded/adapters/mysource.py`
