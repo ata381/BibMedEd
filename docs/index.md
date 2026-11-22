@@ -10,7 +10,7 @@ BibMedEd helps health professions education researchers track how they searched,
 
 ## Features
 
-- **Multi-database search** — Query PubMed, OpenAlex, CrossRef, Semantic Scholar, and Lens.org
+- **Multi-database search** — Query PubMed, OpenAlex, CrossRef, Semantic Scholar, Lens.org, and Europe PMC
 - **Automated deduplication** — Cross-database dedup by DOI and PMID
 - **Six analysis modules** — Publications, authors, countries, keywords, citations, journals
 - **Interactive visualizations** — D3.js co-authorship and keyword co-occurrence networks

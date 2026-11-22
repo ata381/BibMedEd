@@ -1,0 +1,555 @@
+{
+  "_fixture_note": "MINIMISED capture: identifiers, collections, DOIs, PMIDs, PMCIDs, years, publication types, journal titles/ISSNs and MeSH descriptors are as returned by Europe PMC on 2026-11-22; titles, abstracts, author names, affiliations, keywords and ORCID iDs are SYNTHETIC. See europepmc_real_PROVENANCE.md.",
+  "version": "6.9",
+  "hitCount": 5,
+  "request": {
+    "queryString": "(EXT_ID:34093275 AND SRC:MED) OR (EXT_ID:33086367 AND SRC:MED) OR (EXT_ID:34222746 AND SRC:MED) OR (EXT_ID:34826270 AND SRC:MED) OR (EXT_ID:34011088 AND SRC:MED)",
+    "resultType": "core",
+    "cursorMark": "*",
+    "pageSize": 25,
+    "sort": "",
+    "synonym": false
+  },
+  "resultList": {
+    "result": [
+      {
+        "id": "33086367",
+        "source": "MED",
+        "pmid": "33086367",
+        "pmcid": "PMC8580374",
+        "doi": "10.1097/sih.0000000000000509",
+        "title": "Synthetic title for MED:33086367",
+        "abstractText": "<h4>Introduction</h4>Synthetic placeholder sentence for the Introduction section.<h4>Methods</h4>Synthetic placeholder sentence for the Methods section.<h4>Results</h4>Synthetic placeholder sentence for the Results section.<h4>Conclusions</h4>Synthetic placeholder sentence for the Conclusions section.",
+        "authorList": {
+          "author": [
+            {
+              "fullName": "Synthetic Author 1 (MED:33086367)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 1)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 2 (MED:33086367)"
+            },
+            {
+              "fullName": "Synthetic Author 3 (MED:33086367)"
+            },
+            {
+              "fullName": "Synthetic Author 4 (MED:33086367)"
+            },
+            {
+              "fullName": "Synthetic Author 5 (MED:33086367)"
+            }
+          ]
+        },
+        "journalInfo": {
+          "yearOfPublication": 2021,
+          "journal": {
+            "title": "Simulation in healthcare : journal of the Society for Simulation in Healthcare",
+            "issn": "1559-2332",
+            "essn": "1559-713X"
+          }
+        },
+        "pubYear": "2021",
+        "pubTypeList": {
+          "pubType": [
+            "research-article",
+            "Journal Article"
+          ]
+        },
+        "meshHeadingList": {
+          "meshHeading": [
+            {
+              "descriptorName": "Humans"
+            },
+            {
+              "descriptorName": "Education, Medical"
+            },
+            {
+              "descriptorName": "Students, Medical"
+            },
+            {
+              "descriptorName": "Computer Simulation"
+            },
+            {
+              "descriptorName": "Mobile Applications"
+            },
+            {
+              "descriptorName": "Smartphone"
+            }
+          ]
+        }
+      },
+      {
+        "id": "34826270",
+        "source": "MED",
+        "pmid": "34826270",
+        "doi": "10.12788/jhm.3735",
+        "title": "Synthetic title for MED:34826270",
+        "authorList": {
+          "author": [
+            {
+              "fullName": "Synthetic Author 1 (MED:34826270)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 1)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 2 (MED:34826270)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 2)"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "journalInfo": {
+          "yearOfPublication": 2021,
+          "journal": {
+            "title": "Journal of hospital medicine",
+            "issn": "1553-5592",
+            "essn": "1553-5606"
+          }
+        },
+        "pubYear": "2021",
+        "pubTypeList": {
+          "pubType": [
+            "Comment",
+            "Editorial"
+          ]
+        },
+        "meshHeadingList": {
+          "meshHeading": [
+            {
+              "descriptorName": "Humans"
+            },
+            {
+              "descriptorName": "Education, Medical"
+            },
+            {
+              "descriptorName": "Simulation Training"
+            },
+            {
+              "descriptorName": "Optimism"
+            }
+          ]
+        }
+      },
+      {
+        "id": "34222746",
+        "source": "MED",
+        "pmid": "34222746",
+        "pmcid": "PMC8155693",
+        "doi": "10.1002/aet2.10605",
+        "title": "Synthetic title for MED:34222746",
+        "abstractText": "<h4>Background</h4>Synthetic placeholder sentence for the Background section.<h4>Objective</h4>Synthetic placeholder sentence for the Objective section.<h4>Methods</h4>Synthetic placeholder sentence for the Methods section.<h4>Results</h4>Synthetic placeholder sentence for the Results section.<h4>Conclusion</h4>Synthetic placeholder sentence for the Conclusion section.",
+        "authorList": {
+          "author": [
+            {
+              "fullName": "Synthetic Author 1 (MED:34222746)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 1)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 2 (MED:34222746)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 2)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 3 (MED:34222746)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 3)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 4 (MED:34222746)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 4)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 5 (MED:34222746)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 5)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 6 (MED:34222746)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 6)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 7 (MED:34222746)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 7)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 8 (MED:34222746)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 8)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 9 (MED:34222746)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 9)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 10 (MED:34222746)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 10)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 11 (MED:34222746)",
+              "authorId": {
+                "type": "ORCID",
+                "value": "0000-0002-1825-0097"
+              },
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 11)"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "journalInfo": {
+          "yearOfPublication": 2021,
+          "journal": {
+            "title": "AEM education and training",
+            "issn": "2472-5390",
+            "essn": "2472-5390"
+          }
+        },
+        "pubYear": "2021",
+        "pubTypeList": {
+          "pubType": [
+            "research-article",
+            "Journal Article"
+          ]
+        }
+      },
+      {
+        "id": "34093275",
+        "source": "MED",
+        "pmid": "34093275",
+        "pmcid": "PMC8175985",
+        "doi": "10.3389/fpsyt.2021.658967",
+        "title": "Synthetic title for MED:34093275",
+        "abstractText": "Synthetic placeholder abstract for MED:34093275.",
+        "authorList": {
+          "author": [
+            {
+              "fullName": "Synthetic Author 1 (MED:34093275)",
+              "authorId": {
+                "type": "ORCID",
+                "value": "0000-0002-1825-0097"
+              },
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 1)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 2 (MED:34093275)",
+              "authorId": {
+                "type": "ORCID",
+                "value": "0000-0002-1694-233X"
+              },
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 2)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 3 (MED:34093275)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 3)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 4 (MED:34093275)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 4)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 5 (MED:34093275)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 5)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 6 (MED:34093275)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 6)"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "journalInfo": {
+          "yearOfPublication": 2021,
+          "journal": {
+            "title": "Frontiers in psychiatry",
+            "issn": "1664-0640",
+            "essn": "1664-0640"
+          }
+        },
+        "pubYear": "2021",
+        "pubTypeList": {
+          "pubType": [
+            "review-article",
+            "Review",
+            "Journal Article"
+          ]
+        },
+        "keywordList": {
+          "keyword": [
+            "synthetic keyword 1",
+            "synthetic keyword 2",
+            "synthetic keyword 3",
+            "synthetic keyword 4",
+            "synthetic keyword 5"
+          ]
+        }
+      },
+      {
+        "id": "34011088",
+        "source": "MED",
+        "pmid": "34011088",
+        "pmcid": "PMC8137105",
+        "doi": "10.1097/md.0000000000025982",
+        "title": "Synthetic title for MED:34011088",
+        "abstractText": "<h4>Abstract</h4>Synthetic placeholder sentence for the Abstract section.",
+        "authorList": {
+          "author": [
+            {
+              "fullName": "Synthetic Author 1 (MED:34011088)",
+              "authorId": {
+                "type": "ORCID",
+                "value": "0000-0002-1825-0097"
+              },
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 1)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 2 (MED:34011088)",
+              "authorId": {
+                "type": "ORCID",
+                "value": "0000-0002-1694-233X"
+              },
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 2)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 3 (MED:34011088)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 3)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 4 (MED:34011088)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 4)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 5 (MED:34011088)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 5)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 6 (MED:34011088)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 6)"
+                  }
+                ]
+              }
+            },
+            {
+              "fullName": "Synthetic Author 7 (MED:34011088)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 7)"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "journalInfo": {
+          "yearOfPublication": 2021,
+          "journal": {
+            "title": "Medicine",
+            "issn": "0304-5412",
+            "essn": "1536-5964"
+          }
+        },
+        "pubYear": "2021",
+        "pubTypeList": {
+          "pubType": [
+            "research-article",
+            "Journal Article",
+            "Observational Study"
+          ]
+        },
+        "meshHeadingList": {
+          "meshHeading": [
+            {
+              "descriptorName": "Humans"
+            },
+            {
+              "descriptorName": "Case-Control Studies"
+            },
+            {
+              "descriptorName": "Program Evaluation"
+            },
+            {
+              "descriptorName": "Communication"
+            },
+            {
+              "descriptorName": "Physician-Patient Relations"
+            },
+            {
+              "descriptorName": "Specialties, Surgical"
+            },
+            {
+              "descriptorName": "Education, Medical, Undergraduate"
+            },
+            {
+              "descriptorName": "Clinical Competence"
+            },
+            {
+              "descriptorName": "Students, Medical"
+            },
+            {
+              "descriptorName": "Teaching"
+            },
+            {
+              "descriptorName": "Computer-Assisted Instruction"
+            },
+            {
+              "descriptorName": "Software"
+            },
+            {
+              "descriptorName": "Female"
+            },
+            {
+              "descriptorName": "Male"
+            },
+            {
+              "descriptorName": "Simulation Training"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

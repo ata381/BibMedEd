@@ -4,6 +4,7 @@ export const DATA_SOURCES = [
   "CrossRef",
   "Semantic Scholar",
   "Lens.org",
+  "Europe PMC",
 ] as const;
 
 export const ANALYSIS_MODULES = [

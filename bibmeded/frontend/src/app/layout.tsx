@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     template: "%s | BibMedEd",
   },
   description:
-    "Search PubMed, OpenAlex, CrossRef, Semantic Scholar, and Lens.org. Analyze trends. Visualize co-authorship and keyword networks. Export PRISMA-ready methodology logs.",
+    "Search PubMed, OpenAlex, CrossRef, Semantic Scholar, Lens.org, and Europe PMC. Analyze trends. Visualize co-authorship and keyword networks. Export PRISMA-ready methodology logs.",
 };
 
 // No-flash theme bootstrap: runs before React hydration so the first paint
