@@ -1,0 +1,38 @@
+{
+  "_synthetic_fixture": "SYNTHETIC test data, not captured from the live API. Shape follows the Europe PMC REST ResponseWrapper/Result schemas in https://www.ebi.ac.uk/europepmc/webservices/rest/v3/api-docs (resultType=idlist, format=json). Identifiers are fictitious: PMIDs 99000001+, PPR990001, PMC99000009, DOIs under the 10.5555 example prefix.",
+  "pages": {
+    "*": {
+      "version": "6.9",
+      "hitCount": 5000,
+      "nextCursorMark": "AoIIP0SYNTH01",
+      "request": {"queryString": "medical education", "resultType": "idlist", "cursorMark": "*", "pageSize": 1000, "sort": "", "synonym": false},
+      "resultList": {
+        "result": [
+          {"id": "99000001", "source": "MED", "pmid": "99000001", "pmcid": "PMC99000001", "doi": "10.5555/BibMedEd.EPMC.0001"},
+          {"id": "PPR990001", "source": "PPR", "doi": "10.5555/preprint.epmc.0002"},
+          {"id": "99000002", "source": "MED", "pmid": "99000002"}
+        ]
+      }
+    },
+    "AoIIP0SYNTH01": {
+      "version": "6.9",
+      "hitCount": 4999,
+      "nextCursorMark": "AoIIP0SYNTH02",
+      "request": {"queryString": "medical education", "resultType": "idlist", "cursorMark": "AoIIP0SYNTH01", "pageSize": 1000, "sort": "", "synonym": false},
+      "resultList": {
+        "result": [
+          {"id": "PMC99000009", "source": "PMC", "pmcid": "PMC99000009", "doi": "10.5555/pmc.only.0009"},
+          {"id": "99000003", "source": "MED", "pmid": "99000003"},
+          {"id": "99000004", "source": "MED", "pmid": "99000004"}
+        ]
+      }
+    },
+    "AoIIP0SYNTH02": {
+      "version": "6.9",
+      "hitCount": 4999,
+      "nextCursorMark": "AoIIP0SYNTH02",
+      "request": {"queryString": "medical education", "resultType": "idlist", "cursorMark": "AoIIP0SYNTH02", "pageSize": 1000, "sort": "", "synonym": false},
+      "resultList": {"result": []}
+    }
+  }
+}

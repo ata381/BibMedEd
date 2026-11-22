@@ -1,0 +1,284 @@
+{
+  "_fixture_note": "MINIMISED capture: identifiers, collections, DOIs, PMIDs, PMCIDs, years, publication types, journal titles/ISSNs and MeSH descriptors are as returned by Europe PMC on 2026-11-22; titles, abstracts, author names, affiliations, keywords and ORCID iDs are SYNTHETIC. See europepmc_real_PROVENANCE.md.",
+  "version": "6.9",
+  "hitCount": 11,
+  "request": {
+    "queryString": "(EXT_ID:42954961 AND SRC:MED) OR (EXT_ID:PMC13787573 AND SRC:PMC) OR (EXT_ID:CN101548780 AND SRC:PAT) OR (EXT_ID:IND44331483 AND SRC:AGR) OR (EXT_ID:367763 AND SRC:CBA) OR (EXT_ID:410369 AND SRC:HIR) OR (EXT_ID:C8501 AND SRC:CTX) OR (EXT_ID:889149 AND SRC:ETH) OR (EXT_ID:711268 AND SRC:CIT) OR (EXT_ID:PPR1373820 AND SRC:PPR) OR (EXT_ID:NBK623779 AND SRC:NBK)",
+    "resultType": "core",
+    "cursorMark": "*",
+    "pageSize": 25,
+    "sort": "",
+    "synonym": false
+  },
+  "resultList": {
+    "result": [
+      {
+        "id": "42954961",
+        "source": "MED",
+        "pmid": "42954961",
+        "doi": "10.1016/j.amepre.2026.108588",
+        "title": "Synthetic title for MED:42954961",
+        "abstractText": "<h4>Introduction</h4>Synthetic placeholder sentence for the Introduction section. Synthetic statistic (β=0.05; p<0.05).<h4>Methods</h4>Synthetic placeholder sentence for the Methods section.<h4>Results</h4>Synthetic placeholder sentence for the Results section.<h4>Conclusions</h4>Synthetic placeholder sentence for the Conclusions section.",
+        "authorList": {
+          "author": [
+            {
+              "fullName": "Synthetic Author Ünal-Çelik (MED:42954961)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 1)"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "journalInfo": {
+          "yearOfPublication": 2028,
+          "journal": {
+            "title": "American journal of preventive medicine",
+            "issn": "0749-3797",
+            "essn": "1873-2607"
+          }
+        },
+        "pubYear": "2028",
+        "pubTypeList": {
+          "pubType": [
+            "Journal Article"
+          ]
+        }
+      },
+      {
+        "id": "IND44331483",
+        "source": "AGR",
+        "title": "Synthetic title for AGR:IND44331483",
+        "abstractText": "Synthetic placeholder abstract for AGR:IND44331483.",
+        "authorList": {
+          "author": [
+            {
+              "fullName": "Synthetic Author 1 (AGR:IND44331483)"
+            }
+          ]
+        },
+        "journalInfo": {
+          "yearOfPublication": 2028,
+          "journal": {
+            "title": "Transportation research record"
+          }
+        },
+        "pubYear": "2028",
+        "pubTypeList": {
+          "pubType": [
+            "Journal Article"
+          ]
+        }
+      },
+      {
+        "id": "NBK623779",
+        "source": "NBK",
+        "title": "Synthetic title for NBK:NBK623779",
+        "bookOrReportDetails": {
+          "yearOfPublication": 1994
+        },
+        "pubYear": "1994",
+        "pubTypeList": {
+          "pubType": [
+            "Book"
+          ]
+        }
+      },
+      {
+        "id": "C8501",
+        "source": "CTX",
+        "doi": "10.6019/tol.uncovering-function-uniprot-w.2026.00001.1",
+        "title": "Synthetic title for CTX:C8501",
+        "abstractText": "Synthetic placeholder abstract for CTX:C8501.",
+        "authorList": {
+          "author": [
+            {
+              "fullName": "Synthetic Author 1 (CTX:C8501)"
+            }
+          ]
+        },
+        "bookOrReportDetails": {
+          "yearOfPublication": 2026
+        },
+        "pubYear": "2026"
+      },
+      {
+        "id": "PMC13787573",
+        "source": "PMC",
+        "pmcid": "PMC13787573",
+        "title": "Synthetic title for PMC:PMC13787573",
+        "authorList": {
+          "author": [
+            {
+              "fullName": "Synthetic Author 1 (PMC:PMC13787573)",
+              "authorAffiliationDetailsList": {
+                "authorAffiliation": [
+                  {
+                    "affiliation": "Synthetic Department, Example University (author 1)"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "journalInfo": {
+          "yearOfPublication": 0,
+          "journal": {
+            "title": "RSC advances",
+            "issn": "2046-2069",
+            "essn": "2046-2069"
+          }
+        },
+        "pubTypeList": {
+          "pubType": [
+            "research-article",
+            "Journal Article"
+          ]
+        }
+      },
+      {
+        "id": "PPR1373820",
+        "source": "PPR",
+        "doi": "10.64898/2026.11.20.767967",
+        "title": "Synthetic title for PPR:PPR1373820",
+        "abstractText": "Synthetic placeholder abstract for PPR:PPR1373820.",
+        "authorList": {
+          "author": [
+            {
+              "fullName": "Synthetic Author 1 (PPR:PPR1373820)"
+            }
+          ]
+        },
+        "bookOrReportDetails": {
+          "yearOfPublication": 2026
+        },
+        "pubYear": "2026",
+        "pubTypeList": {
+          "pubType": [
+            "Preprint"
+          ]
+        }
+      },
+      {
+        "id": "367763",
+        "source": "CBA",
+        "title": "Synthetic title for CBA:367763",
+        "abstractText": "Synthetic placeholder abstract for CBA:367763.",
+        "authorList": {
+          "author": [
+            {
+              "fullName": "Synthetic Author 1 (CBA:367763)"
+            }
+          ]
+        },
+        "journalInfo": {
+          "yearOfPublication": 2003,
+          "journal": {
+            "title": "Yournal of Shenyang Agricultural University",
+            "issn": "1000-1700"
+          }
+        },
+        "pubYear": "2003",
+        "pubTypeList": {
+          "pubType": [
+            "Research article"
+          ]
+        },
+        "keywordList": {
+          "keyword": [
+            "synthetic keyword 1",
+            "synthetic keyword 2",
+            "synthetic keyword 3",
+            "synthetic keyword 4",
+            "synthetic keyword 5",
+            "synthetic keyword 6",
+            "synthetic keyword 7"
+          ]
+        }
+      },
+      {
+        "id": "CN101548780",
+        "source": "PAT",
+        "title": "Synthetic title for PAT:CN101548780",
+        "abstractText": "Synthetic placeholder abstract for PAT:CN101548780.",
+        "authorList": {
+          "author": [
+            {
+              "fullName": "Synthetic Author 1 (PAT:CN101548780)"
+            }
+          ]
+        },
+        "pubYear": "2009",
+        "pubTypeList": {
+          "pubType": [
+            "Patent"
+          ]
+        }
+      },
+      {
+        "id": "889149",
+        "source": "ETH",
+        "title": "Synthetic title for ETH:889149",
+        "abstractText": "Synthetic placeholder abstract for ETH:889149.",
+        "authorList": {
+          "author": [
+            {
+              "fullName": "Synthetic Author 1 (ETH:889149)"
+            }
+          ]
+        },
+        "bookOrReportDetails": {
+          "yearOfPublication": 2023
+        },
+        "pubYear": "2023",
+        "pubTypeList": {
+          "pubType": [
+            "Dissertation"
+          ]
+        }
+      },
+      {
+        "id": "410369",
+        "source": "HIR",
+        "title": "Synthetic title for HIR:410369",
+        "abstractText": "Synthetic placeholder abstract for HIR:410369.",
+        "bookOrReportDetails": {
+          "yearOfPublication": 2005
+        },
+        "pubYear": "2005",
+        "pubTypeList": {
+          "pubType": [
+            "Practice Guideline"
+          ]
+        },
+        "keywordList": {
+          "keyword": [
+            "synthetic keyword 1",
+            "synthetic keyword 2",
+            "synthetic keyword 3",
+            "synthetic keyword 4",
+            "synthetic keyword 5",
+            "synthetic keyword 6",
+            "synthetic keyword 7"
+          ]
+        }
+      },
+      {
+        "id": "711268",
+        "source": "CIT",
+        "title": "Synthetic title for CIT:711268",
+        "abstractText": "Synthetic placeholder abstract for CIT:711268.",
+        "authorList": {
+          "author": [
+            {
+              "fullName": "Synthetic Author 1 (CIT:711268)"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
