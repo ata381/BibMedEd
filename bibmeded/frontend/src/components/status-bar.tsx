@@ -1,4 +1,5 @@
 import { Icon } from "@/components/ui";
+import { isPagesDemo } from "@/lib/api";
 import { ANALYSIS_MODULES, DATA_SOURCES, DOCS_URL, REPO_URL } from "@/lib/sources";
 
 const LINK_CLASSES =
@@ -12,7 +13,7 @@ export function StatusBar() {
     >
       <span className="inline-flex items-center gap-1.5">
         <Icon name="shield" size={13} />
-        Local workspace
+        {isPagesDemo ? "Sample workspace" : "Local workspace"}
       </span>
       <span className="inline-flex items-center gap-1.5">
         <Icon name="layers" size={13} />

@@ -25,7 +25,7 @@ A living document. Items move up and down as the community contributes adapters 
 - [x] `pip install bibmeded` lightweight CLI on PyPI, with `--version` and `sources` commands (#84, #72, #71)
 - [x] Python package renamed `app` -> `bibmeded` (#97)
 
-A hosted public demo is deliberately deferred; the Blueprint ships, but no public instance is deployed yet.
+The [interactive GitHub Pages demo](https://ata381.github.io/BibMedEd/demo/projects/1/results/) uses the bundled read-only sample.
 
 ## Shipped in 0.3.0 (2026-08-23)
 
@@ -79,7 +79,7 @@ Order set on 2026-10-14 after a needs review of the literature on bibliometric a
 
 ## Later (1.x+)
 
-- [ ] Polished public demo deployment with a read-only seeded project (deferred; read-only mode and the local demo already shipped)
+- [x] Public GitHub Pages demo with a read-only seeded project
 - [ ] Plugin marketplace for community adapters
 - [ ] Dual-reviewer screening workflow (Covidence parity); deferred because Covidence and Rayyan already serve it
 - [ ] Opt-in relevance ranking for screening with a bring-your-own key, every suggestion and the model version written to the log; no automated decisions (replaces the earlier PICO-extraction item: reviewers want assistance, not replacement, and journals now require AI-use disclosure)

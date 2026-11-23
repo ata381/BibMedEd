@@ -4,7 +4,8 @@
 
 BibMedEd helps health professions education researchers track how they searched, screened, and analyzed the literature. Export a methods log, a PRISMA flow diagram, and reporting files you can use to prepare your manuscript.
 
-[Try a sample review](sample-review.md){ .md-button .md-button--primary }
+[Try a sample review](https://ata381.github.io/BibMedEd/demo/projects/1/results/){ .md-button .md-button--primary }
+[Sample walkthrough](sample-review.md){ .md-button }
 [Install BibMedEd](deploy.md#quick-start){ .md-button }
 
 ## Features

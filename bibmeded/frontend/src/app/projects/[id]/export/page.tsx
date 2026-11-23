@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import toast from "react-hot-toast";
-import { exportApi } from "@/lib/api";
+import { exportApi, isPagesDemo } from "@/lib/api";
 import { Button, buttonClasses, Card, CardHeader, EmptyState, Icon, LoadingState, PageHeader, Skeleton, Tabs, type IconName, type TabItem } from "@/components/ui";
 
 type DataFormat = "csv" | "ris" | "wos" | "bibtex" | "json";
@@ -109,6 +109,13 @@ export default function ExportManager() {
   };
 
   const openDownload = (url: string) => {
+    if (isPagesDemo) {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "";
+      link.click();
+      return;
+    }
     // noopener,noreferrer prevents the opened tab from navigating the parent
     // (tabnapping) and keeps the referrer out of the destination request.
     const newWindow = window.open(url, "_blank", "noopener,noreferrer");
@@ -241,6 +248,7 @@ export default function ExportManager() {
                   <p className="flex-1 text-sm text-on-surface-muted">{description}</p>
                   <a
                     href={exportApi.checklistUrl(projectId, guideline)}
+                    download={isPagesDemo}
                     className={buttonClasses({ variant: "outline" })}
                     aria-label={`Download ${title}`}
                   >

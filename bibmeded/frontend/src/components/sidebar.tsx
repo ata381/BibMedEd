@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon, ThemeToggle, type IconName } from "@/components/ui";
+import { isPagesDemo } from "@/lib/api";
 import { DOCS_URL, REPO_URL, WORKFLOW_STEPS } from "@/lib/sources";
 
 const STEP_ICONS: Record<(typeof WORKFLOW_STEPS)[number]["suffix"], IconName> = {
@@ -31,7 +32,7 @@ function navLinkClasses(active: boolean) {
 }
 
 export function Sidebar() {
-  const pathname = usePathname();
+  const pathname = usePathname().replace(/\/$/, "") || "/";
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -144,7 +145,7 @@ export function Sidebar() {
             <ThemeToggle className="ml-auto" />
           </div>
           <p className="rule-t pt-4 text-xs leading-relaxed text-on-surface-subtle">
-            Self-hosted. Your searches and records stay on this machine.
+            {isPagesDemo ? "Read-only sample with synthetic records." : "Self-hosted. Your searches and records stay on this machine."}
           </p>
         </div>
       </aside>
