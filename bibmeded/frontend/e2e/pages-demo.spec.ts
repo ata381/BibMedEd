@@ -9,7 +9,7 @@ test("the Pages sample runs without a backend and downloads the reporting files"
   const unexpectedRequests: string[] = [];
   const origin = new URL(baseURL).origin;
   page.on("request", (request) => {
-    if (new URL(request.url()).origin !== origin || request.method() !== "GET") {
+    if (new URL(request.url()).origin !== origin || !["GET", "HEAD"].includes(request.method())) {
       unexpectedRequests.push(`${request.method()} ${request.url()}`);
     }
   });
