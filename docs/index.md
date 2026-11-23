@@ -2,7 +2,10 @@
 
 **Bibliometric Analysis Platform for Medical Education**
 
-BibMedEd is an open-source tool that enables medical education researchers to search bibliographic databases and perform comprehensive bibliometric analysis — all in one integrated platform. It replaces the fragmented workflow of PubMed search + Covidence + VOSviewer + CiteSpace + Excel.
+BibMedEd helps health professions education researchers track how they searched, screened, and analyzed the literature. Export a methods log, a PRISMA flow diagram, and reporting files you can use to prepare your manuscript.
+
+[Try a sample review](sample-review.md){ .md-button .md-button--primary }
+[Install BibMedEd](deploy.md#quick-start){ .md-button }
 
 ## Features
 

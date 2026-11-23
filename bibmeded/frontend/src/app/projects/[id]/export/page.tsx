@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { exportApi } from "@/lib/api";
-import { Button, Card, CardHeader, EmptyState, Icon, LoadingState, PageHeader, Skeleton, Tabs, type IconName, type TabItem } from "@/components/ui";
+import { Button, buttonClasses, Card, CardHeader, EmptyState, Icon, LoadingState, PageHeader, Skeleton, Tabs, type IconName, type TabItem } from "@/components/ui";
 
 type DataFormat = "csv" | "ris" | "wos" | "bibtex" | "json";
 type Tab = "data" | "methodology";
 
 const TABS: TabItem<Tab>[] = [
   { value: "data", label: "Data export", icon: "table" },
-  { value: "methodology", label: "Methodology & PRISMA", icon: "rule" },
+  { value: "methodology", label: "Reporting", icon: "rule" },
 ];
 
 const FORMAT_DETAILS: Record<DataFormat, { title: string; subtitle: string; icon: IconName; bullets: string[]; url: (id: number) => string }> = {
@@ -61,6 +62,21 @@ const INDIVIDUAL: Array<{ label: string; url: (id: number) => string }> = [
   { label: "Methodology", url: exportApi.methodologyUrl },
   { label: "PRISMA", url: exportApi.prismaUrl },
 ];
+
+const REPORTING_FILES = [
+  {
+    guideline: "biblio",
+    title: "BIBLIO checklist",
+    label: "Download BIBLIO",
+    description: "See what the project recorded for each checklist item. Add manuscript locations and complete the items that need author input.",
+  },
+  {
+    guideline: "prisma-s",
+    title: "PRISMA-S search appendix",
+    label: "Download PRISMA-S",
+    description: "Review the recorded search queries, sources, dates, limits, and deduplication before adding the details your study needs.",
+  },
+] as const;
 
 export default function ExportManager() {
   const params = useParams<{ id: string }>();
@@ -194,8 +210,8 @@ export default function ExportManager() {
                   Everything in one click
                 </h2>
                 <p className="text-sm text-on-surface-muted mt-1.5 leading-relaxed">
-                  One <code className="font-mono text-xs">.zip</code> with the CSV, RIS, Web of Science, JSON, methodology log, PRISMA SVG, and a manifest — drop it straight into your
-                  supplementary materials.
+                  One ZIP with the data exports, methodology log, PRISMA flow diagram, BIBLIO checklist,
+                  PRISMA-S search appendix, screening decisions, and file manifest.
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -216,6 +232,26 @@ export default function ExportManager() {
 
       {activeTab === "methodology" && (
         <section id="panel-methodology" role="tabpanel" aria-labelledby="tab-methodology" className="space-y-8">
+          <Card as="section" aria-labelledby="reporting-files-heading" padding="lg">
+            <h2 id="reporting-files-heading" className="text-xl text-on-surface">Reporting files</h2>
+            <div className="mt-4 grid gap-6 md:grid-cols-2">
+              {REPORTING_FILES.map(({ guideline, title, label, description }) => (
+                <div key={guideline} className="flex flex-col items-start gap-3">
+                  <h3 className="font-semibold text-on-surface">{title}</h3>
+                  <p className="flex-1 text-sm text-on-surface-muted">{description}</p>
+                  <a
+                    href={exportApi.checklistUrl(projectId, guideline)}
+                    className={buttonClasses({ variant: "outline" })}
+                    aria-label={`Download ${title}`}
+                  >
+                    <Icon name="download" size={18} />
+                    {label}
+                  </a>
+                </div>
+              ))}
+            </div>
+          </Card>
+
           <Card padding="lg">
             <CardHeader
               eyebrow="Supplementary file 1"
@@ -265,8 +301,14 @@ export default function ExportManager() {
                 </Button>
               }
             />
-            <div className="border border-divider rounded-[var(--radius-md)] overflow-hidden bg-surface-raised">
-              <object data={exportApi.prismaUrl(projectId)} type="image/svg+xml" aria-label="PRISMA 2020 flow diagram preview" className="w-full h-[520px]" />
+            <div className="relative h-[520px] border border-divider rounded-[var(--radius-md)] overflow-hidden bg-surface-raised">
+              <Image
+                src={exportApi.prismaUrl(projectId)}
+                alt="PRISMA 2020 flow diagram showing identification, screening, and inclusion counts"
+                fill
+                unoptimized
+                className="object-contain"
+              />
             </div>
           </Card>
         </section>
