@@ -111,7 +111,7 @@ export default function ResultsReview() {
           </>
         }
         aside={
-          <Button onClick={goToAnalysis} disabled={includedCount === 0 && !loading} trailingIcon="arrowRight">
+          <Button onClick={goToAnalysis} disabled={loading || includedCount === 0} trailingIcon="arrowRight">
             {readOnly ? "View analysis" : "Run Bibliometric Analysis"}
           </Button>
         }

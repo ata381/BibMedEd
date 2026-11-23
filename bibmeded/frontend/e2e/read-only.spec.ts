@@ -29,6 +29,8 @@ test("read-only demo disables screening controls", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Results Review" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Included: "Simulation-based feedback/ })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Exclude 0-citation papers" })).toHaveCount(0);
+  await page.getByRole("button", { name: "View analysis" }).click();
+  await expect(page.getByRole("heading", { name: "Analysis Overview" })).toBeVisible();
   expect(writeRequests).toEqual([]);
 });
 
