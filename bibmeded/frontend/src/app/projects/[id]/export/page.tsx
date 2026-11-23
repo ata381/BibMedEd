@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { exportApi } from "@/lib/api";
@@ -300,8 +301,14 @@ export default function ExportManager() {
                 </Button>
               }
             />
-            <div className="border border-divider rounded-[var(--radius-md)] overflow-hidden bg-surface-raised">
-              <object data={exportApi.prismaUrl(projectId)} type="image/svg+xml" aria-label="PRISMA 2020 flow diagram preview" className="w-full h-[520px]" />
+            <div className="relative h-[520px] border border-divider rounded-[var(--radius-md)] overflow-hidden bg-surface-raised">
+              <Image
+                src={exportApi.prismaUrl(projectId)}
+                alt="PRISMA 2020 flow diagram showing identification, screening, and inclusion counts"
+                fill
+                unoptimized
+                className="object-contain"
+              />
             </div>
           </Card>
         </section>
