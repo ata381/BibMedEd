@@ -4,8 +4,10 @@ import { expect, test } from "@playwright/test";
 test.skip(!process.env.PLAYWRIGHT_PAGES_DEMO, "Requires the static Pages build and no backend.");
 
 test("the Pages sample runs without a backend and downloads the reporting files", async ({ page, baseURL }) => {
+  if (!baseURL) throw new Error("Set PLAYWRIGHT_BASE_URL to the static demo URL.");
+  test.setTimeout(45_000);
   const unexpectedRequests: string[] = [];
-  const origin = new URL(baseURL!).origin;
+  const origin = new URL(baseURL).origin;
   page.on("request", (request) => {
     if (new URL(request.url()).origin !== origin || request.method() !== "GET") {
       unexpectedRequests.push(`${request.method()} ${request.url()}`);
@@ -14,6 +16,7 @@ test("the Pages sample runs without a backend and downloads the reporting files"
 
   await page.goto("projects/1/search/");
   await expect(page.getByText("Read-only demo")).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Raw query" })).toHaveValue(/medical education/i, { timeout: 12_000 });
   await expect(page.getByRole("button", { name: "Execute Search" })).toBeDisabled();
 
   await page.goto("projects/1/results/");

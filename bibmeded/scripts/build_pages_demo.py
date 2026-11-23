@@ -31,7 +31,6 @@ def build_demo(destination: Path) -> None:
 def write_snapshot(client: TestClient, destination: Path, analysis_types: Iterable[str]) -> None:
     project_path = "/api/projects/1"
     routes = {
-        "/api/config": "api/config.json",
         "/api/adapters": "api/adapters.json",
         "/api/projects": "api/projects.json",
         project_path: "api/projects/1.json",
