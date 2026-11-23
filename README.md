@@ -32,9 +32,9 @@
 
 ---
 
-> Systematic bibliometric reviews currently require stitching together PubMed search, Covidence, VOSviewer, CiteSpace, and Excel — four tools, manual deduplication, and a methodology section that's painful to reconstruct. **BibMedEd is one application that does all of it**, self-hosts with one command, and exports a citable PRISMA-ready methodology log of every step it took.
+> **BibMedEd helps health professions education researchers document how they searched, screened, and analyzed the literature.** It keeps a methods log and exports a PRISMA flow diagram, a BIBLIO checklist, and a PRISMA-S search appendix for manuscript preparation.
 >
-> New here? Read **[Why BibMedEd vs Covidence / VOSviewer / Bibliometrix](https://ata381.github.io/BibMedEd/why-bibmeded/)** for an honest capability comparison, or jump into the **[end-to-end case study](https://ata381.github.io/BibMedEd/case-study/)**.
+> **[Try a sample review](https://ata381.github.io/BibMedEd/sample-review/)** and download the reporting files without installing anything.
 
 <p align="center">
   <a href="https://ata381.github.io/BibMedEd/#user-interface-tour">

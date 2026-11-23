@@ -1,0 +1,18 @@
+PRISMA-S search appendix
+Project: AI in Medical Education — Sample Project
+Adapted from Rethlefsen et al. (https://doi.org/10.1186/s13643-020-01542-z), items 1, 8, 9, 13, 15, and 16.
+Review external searches, adapter-specific syntax, and limit justifications before submission.
+
+Search 1 — BibMedEd sample dataset
+Platform / method: Loaded the bundled synthetic demonstration dataset without external API calls
+Search date: not applicable (synthetic data)
+Separate publication-year filters: not applicable (synthetic data)
+Upstream matches: not recorded
+Retrieved identifiers: not recorded
+Configured retrieval cap: not recorded
+Retrieval truncated: not recorded
+Synthetic input records: 13. No upstream search was run.
+Exact stored query submitted to BibMedEd (sample queries are illustrative):
+("Education, Medical"[Mesh] OR "medical education"[tiab]) AND ("Artificial Intelligence"[Mesh] OR "machine learning"[tiab] OR "generative AI"[tiab] OR "learning analytics"[tiab] OR "simulation"[tiab] OR "virtual patient*"[tiab]) AND ("2018/01/01"[PDAT] : "2025/12/31"[PDAT])
+
+Deduplication steps recorded in the methodology log: Search 1: source identifier, 1 removed

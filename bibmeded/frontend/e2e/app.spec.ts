@@ -416,7 +416,7 @@ test("export tabs have valid relationships and keyboard activation", async ({ pa
   await page.goto("/projects/1/export");
 
   const dataTab = page.getByRole("tab", { name: "Data export" });
-  const methodologyTab = page.getByRole("tab", { name: "Methodology & PRISMA" });
+  const methodologyTab = page.getByRole("tab", { name: "Reporting" });
   await dataTab.focus();
   await page.keyboard.press("ArrowRight");
   await expect(methodologyTab).toBeFocused();
@@ -427,6 +427,10 @@ test("export tabs have valid relationships and keyboard activation", async ({ pa
   expect(labelledBy).toBeTruthy();
   await expect(page.locator(`#${labelledBy}`)).toBeVisible();
   await expect(page.getByText("BibMedEd methodology log")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Download BIBLIO checklist" }))
+    .toHaveAttribute("href", /\/api\/projects\/1\/export\/checklist\?guideline=biblio$/);
+  await expect(page.getByRole("link", { name: "Download PRISMA-S search appendix" }))
+    .toHaveAttribute("href", /\/api\/projects\/1\/export\/checklist\?guideline=prisma-s$/);
 });
 
 test("mobile navigation is hidden when closed and restores focus on Escape", async ({ page }, testInfo) => {

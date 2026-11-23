@@ -105,12 +105,14 @@ export default function ResultsReview() {
         lede={
           <>
             <span className="numeral text-on-surface text-xl">{total.toLocaleString()}</span> unique publications after cross-source
-            deduplication. Exclude records with a PRISMA reason — every decision is counted in the flow diagram and the methodology log.
+            deduplication. {readOnly
+              ? "See which records were screened out and which were included in the analysis."
+              : "Exclude records with a PRISMA reason — every decision is counted in the flow diagram and the methodology log."}
           </>
         }
         aside={
           <Button onClick={goToAnalysis} disabled={includedCount === 0 && !loading} trailingIcon="arrowRight">
-            Run Bibliometric Analysis
+            {readOnly ? "View analysis" : "Run Bibliometric Analysis"}
           </Button>
         }
       />
