@@ -48,7 +48,7 @@ cd bibmeded
 docker compose -f docker-compose.demo.yml up --build
 ```
 
-Then open <http://localhost:3100>. The same release ships a free-plan Render Blueprint, `deploy/render-demo.yaml`, for hosting your own demo. The project does not run a hosted public demo yet; that is deliberately deferred. Read [Public read-only demo](deploy.md#public-read-only-demo) before exposing an instance, since everything in a read-only instance's database is publicly readable.
+Then open <http://localhost:3100>. You can also [open the interactive sample on GitHub Pages](https://ata381.github.io/BibMedEd/demo/projects/1/results/). The release ships a free-plan Render Blueprint, `deploy/render-demo.yaml`, for teams that want to host their own read-only backend. Read [Public read-only demo](deploy.md#public-read-only-demo) before exposing an instance, since everything in a read-only instance's database is publicly readable.
 
 ## Fresh installs work on SQLAlchemy 2.1
 

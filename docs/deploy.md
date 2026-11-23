@@ -43,6 +43,10 @@ The database schema is created automatically on first startup.
 
 ## Public read-only demo
 
+[Open the interactive sample on GitHub Pages](https://ata381.github.io/BibMedEd/demo/projects/1/results/). GitHub Actions builds the sample from BibMedEd's synthetic data and publishes the screens, analysis results, and exports alongside these docs.
+
+To run a copy with the read-only backend, use the instructions below.
+
 Setting `BIBMEDED_READ_ONLY=true` turns an instance into a public demo that visitors can explore without installing anything, and that they cannot change.
 
 When the flag is on:

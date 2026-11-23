@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { projectsApi, Project } from "@/lib/api";
+import { isPagesDemo, projectsApi, Project } from "@/lib/api";
 import { useReadOnly } from "@/lib/read-only";
 import { ANALYSIS_MODULES, DATA_SOURCES, WORKFLOW_STEPS } from "@/lib/sources";
 import { NetworkFigure } from "@/components/network-figure";
@@ -73,7 +73,7 @@ export default function Home() {
         <PageHeader
           eyebrow="Workspace"
           title={HEADLINE}
-          lede={LEDE}
+          lede={isPagesDemo ? "Explore a completed review using synthetic records. Follow the screening decisions, inspect the analyses, and download the reporting files." : LEDE}
           aside={readOnly ? undefined : <ButtonLink href="/projects/new" leadingIcon="plus">New project</ButtonLink>}
         />
       )}

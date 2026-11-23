@@ -1,10 +1,20 @@
 import axios from 'axios';
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+const demoPath = process.env.NEXT_PUBLIC_PAGES_DEMO_PATH;
+export const isPagesDemo = Boolean(demoPath);
+const apiBaseUrl = demoPath ? `${demoPath}/demo-data` : (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000');
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: apiBaseUrl,
 });
+
+if (isPagesDemo) {
+  api.interceptors.request.use((config) => {
+    if (config.method !== "get") throw new Error("The sample project is read-only.");
+    config.url = `${config.url}.json`;
+    return config;
+  });
+}
 
 // Types
 export interface Project {
@@ -160,25 +170,20 @@ export const adaptersApi = {
   list: () => api.get<AdapterInfo[]>('/api/adapters'),
 };
 
+const exportUrl = (projectId: number, route: string, filename: string) =>
+  `${apiBaseUrl}/api/projects/${projectId}/export/${isPagesDemo ? filename : route}`;
+
 export const exportApi = {
-  csvUrl: (projectId: number) =>
-    `${API_BASE_URL}/api/projects/${projectId}/export/csv`,
-  risUrl: (projectId: number) =>
-    `${API_BASE_URL}/api/projects/${projectId}/export/ris`,
-  wosUrl: (projectId: number) =>
-    `${API_BASE_URL}/api/projects/${projectId}/export/wos`,
-  bibtexUrl: (projectId: number) =>
-    `${API_BASE_URL}/api/projects/${projectId}/export/bibtex`,
-  jsonUrl: (projectId: number) =>
-    `${API_BASE_URL}/api/projects/${projectId}/export/json`,
-  methodologyUrl: (projectId: number) =>
-    `${API_BASE_URL}/api/projects/${projectId}/export/methodology`,
-  prismaUrl: (projectId: number) =>
-    `${API_BASE_URL}/api/projects/${projectId}/export/prisma`,
+  csvUrl: (projectId: number) => exportUrl(projectId, "csv", "sample.csv"),
+  risUrl: (projectId: number) => exportUrl(projectId, "ris", "sample.ris"),
+  wosUrl: (projectId: number) => exportUrl(projectId, "wos", "sample-wos.txt"),
+  bibtexUrl: (projectId: number) => exportUrl(projectId, "bibtex", "sample.bib"),
+  jsonUrl: (projectId: number) => exportUrl(projectId, "json", "sample.json"),
+  methodologyUrl: (projectId: number) => exportUrl(projectId, "methodology", "sample-methodology.txt"),
+  prismaUrl: (projectId: number) => exportUrl(projectId, "prisma", "sample-prisma.svg"),
   checklistUrl: (projectId: number, guideline: "biblio" | "prisma-s") =>
-    `${API_BASE_URL}/api/projects/${projectId}/export/checklist?guideline=${guideline}`,
-  bundleUrl: (projectId: number) =>
-    `${API_BASE_URL}/api/projects/${projectId}/export/bundle`,
+    exportUrl(projectId, `checklist?guideline=${guideline}`, guideline === "biblio" ? "sample-biblio.md" : "sample-prisma-s.txt"),
+  bundleUrl: (projectId: number) => exportUrl(projectId, "bundle", "sample-bundle.zip"),
 };
 
 export default api;
