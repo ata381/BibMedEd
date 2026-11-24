@@ -1,0 +1,7 @@
+:HL["/BibMedEd/demo/_next/static/chunks/21bguab7cor8f.css","style"]
+:HL["/BibMedEd/demo/_next/static/media/AtkinsonHyperlegibleNext_Italic_latin.p.29o0yt52oqhj0.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/BibMedEd/demo/_next/static/media/AtkinsonHyperlegibleNext_latin.p.2409q_i1evx7d.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/BibMedEd/demo/_next/static/media/CrimsonPro_Italic_latin-s.p.1ju-xbk-1f9ur.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/BibMedEd/demo/_next/static/media/CrimsonPro_latin-s.p.426y6r_s_712v.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+1:[["children",{"s":"__PAGE__","h":128}]]
+0:{"b":"sxtKUOWqsQxlHfwiSvfjn","t":{"t":{"s":"","h":16,"c":"$Q1"}}}

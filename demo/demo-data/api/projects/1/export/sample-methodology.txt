@@ -1,0 +1,51 @@
+METHODOLOGY LOG — Project: "AI in Medical Education — Sample Project"
+Generated: 2026-11-24
+Tool: BibMedEd (https://github.com/ata381/bibmeded)
+Reporting aids: BIBLIO checklist and PRISMA-S search appendix (export bundle or checklist API).
+
+Author productivity analysis corpus: v1:21b60de138dd776d08ff1cd10aa5e8888e9a7c63fc3d3a293111ecc640dd6c59
+Computed from the included records at export time.
+
+SEARCH STRATEGY
+  Step 1: Loaded the bundled synthetic demonstration dataset without external API calls
+    Results: 13 records
+
+DEDUPLICATION
+  Step 2: Removed one synthetic duplicate to demonstrate PRISMA accounting
+    Method: unknown
+    Removed: 1 duplicates (13 → 12)
+
+SCREENING
+  Step 3: Excluded one synthetic demonstration record with a PRISMA reason
+
+SCREENING DECISIONS BY STAGE (PRISMA 2020 item 16a)
+  Title/abstract screening: 1 record excluded
+    Wrong population: 1
+  Full-text retrieval: 0 reports not retrieved
+  Full-text eligibility: 0 reports excluded
+
+SCREENING DECISION HISTORY (audit trail)
+  Decisions logged: 1
+    Exclusions: 1
+    Reversals (excluded record re-included): 0
+    Reason or stage changes: 0
+  First decision: 2026-11-24T08:48:01Z
+  Last decision: 2026-11-24T08:48:01Z
+  Exclusion decisions by stage and reason:
+    Title/abstract: 1
+      Wrong population: 1
+  Reviewer labels: none recorded
+  Decisions without a reviewer label: 1
+  Per-decision log: the screening-decisions CSV in the export bundle.
+  Not backfilled: decisions made before the audit trail existed (Alembic revision 0006_screening_decisions) were not recorded.
+
+FINAL DATASET
+  Studies included: 11
+
+AUTHOR PRODUCTIVITY (Lotka's law)
+  Method: Lotka's law (Lotka 1926): least-squares fit of log10(authors) on log10(papers) over every productivity level; Kolmogorov-Smirnov test against the fitted distribution (Pao 1985)
+  Parameters: complete counting over included records; at least 3 productivity levels; K-S at the 0.01 level, critical value 1.63/sqrt(N), used only above 35 authors
+  Authors: 8 across 4 productivity levels
+  Distribution (papers: authors): 2: 1, 3: 2, 4: 4, 5: 1
+  Fit: alpha = -0.4143, C = 1.02, R^2 = 0.061
+  Kolmogorov-Smirnov: not computed. The fitted alpha is -0.4143; the Lotka distribution only sums to 1 for alpha > 1, so there is no expected distribution to test against.

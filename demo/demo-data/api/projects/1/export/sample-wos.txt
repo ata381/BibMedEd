@@ -1,0 +1,220 @@
+﻿FN Clarivate Analytics Web of Science
+VR 1.0
+PT J
+AU Sample, MC
+   Sample, HK
+   Sample, MJ
+AF Sample, Marcus Chen
+   Sample, Hana Kim
+   Sample, Mia Johnson
+TI Evaluating conversational tutors for diagnostic uncertainty
+SO Medical Teacher Insights
+DT Journal Article
+DE virtual patients; diagnostic reasoning; generative AI
+AB Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.
+C1 [Sample, MC] Sample Department of Medical Education, University of Toronto, Canada.
+   [Sample, HK] Sample Seoul National University College of Medicine, South Korea.
+   [Sample, MJ] Sample School of Medicine, University of Michigan, USA.
+NR 2
+TC 8
+PY 2025
+UT SAMPLE:sample-012
+ER
+
+PT J
+AU Sample, EG
+   Sample, SD
+   Sample, JP
+AF Sample, Elena Garcia
+   Sample, Sofia Demir
+   Sample, James Patel
+TI Responsible use of large language models in medical assessment
+SO Medical Education Practice
+DT Journal Article
+DE assessment; generative AI; ethics
+AB Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.
+C1 [Sample, EG] Sample Center for Health Professions Education, Utrecht University, Netherlands.
+   [Sample, SD] Sample Department of Medical Education, Hacettepe University, Turkey.
+   [Sample, JP] Sample Institute for Medical Education, University College London, UK.
+NR 2
+TC 19
+PY 2024
+UT SAMPLE:sample-010
+ER
+
+PT J
+AU Sample, AO
+   Sample, HK
+   Sample, LS
+AF Sample, Amina Okafor
+   Sample, Hana Kim
+   Sample, Luis Santos
+TI A global competency framework for AI-ready medical graduates
+SO Global Medical Education
+DT Journal Article
+DE artificial intelligence; curriculum; competency framework
+AB Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.
+C1 [Sample, AO] Sample Faculty of Health Sciences, University of Cape Town, South Africa.
+   [Sample, HK] Sample Seoul National University College of Medicine, South Korea.
+   [Sample, LS] Sample School of Medicine, University of Sao Paulo, Brazil.
+NR 2
+TC 16
+PY 2024
+UT SAMPLE:sample-011
+ER
+
+PT J
+AU Sample, MC
+   Sample, LS
+   Sample, MJ
+AF Sample, Marcus Chen
+   Sample, Luis Santos
+   Sample, Mia Johnson
+TI Generative AI as a reflective writing coach in residency
+SO Digital Health Education
+DT Journal Article
+DE feedback; generative AI; reflective practice
+AB Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.
+C1 [Sample, MC] Sample Department of Medical Education, University of Toronto, Canada.
+   [Sample, LS] Sample School of Medicine, University of Sao Paulo, Brazil.
+   [Sample, MJ] Sample School of Medicine, University of Michigan, USA.
+NR 3
+TC 25
+PY 2023
+UT SAMPLE:sample-009
+ER
+
+PT J
+AU Sample, SD
+   Sample, JP
+AF Sample, Sofia Demir
+   Sample, James Patel
+TI Student trust in AI-supported clinical decision exercises
+SO Medical Teacher Insights
+DT Journal Article
+DE artificial intelligence; trust; clinical reasoning
+AB Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.
+C1 [Sample, SD] Sample Department of Medical Education, Hacettepe University, Turkey.
+   [Sample, JP] Sample Institute for Medical Education, University College London, UK.
+NR 2
+TC 28
+PY 2022
+UT SAMPLE:sample-008
+ER
+
+PT J
+AU Sample, MC
+   Sample, SD
+   Sample, MJ
+AF Sample, Marcus Chen
+   Sample, Sofia Demir
+   Sample, Mia Johnson
+TI Explainable machine learning for formative assessment feedback
+SO Digital Health Education
+DT Journal Article
+DE feedback; assessment; artificial intelligence
+AB Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.
+C1 [Sample, MC] Sample Department of Medical Education, University of Toronto, Canada.
+   [Sample, SD] Sample Department of Medical Education, Hacettepe University, Turkey.
+   [Sample, MJ] Sample School of Medicine, University of Michigan, USA.
+NR 2
+TC 43
+PY 2021
+UT SAMPLE:sample-006
+ER
+
+PT J
+AU Sample, EG
+   Sample, AO
+   Sample, HK
+AF Sample, Elena Garcia
+   Sample, Amina Okafor
+   Sample, Hana Kim
+TI International co-design of a virtual simulation curriculum
+SO Global Medical Education
+DT Journal Article
+DE simulation; curriculum; co-design
+AB Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.
+C1 [Sample, EG] Sample Center for Health Professions Education, Utrecht University, Netherlands.
+   [Sample, AO] Sample Faculty of Health Sciences, University of Cape Town, South Africa.
+   [Sample, HK] Sample Seoul National University College of Medicine, South Korea.
+NR 2
+TC 29
+PY 2021
+UT SAMPLE:sample-007
+ER
+
+PT J
+AU Sample, EG
+   Sample, MC
+   Sample, HK
+AF Sample, Elena Garcia
+   Sample, Marcus Chen
+   Sample, Hana Kim
+TI Virtual patients for diagnostic reasoning: a multi-institutional study
+SO Medical Education Practice
+DT Journal Article
+DE simulation; virtual patients; diagnostic reasoning
+AB Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.
+C1 [Sample, EG] Sample Center for Health Professions Education, Utrecht University, Netherlands.
+   [Sample, MC] Sample Department of Medical Education, University of Toronto, Canada.
+   [Sample, HK] Sample Seoul National University College of Medicine, South Korea.
+NR 2
+TC 47
+PY 2020
+UT SAMPLE:sample-004
+ER
+
+PT J
+AU Sample, MC
+   Sample, MJ
+AF Sample, Marcus Chen
+   Sample, Mia Johnson
+TI Learning analytics for early identification of struggling medical students
+SO Digital Health Education
+DT Journal Article
+DE learning analytics; assessment; student support
+AB Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.
+C1 [Sample, MC] Sample Department of Medical Education, University of Toronto, Canada.
+   [Sample, MJ] Sample School of Medicine, University of Michigan, USA.
+TC 51
+PY 2019
+UT SAMPLE:sample-002
+ER
+
+PT J
+AU Sample, AO
+   Sample, SD
+AF Sample, Amina Okafor
+   Sample, Sofia Demir
+TI Faculty perspectives on artificial intelligence in health professions education
+SO Medical Teacher Insights
+DT Journal Article
+DE artificial intelligence; faculty development; medical education
+AB Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.
+C1 [Sample, AO] Sample Faculty of Health Sciences, University of Cape Town, South Africa.
+   [Sample, SD] Sample Department of Medical Education, Hacettepe University, Turkey.
+NR 1
+TC 39
+PY 2019
+UT SAMPLE:sample-003
+ER
+
+PT J
+AU Sample, EG
+   Sample, JP
+AF Sample, Elena Garcia
+   Sample, James Patel
+TI Simulation-based feedback in undergraduate clinical training
+SO Medical Education Practice
+DT Journal Article
+DE simulation; feedback; clinical skills
+AB Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.
+C1 [Sample, EG] Sample Center for Health Professions Education, Utrecht University, Netherlands.
+   [Sample, JP] Sample Institute for Medical Education, University College London, UK.
+TC 64
+PY 2018
+UT SAMPLE:sample-001
+ER
+
+EF

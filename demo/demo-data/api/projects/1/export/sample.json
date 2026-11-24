@@ -1,0 +1,410 @@
+{
+  "schema_version": "1.0",
+  "project": "AI in Medical Education — Sample Project",
+  "generated": "2026-11-24",
+  "count": 11,
+  "publications": [
+    {
+      "pmid": null,
+      "source_id": "sample-012",
+      "external_ids": {
+        "sample": "sample-012"
+      },
+      "doi": null,
+      "title": "Evaluating conversational tutors for diagnostic uncertainty",
+      "abstract": "Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.",
+      "year": 2025,
+      "publication_type": "Journal Article",
+      "source_database": "sample",
+      "citation_count": 8,
+      "excluded": false,
+      "exclusion_reason": null,
+      "screening_stage": null,
+      "journal_name": "Medical Teacher Insights",
+      "journal_issn": null,
+      "authors": [
+        {
+          "name": "Marcus Chen Sample",
+          "orcid": null
+        },
+        {
+          "name": "Hana Kim Sample",
+          "orcid": null
+        },
+        {
+          "name": "Mia Johnson Sample",
+          "orcid": null
+        }
+      ],
+      "keywords": [
+        "virtual patients",
+        "diagnostic reasoning",
+        "generative AI"
+      ]
+    },
+    {
+      "pmid": null,
+      "source_id": "sample-010",
+      "external_ids": {
+        "sample": "sample-010"
+      },
+      "doi": null,
+      "title": "Responsible use of large language models in medical assessment",
+      "abstract": "Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.",
+      "year": 2024,
+      "publication_type": "Journal Article",
+      "source_database": "sample",
+      "citation_count": 19,
+      "excluded": false,
+      "exclusion_reason": null,
+      "screening_stage": null,
+      "journal_name": "Medical Education Practice",
+      "journal_issn": null,
+      "authors": [
+        {
+          "name": "Elena Garcia Sample",
+          "orcid": null
+        },
+        {
+          "name": "Sofia Demir Sample",
+          "orcid": null
+        },
+        {
+          "name": "James Patel Sample",
+          "orcid": null
+        }
+      ],
+      "keywords": [
+        "assessment",
+        "generative AI",
+        "ethics"
+      ]
+    },
+    {
+      "pmid": null,
+      "source_id": "sample-011",
+      "external_ids": {
+        "sample": "sample-011"
+      },
+      "doi": null,
+      "title": "A global competency framework for AI-ready medical graduates",
+      "abstract": "Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.",
+      "year": 2024,
+      "publication_type": "Journal Article",
+      "source_database": "sample",
+      "citation_count": 16,
+      "excluded": false,
+      "exclusion_reason": null,
+      "screening_stage": null,
+      "journal_name": "Global Medical Education",
+      "journal_issn": null,
+      "authors": [
+        {
+          "name": "Amina Okafor Sample",
+          "orcid": null
+        },
+        {
+          "name": "Hana Kim Sample",
+          "orcid": null
+        },
+        {
+          "name": "Luis Santos Sample",
+          "orcid": null
+        }
+      ],
+      "keywords": [
+        "artificial intelligence",
+        "curriculum",
+        "competency framework"
+      ]
+    },
+    {
+      "pmid": null,
+      "source_id": "sample-009",
+      "external_ids": {
+        "sample": "sample-009"
+      },
+      "doi": null,
+      "title": "Generative AI as a reflective writing coach in residency",
+      "abstract": "Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.",
+      "year": 2023,
+      "publication_type": "Journal Article",
+      "source_database": "sample",
+      "citation_count": 25,
+      "excluded": false,
+      "exclusion_reason": null,
+      "screening_stage": null,
+      "journal_name": "Digital Health Education",
+      "journal_issn": null,
+      "authors": [
+        {
+          "name": "Marcus Chen Sample",
+          "orcid": null
+        },
+        {
+          "name": "Luis Santos Sample",
+          "orcid": null
+        },
+        {
+          "name": "Mia Johnson Sample",
+          "orcid": null
+        }
+      ],
+      "keywords": [
+        "feedback",
+        "generative AI",
+        "reflective practice"
+      ]
+    },
+    {
+      "pmid": null,
+      "source_id": "sample-008",
+      "external_ids": {
+        "sample": "sample-008"
+      },
+      "doi": null,
+      "title": "Student trust in AI-supported clinical decision exercises",
+      "abstract": "Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.",
+      "year": 2022,
+      "publication_type": "Journal Article",
+      "source_database": "sample",
+      "citation_count": 28,
+      "excluded": false,
+      "exclusion_reason": null,
+      "screening_stage": null,
+      "journal_name": "Medical Teacher Insights",
+      "journal_issn": null,
+      "authors": [
+        {
+          "name": "Sofia Demir Sample",
+          "orcid": null
+        },
+        {
+          "name": "James Patel Sample",
+          "orcid": null
+        }
+      ],
+      "keywords": [
+        "artificial intelligence",
+        "trust",
+        "clinical reasoning"
+      ]
+    },
+    {
+      "pmid": null,
+      "source_id": "sample-006",
+      "external_ids": {
+        "sample": "sample-006"
+      },
+      "doi": null,
+      "title": "Explainable machine learning for formative assessment feedback",
+      "abstract": "Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.",
+      "year": 2021,
+      "publication_type": "Journal Article",
+      "source_database": "sample",
+      "citation_count": 43,
+      "excluded": false,
+      "exclusion_reason": null,
+      "screening_stage": null,
+      "journal_name": "Digital Health Education",
+      "journal_issn": null,
+      "authors": [
+        {
+          "name": "Marcus Chen Sample",
+          "orcid": null
+        },
+        {
+          "name": "Sofia Demir Sample",
+          "orcid": null
+        },
+        {
+          "name": "Mia Johnson Sample",
+          "orcid": null
+        }
+      ],
+      "keywords": [
+        "feedback",
+        "assessment",
+        "artificial intelligence"
+      ]
+    },
+    {
+      "pmid": null,
+      "source_id": "sample-007",
+      "external_ids": {
+        "sample": "sample-007"
+      },
+      "doi": null,
+      "title": "International co-design of a virtual simulation curriculum",
+      "abstract": "Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.",
+      "year": 2021,
+      "publication_type": "Journal Article",
+      "source_database": "sample",
+      "citation_count": 29,
+      "excluded": false,
+      "exclusion_reason": null,
+      "screening_stage": null,
+      "journal_name": "Global Medical Education",
+      "journal_issn": null,
+      "authors": [
+        {
+          "name": "Elena Garcia Sample",
+          "orcid": null
+        },
+        {
+          "name": "Amina Okafor Sample",
+          "orcid": null
+        },
+        {
+          "name": "Hana Kim Sample",
+          "orcid": null
+        }
+      ],
+      "keywords": [
+        "simulation",
+        "curriculum",
+        "co-design"
+      ]
+    },
+    {
+      "pmid": null,
+      "source_id": "sample-004",
+      "external_ids": {
+        "sample": "sample-004"
+      },
+      "doi": null,
+      "title": "Virtual patients for diagnostic reasoning: a multi-institutional study",
+      "abstract": "Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.",
+      "year": 2020,
+      "publication_type": "Journal Article",
+      "source_database": "sample",
+      "citation_count": 47,
+      "excluded": false,
+      "exclusion_reason": null,
+      "screening_stage": null,
+      "journal_name": "Medical Education Practice",
+      "journal_issn": null,
+      "authors": [
+        {
+          "name": "Elena Garcia Sample",
+          "orcid": null
+        },
+        {
+          "name": "Marcus Chen Sample",
+          "orcid": null
+        },
+        {
+          "name": "Hana Kim Sample",
+          "orcid": null
+        }
+      ],
+      "keywords": [
+        "simulation",
+        "virtual patients",
+        "diagnostic reasoning"
+      ]
+    },
+    {
+      "pmid": null,
+      "source_id": "sample-002",
+      "external_ids": {
+        "sample": "sample-002"
+      },
+      "doi": null,
+      "title": "Learning analytics for early identification of struggling medical students",
+      "abstract": "Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.",
+      "year": 2019,
+      "publication_type": "Journal Article",
+      "source_database": "sample",
+      "citation_count": 51,
+      "excluded": false,
+      "exclusion_reason": null,
+      "screening_stage": null,
+      "journal_name": "Digital Health Education",
+      "journal_issn": null,
+      "authors": [
+        {
+          "name": "Marcus Chen Sample",
+          "orcid": null
+        },
+        {
+          "name": "Mia Johnson Sample",
+          "orcid": null
+        }
+      ],
+      "keywords": [
+        "learning analytics",
+        "assessment",
+        "student support"
+      ]
+    },
+    {
+      "pmid": null,
+      "source_id": "sample-003",
+      "external_ids": {
+        "sample": "sample-003"
+      },
+      "doi": null,
+      "title": "Faculty perspectives on artificial intelligence in health professions education",
+      "abstract": "Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.",
+      "year": 2019,
+      "publication_type": "Journal Article",
+      "source_database": "sample",
+      "citation_count": 39,
+      "excluded": false,
+      "exclusion_reason": null,
+      "screening_stage": null,
+      "journal_name": "Medical Teacher Insights",
+      "journal_issn": null,
+      "authors": [
+        {
+          "name": "Amina Okafor Sample",
+          "orcid": null
+        },
+        {
+          "name": "Sofia Demir Sample",
+          "orcid": null
+        }
+      ],
+      "keywords": [
+        "artificial intelligence",
+        "faculty development",
+        "medical education"
+      ]
+    },
+    {
+      "pmid": null,
+      "source_id": "sample-001",
+      "external_ids": {
+        "sample": "sample-001"
+      },
+      "doi": null,
+      "title": "Simulation-based feedback in undergraduate clinical training",
+      "abstract": "Synthetic demonstration record created for the bundled BibMedEd sample project. It is not a real publication and must not be cited.",
+      "year": 2018,
+      "publication_type": "Journal Article",
+      "source_database": "sample",
+      "citation_count": 64,
+      "excluded": false,
+      "exclusion_reason": null,
+      "screening_stage": null,
+      "journal_name": "Medical Education Practice",
+      "journal_issn": null,
+      "authors": [
+        {
+          "name": "Elena Garcia Sample",
+          "orcid": null
+        },
+        {
+          "name": "James Patel Sample",
+          "orcid": null
+        }
+      ],
+      "keywords": [
+        "simulation",
+        "feedback",
+        "clinical skills"
+      ]
+    }
+  ]
+}
